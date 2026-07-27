@@ -1,14 +1,12 @@
-import { useSuspenseQuery } from "@tanstack/react-query"
+﻿import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, redirect } from "@tanstack/react-router"
 import { Suspense } from "react"
 
 import { type UserPublic, UsersService } from "@/client"
-import AddUser from "@/components/Admin/AddUser"
-import { columns, type UserTableData } from "@/components/Admin/columns"
+import AddUser from "@/components/Admin/Users/AddUser"
+import { columns, type UserTableData } from "@/components/Admin/Users/columns"
 import { DataTable } from "@/components/Common/DataTable"
-import { ImageCategories } from "@/components/Admin/ImageCategories"
 import PendingUsers from "@/components/Pending/PendingUsers"
-import { Separator } from "@/components/ui/separator"
 import useAuth from "@/hooks/useAuth"
 
 function getUsersQueryOptions() {
@@ -70,8 +68,6 @@ function Admin() {
         <AddUser />
       </div>
       <UsersTable />
-      <Separator />
-      <ImageCategories />
     </div>
   )
 }
