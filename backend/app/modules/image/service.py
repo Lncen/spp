@@ -18,11 +18,19 @@ def _compute_sha256(file_bytes: bytes) -> str:
     return hashlib.sha256(file_bytes).hexdigest()
 
 
-def _get_upload_path() -> tuple[Path, str]:
-    """生成文件存储路径：{UPLOAD_DIR}/images/{yyyy}/{mm}/{uuid}.webp"""
+_EXT_TO_FORMAT = {
+    ".jpg": "JPEG",
+    ".jpeg": "JPEG",
+    ".png": "PNG",
+    ".webp": "WEBP",
+}
+
+
+def _get_upload_path(ext: str = ".webp") -> tuple[Path, str]:
+    """生成文件存储路径：{UPLOAD_DIR}/images/{yyyy}/{mm}/{uuid}{ext}"""
     now = datetime.now()
     rel_dir = f"images/{now.year:04d}/{now.month:02d}"
-    filename = f"{uuid.uuid4().hex}.webp"
+    filename = f"{uuid.uuid4().hex}{ext}"
     rel_path = f"{rel_dir}/{filename}"
     abs_path = Path(settings.UPLOAD_DIR) / rel_path
     abs_path.parent.mkdir(parents=True, exist_ok=True)
@@ -30,7 +38,7 @@ def _get_upload_path() -> tuple[Path, str]:
 
 
 def process_and_save_image(
-    *, session: Session, file_bytes: bytes, original_filename: str, owner_id: uuid.UUID
+    *, session: Session, file_bytes: bytes, original_filename: str, owner_id: uuid.UUID, image_ext: str = ".webp"
 ) -> Image:
     """处理上传图片：去重 → 校验 → 缩略图 → 保存 → 返回记录
 
@@ -66,14 +74,18 @@ def process_and_save_image(
             new_h = int(original_h * ratio)
             img = img.resize((new_w, new_h), PILImage.LANCZOS)
 
-        # 统一输出为 WebP（比 JPEG 小 25-35%）
+        # 按原图格式输出缩略图
+        save_format = _EXT_TO_FORMAT.get(image_ext, "WEBP")
         output = BytesIO()
-        img.save(output, format="WEBP", quality=85, optimize=True)
+        save_kwargs: dict = {"format": save_format, "optimize": True}
+        if save_format in ("JPEG", "WEBP"):
+            save_kwargs["quality"] = 85
+        img.save(output, **save_kwargs)
         output_bytes = output.getvalue()
         width, height = img.size
 
     # 3. 写入磁盘
-    abs_path, rel_path = _get_upload_path()
+    abs_path, rel_path = _get_upload_path(image_ext)
     abs_path.write_bytes(output_bytes)
 
     # 4. 保存数据库记录

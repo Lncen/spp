@@ -3,7 +3,7 @@
 import sentry_sdk
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
-from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.cors import CORSMiddleware as CORSMiddleware
 from starlette.staticfiles import StaticFiles
 
 from app.api.main import api_router
@@ -37,9 +37,15 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 # 确保上传目录存在
 Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 
-# 挂载上传目录，由反向代理或前端直接访问静态文件
-app.mount(
-    "/uploads",
-    StaticFiles(directory=settings.UPLOAD_DIR),
-    name="uploads",
-)
+# 挂载上传目录，加上 CORS 中间件以支持跨域访问
+from starlette.middleware.cors import CORSMiddleware
+uploads_app = StaticFiles(directory=settings.UPLOAD_DIR)
+if settings.all_cors_origins:
+    uploads_app = CORSMiddleware(
+        uploads_app,
+        allow_origins=settings.all_cors_origins,
+        allow_credentials=True,
+        allow_methods=["GET", "HEAD", "OPTIONS"],
+        allow_headers=["*"],
+    )
+app.mount("/uploads", uploads_app, name="uploads")

@@ -81,9 +81,7 @@ const AddItem = () => {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add Item</DialogTitle>
-          <DialogDescription>
-            填写详细信息以添加新项目。
-          </DialogDescription>
+          <DialogDescription>填写详细信息以添加新项目。</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>

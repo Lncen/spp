@@ -25,7 +25,7 @@ def _build_image_url(image: Image) -> str:
     """
     if settings.STATIC_URL_BASE:
         base = settings.STATIC_URL_BASE.rstrip("/")
-        return f"{base}/{image.file_path}"
+        return f"{base}/uploads/{image.file_path}"
     return f"/uploads/{image.file_path}"
 
 
@@ -81,7 +81,7 @@ def read_image(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) ->
 
 
 @router.post("/upload", response_model=ImagePublic)
-def upload_image(
+async def upload_image(
     *, session: SessionDep, current_user: CurrentUser, file: UploadFile
 ) -> Any:
     """上传图片，支持 JPEG/PNG/WebP，自动压缩为 WebP 缩略图"""
@@ -91,7 +91,7 @@ def upload_image(
         raise HTTPException(status_code=400, detail="不支持的图片格式，仅允许 JPEG/PNG/WebP")
 
     # 读取文件内容
-    file_bytes = file.read()
+    file_bytes = await file.read()
 
     # 验证大小
     actual_size = len(file_bytes)
@@ -106,6 +106,7 @@ def upload_image(
         session=session,
         file_bytes=file_bytes,
         original_filename=file.filename or "unknown",
+        image_ext=ext,
         owner_id=current_user.id,
     )
     return ImagePublic.model_validate(image, update={"url": _build_image_url(image)})

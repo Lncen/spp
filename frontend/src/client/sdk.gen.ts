@@ -3,12 +3,99 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { ImagesReadImagesData, ImagesReadImagesResponse, ImagesReadImageData, ImagesReadImageResponse, ImagesDeleteImageData, ImagesDeleteImageResponse, ImagesUploadImageData, ImagesUploadImageResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserPrivateData, PrivateCreateUserPrivateResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+
+export class ImagesService {
+    /**
+     * Read Images
+     * 获取当前用户的图片列表
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @returns ImagesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readImages(data: ImagesReadImagesData = {}): CancelablePromise<ImagesReadImagesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/images/',
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Image
+     * 根据 ID 获取图片元数据
+     * @param data The data for the request.
+     * @param data.id
+     * @returns ImagePublic Successful Response
+     * @throws ApiError
+     */
+    public static readImage(data: ImagesReadImageData): CancelablePromise<ImagesReadImageResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/images/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Image
+     * 删除图片（同时删除磁盘文件）
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteImage(data: ImagesDeleteImageData): CancelablePromise<ImagesDeleteImageResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/images/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Upload Image
+     * 上传图片，支持 JPEG/PNG/WebP，自动压缩为 WebP 缩略图
+     * @param data The data for the request.
+     * @param data.formData
+     * @returns ImagePublic Successful Response
+     * @throws ApiError
+     */
+    public static uploadImage(data: ImagesUploadImageData): CancelablePromise<ImagesUploadImageResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/images/upload',
+            formData: data.formData,
+            mediaType: 'multipart/form-data',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
 
 export class ItemsService {
     /**
      * Read Items
-     * Retrieve items.
+     * 获取物品列表
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -31,7 +118,7 @@ export class ItemsService {
     
     /**
      * Create Item
-     * Create new item.
+     * 创建新物品
      * @param data The data for the request.
      * @param data.requestBody
      * @returns ItemPublic Successful Response
@@ -51,7 +138,7 @@ export class ItemsService {
     
     /**
      * Read Item
-     * Get item by ID.
+     * 根据 ID 获取物品
      * @param data The data for the request.
      * @param data.id
      * @returns ItemPublic Successful Response
@@ -72,7 +159,7 @@ export class ItemsService {
     
     /**
      * Update Item
-     * Update an item.
+     * 更新物品（支持设置/取消配图）
      * @param data The data for the request.
      * @param data.id
      * @param data.requestBody
@@ -96,7 +183,7 @@ export class ItemsService {
     
     /**
      * Delete Item
-     * Delete an item.
+     * 删除物品
      * @param data The data for the request.
      * @param data.id
      * @returns Message Successful Response
@@ -119,7 +206,7 @@ export class ItemsService {
 export class LoginService {
     /**
      * Login Access Token
-     * OAuth2 compatible token login, get an access token for future requests
+     * OAuth2 兼容的登录接口，获取访问令牌
      * @param data The data for the request.
      * @param data.formData
      * @returns Token Successful Response
@@ -139,7 +226,7 @@ export class LoginService {
     
     /**
      * Test Token
-     * Test access token
+     * 测试访问令牌是否有效
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
@@ -152,7 +239,7 @@ export class LoginService {
     
     /**
      * Recover Password
-     * Password Recovery
+     * 密码找回——发送重置链接邮件
      * @param data The data for the request.
      * @param data.email
      * @returns Message Successful Response
@@ -173,7 +260,7 @@ export class LoginService {
     
     /**
      * Reset Password
-     * Reset password
+     * 重置密码
      * @param data The data for the request.
      * @param data.requestBody
      * @returns Message Successful Response
@@ -193,7 +280,7 @@ export class LoginService {
     
     /**
      * Recover Password Html Content
-     * HTML Content for Password Recovery
+     * 获取密码找回邮件的 HTML 内容（仅超级管理员可用）
      * @param data The data for the request.
      * @param data.email
      * @returns string Successful Response
@@ -215,14 +302,14 @@ export class LoginService {
 
 export class PrivateService {
     /**
-     * Create User
-     * Create a new user.
+     * Create User Private
+     * 内部接口：创建新用户（仅开发环境可用）
      * @param data The data for the request.
      * @param data.requestBody
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
-    public static createUser(data: PrivateCreateUserData): CancelablePromise<PrivateCreateUserResponse> {
+    public static createUserPrivate(data: PrivateCreateUserPrivateData): CancelablePromise<PrivateCreateUserPrivateResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/private/users/',
@@ -238,7 +325,7 @@ export class PrivateService {
 export class UsersService {
     /**
      * Read Users
-     * Retrieve users.
+     * 获取用户列表（仅超级管理员可用）
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -261,7 +348,7 @@ export class UsersService {
     
     /**
      * Create User
-     * Create new user.
+     * 创建新用户（仅超级管理员可用）
      * @param data The data for the request.
      * @param data.requestBody
      * @returns UserPublic Successful Response
@@ -281,7 +368,7 @@ export class UsersService {
     
     /**
      * Read User Me
-     * Get current user.
+     * 获取当前用户信息
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
@@ -294,7 +381,7 @@ export class UsersService {
     
     /**
      * Delete User Me
-     * Delete own user.
+     * 删除当前用户（超级管理员不允许删除自己）
      * @returns Message Successful Response
      * @throws ApiError
      */
@@ -307,7 +394,7 @@ export class UsersService {
     
     /**
      * Update User Me
-     * Update own user.
+     * 更新当前用户个人信息
      * @param data The data for the request.
      * @param data.requestBody
      * @returns UserPublic Successful Response
@@ -327,7 +414,7 @@ export class UsersService {
     
     /**
      * Update Password Me
-     * Update own password.
+     * 修改当前用户密码
      * @param data The data for the request.
      * @param data.requestBody
      * @returns Message Successful Response
@@ -347,7 +434,7 @@ export class UsersService {
     
     /**
      * Register User
-     * Create new user without the need to be logged in.
+     * 用户自助注册
      * @param data The data for the request.
      * @param data.requestBody
      * @returns UserPublic Successful Response
@@ -367,7 +454,7 @@ export class UsersService {
     
     /**
      * Read User By Id
-     * Get a specific user by id.
+     * 根据 ID 获取用户
      * @param data The data for the request.
      * @param data.userId
      * @returns UserPublic Successful Response
@@ -388,7 +475,7 @@ export class UsersService {
     
     /**
      * Update User
-     * Update a user.
+     * 更新用户信息（仅超级管理员可用）
      * @param data The data for the request.
      * @param data.userId
      * @param data.requestBody
@@ -412,7 +499,7 @@ export class UsersService {
     
     /**
      * Delete User
-     * Delete a user.
+     * 删除用户（仅超级管理员可用，不允许删除自己）
      * @param data The data for the request.
      * @param data.userId
      * @returns Message Successful Response
@@ -435,7 +522,7 @@ export class UsersService {
 export class UtilsService {
     /**
      * Test Email
-     * Test emails.
+     * 发送测试邮件（仅超级管理员可用）
      * @param data The data for the request.
      * @param data.emailTo
      * @returns Message Successful Response
@@ -456,6 +543,7 @@ export class UtilsService {
     
     /**
      * Health Check
+     * 健康检查
      * @returns boolean Successful Response
      * @throws ApiError
      */
