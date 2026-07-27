@@ -3,15 +3,16 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ImagesReadImagesData, ImagesReadImagesResponse, ImagesReadImageData, ImagesReadImageResponse, ImagesDeleteImageData, ImagesDeleteImageResponse, ImagesUploadImageData, ImagesUploadImageResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserPrivateData, PrivateCreateUserPrivateResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { ImagesReadImagesData, ImagesReadImagesResponse, ImagesReadImageData, ImagesReadImageResponse, ImagesDeleteImageData, ImagesDeleteImageResponse, ImagesUploadImageData, ImagesUploadImageResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserPrivateData, PrivateCreateUserPrivateResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, ImageCategoriesReadCategoriesResponse, ImageCategoriesReadCategoryData, ImageCategoriesReadCategoryResponse, ImageCategoriesCreateCategoryData, ImageCategoriesCreateCategoryResponse, ImageCategoriesUpdateCategoryData, ImageCategoriesUpdateCategoryResponse, ImageCategoriesDeleteCategoryData, ImageCategoriesDeleteCategoryResponse, ImagesUpdateImageData, ImagesUpdateImageResponse } from './types.gen';
 
 export class ImagesService {
     /**
      * Read Images
-     * 获取当前用户的图片列表
+     * 鑾峰彇褰撳墠鐢ㄦ埛鐨勫浘鐗囧垪琛?
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
+     * @param data.category
      * @returns ImagesPublic Successful Response
      * @throws ApiError
      */
@@ -21,7 +22,8 @@ export class ImagesService {
             url: '/api/v1/images/',
             query: {
                 skip: data.skip,
-                limit: data.limit
+                limit: data.limit,
+                category: data.category
             },
             errors: {
                 422: 'Validation Error'
@@ -30,8 +32,127 @@ export class ImagesService {
     }
     
     /**
+     * Read Category Options
+     * 鑾峰彇鍒嗙被閫夐」鍒楄〃锛堜粎 name + label锛屼緵涓婁紶琛ㄥ崟浣跨敤锛?
+     * @returns string[] Successful Response
+     * @throws ApiError
+     */
+    public static readCategoryOptions(): CancelablePromise<Array<string>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/image-categories/options',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
      * Read Image
-     * 根据 ID 获取图片元数据
+
+    /**
+     * Read Categories
+     * 获取所有图片分类列表（含图片计数）
+     * @returns ImageCategoriesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readCategories(): CancelablePromise<ImageCategoriesReadCategoriesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/image-categories/',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+
+    /**
+     * Read Category
+     * 根据 ID 获取分类详情
+     * @param data The data for the request.
+     * @param data.id
+     * @returns ImageCategoryPublic Successful Response
+     * @throws ApiError
+     */
+    public static readCategory(data: ImageCategoriesReadCategoryData): CancelablePromise<ImageCategoriesReadCategoryResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/image-categories/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+
+    /**
+     * Create Category
+     * 创建图片分类（管理员）
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns ImageCategoryPublic Successful Response
+     * @throws ApiError
+     */
+    public static createCategory(data: ImageCategoriesCreateCategoryData): CancelablePromise<ImageCategoriesCreateCategoryResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/image-categories/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+
+    /**
+     * Update Category
+     * 更新图片分类（管理员）
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns ImageCategoryPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateCategory(data: ImageCategoriesUpdateCategoryData): CancelablePromise<ImageCategoriesUpdateCategoryResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/image-categories/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+
+    /**
+     * Delete Category
+     * 删除图片分类（管理员），有图片引用时拒绝删除
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteCategory(data: ImageCategoriesDeleteCategoryData): CancelablePromise<ImageCategoriesDeleteCategoryResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/image-categories/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    /**
+     * 鏍规嵁 ID 鑾峰彇鍥剧墖鍏冩暟鎹?
      * @param data The data for the request.
      * @param data.id
      * @returns ImagePublic Successful Response
@@ -52,7 +173,7 @@ export class ImagesService {
     
     /**
      * Delete Image
-     * 删除图片（同时删除磁盘文件）
+     * 鍒犻櫎鍥剧墖锛堝悓鏃跺垹闄ょ鐩樻枃浠讹級
      * @param data The data for the request.
      * @param data.id
      * @returns Message Successful Response
@@ -73,7 +194,7 @@ export class ImagesService {
     
     /**
      * Upload Image
-     * 上传图片，支持 JPEG/PNG/WebP，自动压缩为 WebP 缩略图
+     * 涓婁紶鍥剧墖锛屾敮鎸?JPEG/PNG/WebP锛岃嚜鍔ㄥ帇缂╀负 WebP 缂╃暐鍥?
      * @param data The data for the request.
      * @param data.formData
      * @returns ImagePublic Successful Response
@@ -85,17 +206,42 @@ export class ImagesService {
             url: '/api/v1/images/upload',
             formData: data.formData,
             mediaType: 'multipart/form-data',
+            query: {
+                category: data.category
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    /**
+     * Update Image
+     * Update image category
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns ImagePublic Successful Response
+     * @throws ApiError
+     */
+    public static updateImage(data: ImagesUpdateImageData): CancelablePromise<ImagesUpdateImageResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/images/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: 'Validation Error'
             }
         });
     }
 }
-
 export class ItemsService {
     /**
      * Read Items
-     * 获取物品列表
+     * 鑾峰彇鐗╁搧鍒楄〃
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -118,7 +264,7 @@ export class ItemsService {
     
     /**
      * Create Item
-     * 创建新物品
+     * 鍒涘缓鏂扮墿鍝?
      * @param data The data for the request.
      * @param data.requestBody
      * @returns ItemPublic Successful Response
@@ -138,7 +284,7 @@ export class ItemsService {
     
     /**
      * Read Item
-     * 根据 ID 获取物品
+     * 鏍规嵁 ID 鑾峰彇鐗╁搧
      * @param data The data for the request.
      * @param data.id
      * @returns ItemPublic Successful Response
@@ -159,7 +305,7 @@ export class ItemsService {
     
     /**
      * Update Item
-     * 更新物品（支持设置/取消配图）
+     * 鏇存柊鐗╁搧锛堟敮鎸佽缃?鍙栨秷閰嶅浘锛?
      * @param data The data for the request.
      * @param data.id
      * @param data.requestBody
@@ -183,7 +329,7 @@ export class ItemsService {
     
     /**
      * Delete Item
-     * 删除物品
+     * 鍒犻櫎鐗╁搧
      * @param data The data for the request.
      * @param data.id
      * @returns Message Successful Response
@@ -206,7 +352,7 @@ export class ItemsService {
 export class LoginService {
     /**
      * Login Access Token
-     * OAuth2 兼容的登录接口，获取访问令牌
+     * OAuth2 鍏煎鐨勭櫥褰曟帴鍙ｏ紝鑾峰彇璁块棶浠ょ墝
      * @param data The data for the request.
      * @param data.formData
      * @returns Token Successful Response
@@ -226,7 +372,7 @@ export class LoginService {
     
     /**
      * Test Token
-     * 测试访问令牌是否有效
+     * 娴嬭瘯璁块棶浠ょ墝鏄惁鏈夋晥
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
@@ -239,7 +385,7 @@ export class LoginService {
     
     /**
      * Recover Password
-     * 密码找回——发送重置链接邮件
+     * 瀵嗙爜鎵惧洖鈥斺€斿彂閫侀噸缃摼鎺ラ偖浠?
      * @param data The data for the request.
      * @param data.email
      * @returns Message Successful Response
@@ -260,7 +406,7 @@ export class LoginService {
     
     /**
      * Reset Password
-     * 重置密码
+     * 閲嶇疆瀵嗙爜
      * @param data The data for the request.
      * @param data.requestBody
      * @returns Message Successful Response
@@ -280,7 +426,7 @@ export class LoginService {
     
     /**
      * Recover Password Html Content
-     * 获取密码找回邮件的 HTML 内容（仅超级管理员可用）
+     * 鑾峰彇瀵嗙爜鎵惧洖閭欢鐨?HTML 鍐呭锛堜粎瓒呯骇绠＄悊鍛樺彲鐢級
      * @param data The data for the request.
      * @param data.email
      * @returns string Successful Response
@@ -303,7 +449,7 @@ export class LoginService {
 export class PrivateService {
     /**
      * Create User Private
-     * 内部接口：创建新用户（仅开发环境可用）
+     * 鍐呴儴鎺ュ彛锛氬垱寤烘柊鐢ㄦ埛锛堜粎寮€鍙戠幆澧冨彲鐢級
      * @param data The data for the request.
      * @param data.requestBody
      * @returns UserPublic Successful Response
@@ -325,7 +471,7 @@ export class PrivateService {
 export class UsersService {
     /**
      * Read Users
-     * 获取用户列表（仅超级管理员可用）
+     * 鑾峰彇鐢ㄦ埛鍒楄〃锛堜粎瓒呯骇绠＄悊鍛樺彲鐢級
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -348,7 +494,7 @@ export class UsersService {
     
     /**
      * Create User
-     * 创建新用户（仅超级管理员可用）
+     * 鍒涘缓鏂扮敤鎴凤紙浠呰秴绾х鐞嗗憳鍙敤锛?
      * @param data The data for the request.
      * @param data.requestBody
      * @returns UserPublic Successful Response
@@ -368,7 +514,7 @@ export class UsersService {
     
     /**
      * Read User Me
-     * 获取当前用户信息
+     * 鑾峰彇褰撳墠鐢ㄦ埛淇℃伅
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
@@ -381,7 +527,7 @@ export class UsersService {
     
     /**
      * Delete User Me
-     * 删除当前用户（超级管理员不允许删除自己）
+     * 鍒犻櫎褰撳墠鐢ㄦ埛锛堣秴绾х鐞嗗憳涓嶅厑璁稿垹闄よ嚜宸憋級
      * @returns Message Successful Response
      * @throws ApiError
      */
@@ -394,7 +540,7 @@ export class UsersService {
     
     /**
      * Update User Me
-     * 更新当前用户个人信息
+     * 鏇存柊褰撳墠鐢ㄦ埛涓汉淇℃伅
      * @param data The data for the request.
      * @param data.requestBody
      * @returns UserPublic Successful Response
@@ -414,7 +560,7 @@ export class UsersService {
     
     /**
      * Update Password Me
-     * 修改当前用户密码
+     * 淇敼褰撳墠鐢ㄦ埛瀵嗙爜
      * @param data The data for the request.
      * @param data.requestBody
      * @returns Message Successful Response
@@ -434,7 +580,7 @@ export class UsersService {
     
     /**
      * Register User
-     * 用户自助注册
+     * 鐢ㄦ埛鑷姪娉ㄥ唽
      * @param data The data for the request.
      * @param data.requestBody
      * @returns UserPublic Successful Response
@@ -454,7 +600,7 @@ export class UsersService {
     
     /**
      * Read User By Id
-     * 根据 ID 获取用户
+     * 鏍规嵁 ID 鑾峰彇鐢ㄦ埛
      * @param data The data for the request.
      * @param data.userId
      * @returns UserPublic Successful Response
@@ -475,7 +621,7 @@ export class UsersService {
     
     /**
      * Update User
-     * 更新用户信息（仅超级管理员可用）
+     * 鏇存柊鐢ㄦ埛淇℃伅锛堜粎瓒呯骇绠＄悊鍛樺彲鐢級
      * @param data The data for the request.
      * @param data.userId
      * @param data.requestBody
@@ -499,7 +645,7 @@ export class UsersService {
     
     /**
      * Delete User
-     * 删除用户（仅超级管理员可用，不允许删除自己）
+     * 鍒犻櫎鐢ㄦ埛锛堜粎瓒呯骇绠＄悊鍛樺彲鐢紝涓嶅厑璁稿垹闄よ嚜宸憋級
      * @param data The data for the request.
      * @param data.userId
      * @returns Message Successful Response
@@ -522,7 +668,7 @@ export class UsersService {
 export class UtilsService {
     /**
      * Test Email
-     * 发送测试邮件（仅超级管理员可用）
+     * 鍙戦€佹祴璇曢偖浠讹紙浠呰秴绾х鐞嗗憳鍙敤锛?
      * @param data The data for the request.
      * @param data.emailTo
      * @returns Message Successful Response
@@ -543,7 +689,7 @@ export class UtilsService {
     
     /**
      * Health Check
-     * 健康检查
+     * 鍋ュ悍妫€鏌?
      * @returns boolean Successful Response
      * @throws ApiError
      */
@@ -554,3 +700,5 @@ export class UtilsService {
         });
     }
 }
+
+

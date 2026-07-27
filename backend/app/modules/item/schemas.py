@@ -11,6 +11,7 @@ class ItemBase(SQLModel):
     description: str | None = Field(default=None, max_length=255)
 
 
+
 class ItemCreate(ItemBase):
     """创建物品请求"""
     pass

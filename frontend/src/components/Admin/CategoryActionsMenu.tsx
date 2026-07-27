@@ -1,22 +1,21 @@
 import { EllipsisVertical } from "lucide-react"
 import { useState } from "react"
 
-import type { ImagePublic } from "@/client"
+import type { ImageCategoryPublic } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Separator } from "@/components/ui/separator"
-import DeleteImage from "./DeleteImage"
-import EditImageCategory from "./EditImageCategory"
+import DeleteCategory from "./DeleteCategory"
+import EditCategory from "./EditCategory"
 
-interface ImageActionsMenuProps {
-  image: ImagePublic
+interface CategoryActionsMenuProps {
+  category: ImageCategoryPublic
 }
 
-export const ImageActionsMenu = ({ image }: ImageActionsMenuProps) => {
+export const CategoryActionsMenu = ({ category }: CategoryActionsMenuProps) => {
   const [open, setOpen] = useState(false)
 
   return (
@@ -27,8 +26,8 @@ export const ImageActionsMenu = ({ image }: ImageActionsMenuProps) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DeleteImage id={image.id} onSuccess={() => setOpen(false)} />
-        <EditImageCategory image={image} onSuccess={() => setOpen(false)} />
+        <EditCategory category={category} onSuccess={() => setOpen(false)} />
+        <DeleteCategory id={category.id} name={category.name} onSuccess={() => setOpen(false)} />
       </DropdownMenuContent>
     </DropdownMenu>
   )

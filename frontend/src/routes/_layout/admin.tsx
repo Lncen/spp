@@ -6,7 +6,9 @@ import { type UserPublic, UsersService } from "@/client"
 import AddUser from "@/components/Admin/AddUser"
 import { columns, type UserTableData } from "@/components/Admin/columns"
 import { DataTable } from "@/components/Common/DataTable"
+import { ImageCategories } from "@/components/Admin/ImageCategories"
 import PendingUsers from "@/components/Pending/PendingUsers"
+import { Separator } from "@/components/ui/separator"
 import useAuth from "@/hooks/useAuth"
 
 function getUsersQueryOptions() {
@@ -57,7 +59,7 @@ function UsersTable() {
 
 function Admin() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-10">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Users</h1>
@@ -68,6 +70,8 @@ function Admin() {
         <AddUser />
       </div>
       <UsersTable />
+      <Separator />
+      <ImageCategories />
     </div>
   )
 }

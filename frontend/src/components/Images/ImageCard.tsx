@@ -1,4 +1,4 @@
-import { EllipsisVertical } from "lucide-react"
+﻿import { EllipsisVertical } from "lucide-react"
 import { useState } from "react"
 
 import type { ImagePublic } from "@/client"
@@ -8,7 +8,9 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Separator } from "@/components/ui/separator"
 import DeleteImage from "./DeleteImage"
+import EditImageCategory from "./EditImageCategory"
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 B"
@@ -48,6 +50,8 @@ export const ImageCard = ({ image }: ImageCardProps) => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DeleteImage id={image.id} onSuccess={() => setMenuOpen(false)} />
+              <Separator className="my-1" />
+              <EditImageCategory image={image} onSuccess={() => setMenuOpen(false)} />
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -59,7 +63,12 @@ export const ImageCard = ({ image }: ImageCardProps) => {
           {image.filename}
         </p>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>{image.width} × {image.height}</span>
+          {image.category && (
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+              {image.category}
+            </span>
+          )}
+          <span>{image.width} x {image.height}</span>
           <span className="text-border">|</span>
           <span>{formatFileSize(image.file_size)}</span>
         </div>

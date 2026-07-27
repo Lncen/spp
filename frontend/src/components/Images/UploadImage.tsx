@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Upload } from "lucide-react"
 import { useState } from "react"
 
@@ -17,6 +17,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LoadingButton } from "@/components/ui/loading-button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
@@ -24,16 +31,28 @@ const UploadImage = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
+  const [category, setCategory] = useState("")
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
+  const { data: categoryOptions } = useQuery<string[]>({
+    queryKey: ["image-category-options"],
+    queryFn: () => ImagesService.readCategoryOptions(),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  })
+
   const mutation = useMutation({
     mutationFn: (file: File) =>
-      ImagesService.uploadImage({ formData: { file: file as unknown as string } }),
+      ImagesService.uploadImage({
+        formData: { file: file as unknown as string },
+        category: category || undefined,
+      }),
     onSuccess: (data) => {
-      showSuccessToast(`图片 "${data.filename}" 上传成功`)
+      showSuccessToast(`"${data.filename}" 上传成功`)
       setFile(null)
       setPreview(null)
+      setCategory("")
       setIsOpen(false)
     },
     onError: handleError.bind(showErrorToast),
@@ -64,6 +83,7 @@ const UploadImage = () => {
     if (!open) {
       setFile(null)
       setPreview(null)
+      setCategory("")
     }
     setIsOpen(open)
   }
@@ -83,7 +103,7 @@ const UploadImage = () => {
           <DialogHeader>
             <DialogTitle>上传图片</DialogTitle>
             <DialogDescription>
-              支持 JPEG、PNG、WebP 格式，上传后会自动压缩为 WebP 缩略图。
+              支持 JPEG、PNG、WebP 格式。
             </DialogDescription>
           </DialogHeader>
 
@@ -103,13 +123,29 @@ const UploadImage = () => {
                 <img
                   src={preview}
                   alt={file.name}
-                  className="max-h-48 rounded-md object-contain border"
+                  className="max-h-48 w-full rounded-md object-contain border"
                 />
                 <p className="text-xs text-muted-foreground">
                   {file.name} ({(file.size / 1024).toFixed(1)} KB)
                 </p>
               </div>
             )}
+
+            <div className="grid gap-2">
+              <Label>分类</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="选择分类（可选）" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categoryOptions?.map((opt) => (
+                    <SelectItem key={opt} value={opt}>
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <DialogFooter>
@@ -121,7 +157,7 @@ const UploadImage = () => {
             <LoadingButton
               type="submit"
               loading={mutation.isPending}
-              disabled={!file}
+              disabled={!file || mutation.isPending}
             >
               上传
             </LoadingButton>

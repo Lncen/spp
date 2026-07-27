@@ -1,4 +1,5 @@
-﻿
+﻿import uuid
+
 from typing import TYPE_CHECKING
 
 from pydantic import EmailStr
@@ -8,12 +9,21 @@ from app.core.mixin.models import BaseModelMixin
 
 if TYPE_CHECKING:
 
+    from app.modules.level.models import UserLevel
     from app.modules.image.models import Image
     from app.modules.item.models import Item
 
 
 class User(BaseModelMixin, SQLModel, table=True):
     """用户数据库模型"""
+
+    level_id: uuid.UUID | None = Field(
+        default=None,
+        foreign_key="user_level.id",
+        nullable=True,
+        title="用户等级",
+        description="关联的用户等级 UUID"
+    )
 
     email: EmailStr = Field(
         unique=True,

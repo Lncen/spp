@@ -19,31 +19,32 @@ import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
-interface DeleteImageProps {
+interface DeleteCategoryProps {
   id: string
+  name: string
   onSuccess: () => void
 }
 
-const DeleteImage = ({ id, onSuccess }: DeleteImageProps) => {
+const DeleteCategory = ({ id, name, onSuccess }: DeleteCategoryProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const { handleSubmit } = useForm()
 
-  const deleteImage = async (id: string) => {
-    await ImagesService.deleteImage({ id: id })
+  const deleteCategory = async (id: string) => {
+    await ImagesService.deleteCategory({ id })
   }
 
   const mutation = useMutation({
-    mutationFn: deleteImage,
+    mutationFn: deleteCategory,
     onSuccess: () => {
-      showSuccessToast("图片已删除")
+      showSuccessToast("分类已删除")
       setIsOpen(false)
       onSuccess()
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
-      queryClient.invalidateQueries()
+      queryClient.invalidateQueries({ queryKey: ["image-categories"] })
     },
   })
 
@@ -59,16 +60,18 @@ const DeleteImage = ({ id, onSuccess }: DeleteImageProps) => {
         onClick={() => setIsOpen(true)}
       >
         <Trash2 />
-        删除图片
+        删除分类
       </DropdownMenuItem>
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
-            <DialogTitle>删除图片</DialogTitle>
+            <DialogTitle>删除分类</DialogTitle>
             <DialogDescription>
-              该图片将被永久删除，同时对应的磁盘文件也会被移除。此操作不可撤销。
+              确定要删除分类 "<strong>{name}</strong>" 吗？如有图片引用该分类，操作将被拒绝。
+              此操作不可撤销。
             </DialogDescription>
           </DialogHeader>
+
           <DialogFooter className="mt-4">
             <DialogClose asChild>
               <Button variant="outline" disabled={mutation.isPending}>
@@ -89,4 +92,4 @@ const DeleteImage = ({ id, onSuccess }: DeleteImageProps) => {
   )
 }
 
-export default DeleteImage
+export default DeleteCategory

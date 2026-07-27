@@ -1,4 +1,4 @@
-from collections.abc import Generator
+﻿from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
@@ -7,7 +7,7 @@ from sqlmodel import Session, delete
 from app.core.config import settings
 from app.core.db import engine, init_db
 from app.main import app
-from app.modules.image.models import Image
+from app.modules.image.models import Image, ImageCategory
 from app.modules.item.models import Item
 from app.modules.user.models import User
 from tests.utils.user import authentication_token_from_email
@@ -20,7 +20,10 @@ def db() -> Generator[Session]:
         init_db(session)
         yield session
         statement = delete(Item)
+        session.execute(statement)
         statement = delete(Image)
+        session.execute(statement)
+        statement = delete(ImageCategory)
         session.execute(statement)
         statement = delete(User)
         session.execute(statement)

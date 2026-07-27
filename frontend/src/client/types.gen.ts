@@ -18,13 +18,14 @@ export type HTTPValidationError = {
 };
 
 /**
- * 图片公开响应
+ * 鍥剧墖鍏紑鍝嶅簲
  */
 export type ImagePublic = {
     filename: string;
     file_size: number;
     width: number;
     height: number;
+    category?: (string | null);
     id: string;
     owner_id: string;
     created_at?: (string | null);
@@ -32,7 +33,7 @@ export type ImagePublic = {
 };
 
 /**
- * 图片列表响应
+ * 鍥剧墖鍒楄〃鍝嶅簲
  */
 export type ImagesPublic = {
     data: Array<ImagePublic>;
@@ -40,15 +41,16 @@ export type ImagesPublic = {
 };
 
 /**
- * 创建物品请求
+ * 鍒涘缓鐗╁搧璇锋眰
  */
 export type ItemCreate = {
     title: string;
     description?: (string | null);
+    category?: (string | null);
 };
 
 /**
- * 物品公开响应
+ * 鐗╁搧鍏紑鍝嶅簲
  */
 export type ItemPublic = {
     title: string;
@@ -58,10 +60,11 @@ export type ItemPublic = {
     created_at?: (string | null);
     image_id?: (string | null);
     image_url?: (string | null);
+    category?: (string | null);
 };
 
 /**
- * 物品列表响应
+ * 鐗╁搧鍒楄〃鍝嶅簲
  */
 export type ItemsPublic = {
     data: Array<ItemPublic>;
@@ -69,23 +72,24 @@ export type ItemsPublic = {
 };
 
 /**
- * 更新物品请求（全部可选）
+ * 鏇存柊鐗╁搧璇锋眰锛堝叏閮ㄥ彲閫夛級
  */
 export type ItemUpdate = {
     title?: (string | null);
     description?: (string | null);
     image_id?: (string | null);
+    category?: (string | null);
 };
 
 /**
- * 通用响应消息
+ * 閫氱敤鍝嶅簲娑堟伅
  */
 export type Message = {
     message: string;
 };
 
 /**
- * 重置密码请求
+ * 閲嶇疆瀵嗙爜璇锋眰
  */
 export type NewPassword = {
     token: string;
@@ -93,7 +97,7 @@ export type NewPassword = {
 };
 
 /**
- * 内部创建用户请求（仅管理员接口使用）
+ * 鍐呴儴鍒涘缓鐢ㄦ埛璇锋眰锛堜粎绠＄悊鍛樻帴鍙ｄ娇鐢級
  */
 export type PrivateUserCreate = {
     email: string;
@@ -103,7 +107,7 @@ export type PrivateUserCreate = {
 };
 
 /**
- * 访问令牌响应
+ * 璁块棶浠ょ墝鍝嶅簲
  */
 export type Token = {
     access_token: string;
@@ -111,7 +115,7 @@ export type Token = {
 };
 
 /**
- * 修改密码请求
+ * 淇敼瀵嗙爜璇锋眰
  */
 export type UpdatePassword = {
     current_password: string;
@@ -119,7 +123,7 @@ export type UpdatePassword = {
 };
 
 /**
- * 创建用户请求
+ * 鍒涘缓鐢ㄦ埛璇锋眰
  */
 export type UserCreate = {
     email: string;
@@ -130,7 +134,7 @@ export type UserCreate = {
 };
 
 /**
- * 用户公开响应
+ * 鐢ㄦ埛鍏紑鍝嶅簲
  */
 export type UserPublic = {
     email: string;
@@ -142,7 +146,7 @@ export type UserPublic = {
 };
 
 /**
- * 用户注册请求
+ * 鐢ㄦ埛娉ㄥ唽璇锋眰
  */
 export type UserRegister = {
     email: string;
@@ -151,7 +155,7 @@ export type UserRegister = {
 };
 
 /**
- * 用户列表响应
+ * 鐢ㄦ埛鍒楄〃鍝嶅簲
  */
 export type UsersPublic = {
     data: Array<UserPublic>;
@@ -159,7 +163,7 @@ export type UsersPublic = {
 };
 
 /**
- * 更新用户请求（全部可选）
+ * 鏇存柊鐢ㄦ埛璇锋眰锛堝叏閮ㄥ彲閫夛級
  */
 export type UserUpdate = {
     email?: (string | null);
@@ -170,7 +174,7 @@ export type UserUpdate = {
 };
 
 /**
- * 当前用户更新个人信息请求
+ * 褰撳墠鐢ㄦ埛鏇存柊涓汉淇℃伅璇锋眰
  */
 export type UserUpdateMe = {
     full_name?: (string | null);
@@ -188,6 +192,7 @@ export type ValidationError = {
 };
 
 export type ImagesReadImagesData = {
+    category?: (string | null);
     limit?: number;
     skip?: number;
 };
@@ -204,13 +209,104 @@ export type ImagesDeleteImageData = {
     id: string;
 };
 
-export type ImagesDeleteImageResponse = (Message);
+export type ImagesDeleteImageResponse = (Message);;
+
+export type ImageUpdate = {
+    category?: (string | null);
+};
+
+export type ImagesUpdateImageData = {
+    id: string;
+    requestBody: ImageUpdate;
+};
+
+export type ImagesUpdateImageResponse = (ImagePublic);
+
+
+
+/**
+ * 分类公开响应
+ */
+export type ImageCategoryPublic = {
+    description?: (string | null);
+    sort_order?: number;
+    icon?: (string | null);
+    id: string;
+    name: string;
+    is_active: boolean;
+    image_count: number;
+    created_at?: (string | null);
+};
+
+/**
+ * 分类列表响应
+ */
+export type ImageCategoriesPublic = {
+    data: Array<ImageCategoryPublic>;
+    count: number;
+};
+
+/**
+ * 创建分类请求
+ */
+export type ImageCategoryCreate = {
+    description?: (string | null);
+    sort_order?: number;
+    icon?: (string | null);
+    name: string;
+};
+
+/**
+ * 更新分类请求（全部可选）
+ */
+export type ImageCategoryUpdate = {
+    description?: (string | null);
+    sort_order?: (number | null);
+    icon?: (string | null);
+    is_active?: (boolean | null);
+};
+
+export type ImageCategoriesReadCategoriesResponse = (ImageCategoriesPublic);
+
+export type ImageCategoriesReadCategoryData = {
+    id: string;
+};
+
+export type ImageCategoriesReadCategoryResponse = (ImageCategoryPublic);
+
+export type ImageCategoriesCreateCategoryData = {
+    requestBody: ImageCategoryCreate;
+};
+
+export type ImageCategoriesCreateCategoryResponse = (ImageCategoryPublic);
+
+export type ImageCategoriesUpdateCategoryData = {
+    id: string;
+    requestBody: ImageCategoryUpdate;
+};
+
+export type ImageCategoriesUpdateCategoryResponse = (ImageCategoryPublic);
+
+export type ImageCategoriesDeleteCategoryData = {
+    id: string;
+};
+
+export type ImageCategoriesDeleteCategoryResponse = (Message);
+
 
 export type ImagesUploadImageData = {
     formData: Body_images_upload_image;
+    category?: (string | null);
 };
 
 export type ImagesUploadImageResponse = (ImagePublic);
+
+/**
+ * 鍒嗙被閫夐」锛堜緵涓婁紶琛ㄥ崟浣跨敤锛? */
+export type ImageCategoryOption = {
+    name: string;
+    label: string;
+};
 
 export type ItemsReadItemsData = {
     limit?: number;
@@ -337,3 +433,4 @@ export type UtilsTestEmailData = {
 export type UtilsTestEmailResponse = (Message);
 
 export type UtilsHealthCheckResponse = (boolean);
+

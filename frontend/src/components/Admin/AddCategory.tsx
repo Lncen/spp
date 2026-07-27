@@ -5,7 +5,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { type ItemCreate, ItemsService } from "@/client"
+import { ImagesService } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -31,38 +31,53 @@ import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
 const formSchema = z.object({
-  title: z.string().min(1, { message: "Title is required" }),
-  description: z.string().optional(),
+  name: z
+    .string()
+    .min(1, "分类标识不能为空")
+    .max(32, "分类标识不能超过 32 个字符")
+    .regex(/^[a-z][a-z0-9_]*$/, "小写英文字母开头，仅允许小写字母、数字、下划线"),
+  description: z.string().optional().or(z.literal("")),
+  sort_order: z.coerce.number().optional(),
+  icon: z.string().optional().or(z.literal("")),
 })
 
 type FormData = z.infer<typeof formSchema>
 
-const AddItem = () => {
+const AddCategory = () => {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
   const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any,
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
-      title: "",
+      name: "",
       description: "",
+      sort_order: 0,
+      icon: "",
     },
   })
 
   const mutation = useMutation({
-    mutationFn: (data: ItemCreate) =>
-      ItemsService.createItem({ requestBody: data }),
-    onSuccess: () => {
-      showSuccessToast("Item created successfully")
+    mutationFn: (data: FormData) =>
+      ImagesService.createCategory({
+        requestBody: {
+          name: data.name,
+          description: data.description || null,
+          sort_order: data.sort_order ?? 0,
+          icon: data.icon || null,
+        },
+      }),
+    onSuccess: (data) => {
+      showSuccessToast(`分类 "${data.name}" 已创建`)
       form.reset()
       setIsOpen(false)
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] })
+      queryClient.invalidateQueries({ queryKey: ["image-categories"] })
     },
   })
 
@@ -75,30 +90,28 @@ const AddItem = () => {
       <DialogTrigger asChild>
         <Button className="my-4">
           <Plus className="mr-2" />
-          Add Item
+          添加分类
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Item</DialogTitle>
-          <DialogDescription>
-            Fill in the details to add a new item.
-          </DialogDescription>
+          <DialogTitle>添加分类</DialogTitle>
+          <DialogDescription>创建一个新的图片分类。</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <div className="grid gap-4 py-4">
               <FormField
                 control={form.control}
-                name="title"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Title <span className="text-destructive">*</span>
+                      标识 <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Title"
+                        placeholder="product"
                         type="text"
                         {...field}
                         required
@@ -114,9 +127,37 @@ const AddItem = () => {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>描述</FormLabel>
                     <FormControl>
-                      <Input placeholder="Description" type="text" {...field} />
+                      <Input placeholder="分类描述" type="text" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="icon"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>图标名称</FormLabel>
+                    <FormControl>
+                      <Input placeholder="lucide 图标名" type="text" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="sort_order"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>排序权重</FormLabel>
+                    <FormControl>
+                      <Input placeholder="0" type="number" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -127,11 +168,11 @@ const AddItem = () => {
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="outline" disabled={mutation.isPending}>
-                  Cancel
+                  取消
                 </Button>
               </DialogClose>
               <LoadingButton type="submit" loading={mutation.isPending}>
-                Save
+                创建
               </LoadingButton>
             </DialogFooter>
           </form>
@@ -141,4 +182,4 @@ const AddItem = () => {
   )
 }
 
-export default AddItem
+export default AddCategory
