@@ -55,6 +55,47 @@ services:
     ports:
       - "8080:8080"
 
+  redis:
+    restart: "no"
+    ports:
+      - "6379:6379"
+
+  celery_worker:
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: celery -A celery_worker worker --concurrency=2 -l info
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_SERVER=db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+  celery_beat:
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: celery -A celery_worker beat -l info
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_SERVER=db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
   backend:
     restart: "no"
     ports:

@@ -3,6 +3,7 @@ from sqlmodel import Session
 
 from app.modules.supplier.models import Supplier
 from app.modules.supplier.schemas import SupplierCreate
+from app.modules.supplier.service.clients import get_client
 
 
 def create_supplier(*, session: Session, supplier_in: SupplierCreate) -> Supplier:
@@ -15,15 +16,11 @@ def create_supplier(*, session: Session, supplier_in: SupplierCreate) -> Supplie
 
 
 def sync_balance(*, session: Session, supplier: Supplier) -> Supplier:
-    """通过供应商 API 查询并更新余额
+    """通过供应商 API 查询并更新余额"""
+    with get_client(supplier) as client:
+        balance = client.query_balance()
 
-    此处为同步余额的入口，具体 API 调用由业务方注入。
-    当前实现为桩逻辑，待接入真实 API 后替换。
-    """
-    # TODO: 调用供应商 API 查询余额
-    # 示例：response = await query_supplier_balance(supplier)
-    # supplier.balance = response.balance
-
+    supplier.balance = balance
     session.add(supplier)
     session.commit()
     session.refresh(supplier)

@@ -25,12 +25,6 @@ export const Route = createFileRoute("/_layout/categories")({
 function RouteComponent() {
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Image Categories</h1>
-        <p className="text-muted-foreground">
-          Manage image classification categories
-        </p>
-      </div>
       <ImageCategories />
     </div>
   )

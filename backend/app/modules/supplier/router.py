@@ -22,6 +22,7 @@ from app.modules.supplier.service import (
     create_supplier as create_supplier_service,
     sync_balance as sync_balance_service,
 )
+from app.modules.supplier.service.clients.base import SupplierClientError
 from app.modules.user.models import User
 
 router = APIRouter(prefix="/suppliers", tags=["suppliers"])
@@ -169,6 +170,8 @@ def sync_supplier_balance(
         supplier = sync_balance_service(session=session, supplier=supplier)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except SupplierClientError as e:
+        raise HTTPException(status_code=502, detail=str(e))
 
     return SupplierBalancePublic(
         id=supplier.id,

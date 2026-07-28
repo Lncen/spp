@@ -94,6 +94,25 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_PASSWORD: str
 
     UPLOAD_DIR: str = "uploads"
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_PASSWORD: str = ""
+    REDIS_DB: int = 0
+    CELERY_BROKER_DB: int = 1
+    CELERY_RESULT_DB: int = 2
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def CELERY_BROKER_URL(self) -> str:
+        password_part = f":{self.REDIS_PASSWORD}@" if self.REDIS_PASSWORD else ""
+        return f"redis://{password_part}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.CELERY_BROKER_DB}"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def CELERY_RESULT_BACKEND(self) -> str:
+        password_part = f":{self.REDIS_PASSWORD}@" if self.REDIS_PASSWORD else ""
+        return f"redis://{password_part}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.CELERY_RESULT_DB}"
+
     IMAGE_MAX_SIZE: int = 10 * 1024 * 1024  # 10MB
     THUMBNAIL_MAX_DIMENSION: int = 1200
     ALLOWED_IMAGE_EXTENSIONS: set[str] = {".jpg", ".jpeg", ".png", ".webp"}
