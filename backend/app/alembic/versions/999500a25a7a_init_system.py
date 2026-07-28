@@ -1,8 +1,8 @@
 """init system
 
-Revision ID: 597b3fbac2b4
+Revision ID: 999500a25a7a
 Revises: 
-Create Date: 2026-07-28 10:43:17.025136
+Create Date: 2026-07-28 12:03:09.671468
 
 """
 from alembic import op
@@ -11,7 +11,7 @@ import sqlmodel.sql.sqltypes
 
 
 # revision identifiers, used by Alembic.
-revision = '597b3fbac2b4'
+revision = '999500a25a7a'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -34,7 +34,7 @@ def upgrade():
     op.create_index(op.f('ix_imagecategory_is_active'), 'imagecategory', ['is_active'], unique=False)
     op.create_index(op.f('ix_imagecategory_name'), 'imagecategory', ['name'], unique=True)
     op.create_table('supplier',
-    sa.Column('platform', sqlmodel.sql.sqltypes.AutoString(length=64), nullable=False),
+    sa.Column('platform', sa.Enum('YLSUP', name='platformenum'), nullable=False),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('base_url', sqlmodel.sql.sqltypes.AutoString(length=512), nullable=False),
     sa.Column('app_key', sqlmodel.sql.sqltypes.AutoString(length=512), nullable=False),

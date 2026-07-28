@@ -1,6 +1,6 @@
-import type { ColumnDef } from "@tanstack/react-table"
-import type { ImageCategoryPublic } from "frontend/src/client"
-import { cn } from "frontend/src/lib/utils"
+﻿import type { ColumnDef } from "@tanstack/react-table"
+import type { ImageCategoryPublic } from "@/client"
+import { cn } from "@/lib/utils"
 import { CategoryActionsMenu } from "./CategoryActionsMenu"
 export const categoryColumns: ColumnDef<ImageCategoryPublic>[] = [
   {

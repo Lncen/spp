@@ -1,6 +1,6 @@
 ﻿"""供应商模块：路由层"""
 import uuid
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import col, func, select
@@ -9,13 +9,19 @@ from app.api.deps import CurrentUser, SessionDep
 from app.common.models import Message
 from app.modules.supplier.models import Supplier
 from app.modules.supplier.schemas import (
+    PlatformEnum,
+    PlatformOption,
+    PlatformOptionsPublic,
     SupplierBalancePublic,
     SupplierCreate,
     SupplierPublic,
     SuppliersPublic,
     SupplierUpdate,
 )
-from app.modules.supplier.service import sync_balance as sync_balance_service
+from app.modules.supplier.service import (
+    create_supplier as create_supplier_service,
+    sync_balance as sync_balance_service,
+)
 from app.modules.user.models import User
 
 router = APIRouter(prefix="/suppliers", tags=["suppliers"])
@@ -27,6 +33,8 @@ def require_superuser(current_user: CurrentUser) -> User:
         raise HTTPException(status_code=403, detail="权限不足")
     return current_user
 
+SuperuserDep = Annotated[User, Depends(require_superuser)]
+
 
 def _mask_secret(secret: str) -> str:
     """脱敏 app_secret，仅保留后4位"""
@@ -37,8 +45,8 @@ def _mask_secret(secret: str) -> str:
 
 def _supplier_to_public(supplier: Supplier) -> SupplierPublic:
     """将 Supplier 转换为 SupplierPublic（含 app_secret 脱敏）"""
-    data = supplier.model_dump()
-    data["app_secret"] = _mask_secret(data["app_secret"])
+    data = supplier.model_dump(exclude={"app_secret"})
+    data["app_secret"] = _mask_secret(supplier.app_secret)
     return SupplierPublic.model_validate(data)
 
 
@@ -50,7 +58,7 @@ def _suppliers_to_public(suppliers: list[Supplier]) -> list[SupplierPublic]:
 @router.get("/", response_model=SuppliersPublic)
 def read_suppliers(
     session: SessionDep,
-    current_user: User = Depends(require_superuser),
+    current_user: SuperuserDep,
     skip: int = 0,
     limit: int = 100,
 ) -> Any:
@@ -70,10 +78,22 @@ def read_suppliers(
     )
 
 
+@router.get("/platform-options", response_model=PlatformOptionsPublic)
+def get_platform_options(
+    current_user: SuperuserDep,
+) -> Any:
+    """获取平台枚举选项列表（超管权限，前端下拉菜单使用）"""
+    options = [
+        PlatformOption(value=m.value, label=m.name)
+        for m in PlatformEnum
+    ]
+    return PlatformOptionsPublic(data=options)
+
+
 @router.get("/{id}", response_model=SupplierPublic)
 def read_supplier(
     session: SessionDep,
-    current_user: User = Depends(require_superuser),
+    current_user: SuperuserDep,
     id: uuid.UUID = ...,
 ) -> Any:
     """根据 ID 获取供应商详情（超管权限）"""
@@ -87,14 +107,11 @@ def read_supplier(
 def create_supplier(
     *,
     session: SessionDep,
-    current_user: User = Depends(require_superuser),
+    current_user: SuperuserDep,
     supplier_in: SupplierCreate,
 ) -> Any:
     """创建供应商（超管权限）"""
-    supplier = Supplier.model_validate(supplier_in)
-    session.add(supplier)
-    session.commit()
-    session.refresh(supplier)
+    supplier = create_supplier_service(session=session, supplier_in=supplier_in)
     return _supplier_to_public(supplier)
 
 
@@ -102,7 +119,7 @@ def create_supplier(
 def update_supplier(
     *,
     session: SessionDep,
-    current_user: User = Depends(require_superuser),
+    current_user: SuperuserDep,
     id: uuid.UUID,
     supplier_in: SupplierUpdate,
 ) -> Any:
@@ -122,10 +139,10 @@ def update_supplier(
     return _supplier_to_public(supplier)
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", response_model=Message)
 def delete_supplier(
     session: SessionDep,
-    current_user: User = Depends(require_superuser),
+    current_user: SuperuserDep,
     id: uuid.UUID = ...,
 ) -> Message:
     """删除供应商（超管权限）"""
@@ -140,7 +157,7 @@ def delete_supplier(
 @router.post("/{id}/sync-balance", response_model=SupplierBalancePublic)
 def sync_supplier_balance(
     session: SessionDep,
-    current_user: User = Depends(require_superuser),
+    current_user: SuperuserDep,
     id: uuid.UUID = ...,
 ) -> Any:
     """同步供应商余额（通过供应商 API 查询更新，超管权限）"""
@@ -149,7 +166,7 @@ def sync_supplier_balance(
         raise HTTPException(status_code=404, detail="供应商不存在")
 
     try:
-        supplier = sync_balance_service(session=session, supplier_id=id)
+        supplier = sync_balance_service(session=session, supplier=supplier)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

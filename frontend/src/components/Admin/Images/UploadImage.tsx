@@ -1,8 +1,9 @@
-﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Upload } from "lucide-react"
 import { useState } from "react"
 
 import { ImagesService } from "@/client"
+import { ImageCategoriesService } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -37,7 +38,7 @@ const UploadImage = () => {
 
   const { data: categoryOptions } = useQuery<string[]>({
     queryKey: ["image-category-options"],
-    queryFn: () => ImagesService.readCategoryOptions(),
+    queryFn: () => ImageCategoriesService.readCategoryOptions(),
     staleTime: 5 * 60 * 1000,
     retry: false,
   })
@@ -135,7 +136,7 @@ const UploadImage = () => {
               <Label>分类</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="选择分类（可选）" />
+                  <SelectValue placeholder="请选择分类" />
                 </SelectTrigger>
                 <SelectContent>
                   {categoryOptions?.map((opt) => (
@@ -157,7 +158,7 @@ const UploadImage = () => {
             <LoadingButton
               type="submit"
               loading={mutation.isPending}
-              disabled={!file || mutation.isPending}
+              disabled={!file || !category || mutation.isPending}
             >
               上传
             </LoadingButton>

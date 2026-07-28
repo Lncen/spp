@@ -1,12 +1,12 @@
-import { zodResolver } from "@hookform/resolvers/zod"
+﻿import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { ImagesService } from "frontend/src/client"
-import { Button } from "frontend/src/components/ui/button"
+import { ImageCategoriesService } from "@/client"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogClose,
@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "frontend/src/components/ui/dialog"
+} from "@/components/ui/dialog"
 import {
   Form,
   FormControl,
@@ -24,11 +24,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "frontend/src/components/ui/form"
-import { Input } from "frontend/src/components/ui/input"
-import { LoadingButton } from "frontend/src/components/ui/loading-button"
-import useCustomToast from "frontend/src/hooks/useCustomToast"
-import { handleError } from "frontend/src/utils"
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { LoadingButton } from "@/components/ui/loading-button"
+import useCustomToast from "@/hooks/useCustomToast"
+import { handleError } from "@/utils"
 
 const formSchema = z.object({
   name: z
@@ -62,7 +62,7 @@ const AddCategory = () => {
 
   const mutation = useMutation({
     mutationFn: (data: FormData) =>
-      ImagesService.createCategory({
+      ImageCategoriesService.createNewCategory({
         requestBody: {
           name: data.name,
           description: data.description || null,

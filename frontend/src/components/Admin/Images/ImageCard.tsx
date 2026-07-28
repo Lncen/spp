@@ -1,4 +1,4 @@
-﻿import { EllipsisVertical } from "lucide-react"
+import { EllipsisVertical } from "lucide-react"
 import { useState } from "react"
 
 import type { ImagePublic } from "@/client"

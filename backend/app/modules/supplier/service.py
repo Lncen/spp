@@ -1,7 +1,5 @@
 """供应商模块：业务逻辑层"""
-import uuid
-
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.modules.supplier.models import Supplier
 from app.modules.supplier.schemas import SupplierCreate
@@ -16,16 +14,12 @@ def create_supplier(*, session: Session, supplier_in: SupplierCreate) -> Supplie
     return db_supplier
 
 
-def sync_balance(*, session: Session, supplier_id: uuid.UUID) -> Supplier:
+def sync_balance(*, session: Session, supplier: Supplier) -> Supplier:
     """通过供应商 API 查询并更新余额
 
     此处为同步余额的入口，具体 API 调用由业务方注入。
     当前实现为桩逻辑，待接入真实 API 后替换。
     """
-    supplier = session.get(Supplier, supplier_id)
-    if not supplier:
-        raise ValueError("供应商不存在")
-
     # TODO: 调用供应商 API 查询余额
     # 示例：response = await query_supplier_balance(supplier)
     # supplier.balance = response.balance

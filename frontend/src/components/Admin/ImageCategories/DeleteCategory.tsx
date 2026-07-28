@@ -1,10 +1,10 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+﻿import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Trash2 } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 
-import { ImagesService } from "frontend/src/client"
-import { Button } from "frontend/src/components/ui/button"
+import { ImageCategoriesService } from "@/client"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogClose,
@@ -13,11 +13,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "frontend/src/components/ui/dialog"
-import { DropdownMenuItem } from "frontend/src/components/ui/dropdown-menu"
-import { LoadingButton } from "frontend/src/components/ui/loading-button"
-import useCustomToast from "frontend/src/hooks/useCustomToast"
-import { handleError } from "frontend/src/utils"
+} from "@/components/ui/dialog"
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { LoadingButton } from "@/components/ui/loading-button"
+import useCustomToast from "@/hooks/useCustomToast"
+import { handleError } from "@/utils"
 
 interface DeleteCategoryProps {
   id: string
@@ -32,7 +32,7 @@ const DeleteCategory = ({ id, name, onSuccess }: DeleteCategoryProps) => {
   const { handleSubmit } = useForm()
 
   const deleteCategory = async (id: string) => {
-    await ImagesService.deleteCategory({ id })
+    await ImageCategoriesService.deleteExistingCategory({ id })
   }
 
   const mutation = useMutation({

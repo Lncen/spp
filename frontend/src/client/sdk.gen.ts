@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ImageCategoriesReadCategoriesResponse, ImageCategoriesCreateNewCategoryData, ImageCategoriesCreateNewCategoryResponse, ImageCategoriesReadCategoryOptionsResponse, ImageCategoriesReadCategoryData, ImageCategoriesReadCategoryResponse, ImageCategoriesUpdateExistingCategoryData, ImageCategoriesUpdateExistingCategoryResponse, ImageCategoriesDeleteExistingCategoryData, ImageCategoriesDeleteExistingCategoryResponse, ImagesReadImagesData, ImagesReadImagesResponse, ImagesReadImageData, ImagesReadImageResponse, ImagesDeleteImageData, ImagesDeleteImageResponse, ImagesUpdateImageData, ImagesUpdateImageResponse, ImagesUploadImageData, ImagesUploadImageResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LevelsReadLevelsResponse, LevelsReadLevelData, LevelsReadLevelResponse, LevelsUpdateLevelEndpointData, LevelsUpdateLevelEndpointResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserPrivateData, PrivateCreateUserPrivateResponse, SuppliersReadSuppliersData, SuppliersReadSuppliersResponse, SuppliersCreateSupplierData, SuppliersCreateSupplierResponse, SuppliersReadSupplierData, SuppliersReadSupplierResponse, SuppliersUpdateSupplierData, SuppliersUpdateSupplierResponse, SuppliersDeleteSupplierData, SuppliersDeleteSupplierResponse, SuppliersSyncSupplierBalanceData, SuppliersSyncSupplierBalanceResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { ImageCategoriesReadCategoriesResponse, ImageCategoriesCreateNewCategoryData, ImageCategoriesCreateNewCategoryResponse, ImageCategoriesReadCategoryOptionsResponse, ImageCategoriesReadCategoryData, ImageCategoriesReadCategoryResponse, ImageCategoriesUpdateExistingCategoryData, ImageCategoriesUpdateExistingCategoryResponse, ImageCategoriesDeleteExistingCategoryData, ImageCategoriesDeleteExistingCategoryResponse, ImagesReadImagesData, ImagesReadImagesResponse, ImagesReadImageData, ImagesReadImageResponse, ImagesDeleteImageData, ImagesDeleteImageResponse, ImagesUpdateImageData, ImagesUpdateImageResponse, ImagesUploadImageData, ImagesUploadImageResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LevelsReadLevelsResponse, LevelsReadLevelData, LevelsReadLevelResponse, LevelsUpdateLevelEndpointData, LevelsUpdateLevelEndpointResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserPrivateData, PrivateCreateUserPrivateResponse, SuppliersReadSuppliersData, SuppliersReadSuppliersResponse, SuppliersCreateSupplierData, SuppliersCreateSupplierResponse, SuppliersGetPlatformOptionsResponse, SuppliersReadSupplierData, SuppliersReadSupplierResponse, SuppliersUpdateSupplierData, SuppliersUpdateSupplierResponse, SuppliersDeleteSupplierData, SuppliersDeleteSupplierResponse, SuppliersSyncSupplierBalanceData, SuppliersSyncSupplierBalanceResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class ImageCategoriesService {
     /**
@@ -566,6 +566,19 @@ export class SuppliersService {
             errors: {
                 422: 'Validation Error'
             }
+        });
+    }
+    
+    /**
+     * Get Platform Options
+     * 获取平台枚举选项列表（超管权限，前端下拉菜单使用）
+     * @returns PlatformOptionsPublic Successful Response
+     * @throws ApiError
+     */
+    public static getPlatformOptions(): CancelablePromise<SuppliersGetPlatformOptionsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/suppliers/platform-options'
         });
     }
     

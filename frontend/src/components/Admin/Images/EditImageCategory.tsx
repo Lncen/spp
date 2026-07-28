@@ -3,6 +3,7 @@ import { Tag } from "lucide-react"
 import { useState } from "react"
 
 import { ImagesService, type ImagePublic } from "@/client"
+import { ImageCategoriesService } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -39,7 +40,7 @@ const EditImageCategory = ({ image, onSuccess }: EditImageCategoryProps) => {
 
   const { data: categoryOptions } = useQuery<string[]>({
     queryKey: ["image-category-options"],
-    queryFn: () => ImagesService.readCategoryOptions(),
+    queryFn: () => ImageCategoriesService.readCategoryOptions(),
     staleTime: 5 * 60 * 1000,
     retry: false,
   })

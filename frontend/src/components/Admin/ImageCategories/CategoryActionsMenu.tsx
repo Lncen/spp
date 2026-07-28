@@ -1,13 +1,13 @@
-import { EllipsisVertical } from "lucide-react"
+﻿import { EllipsisVertical } from "lucide-react"
 import { useState } from "react"
 
-import type { ImageCategoryPublic } from "frontend/src/client"
-import { Button } from "frontend/src/components/ui/button"
+import type { ImageCategoryPublic } from "@/client"
+import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "frontend/src/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu"
 import DeleteCategory from "./DeleteCategory"
 import EditCategory from "./EditCategory"
 

@@ -677,6 +677,48 @@ export const NewPasswordSchema = {
     description: '重置密码请求'
 } as const;
 
+export const PlatformEnumSchema = {
+    type: 'string',
+    enum: ['ylsup'],
+    title: 'PlatformEnum',
+    description: '供应商平台枚举'
+} as const;
+
+export const PlatformOptionSchema = {
+    properties: {
+        value: {
+            type: 'string',
+            title: '平台值',
+            description: '枚举值，用于表单提交'
+        },
+        label: {
+            type: 'string',
+            title: '平台标签',
+            description: '展示名称，用于下拉菜单展示'
+        }
+    },
+    type: 'object',
+    required: ['value', 'label'],
+    title: 'PlatformOption',
+    description: '平台选项——供前端下拉菜单使用'
+} as const;
+
+export const PlatformOptionsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/PlatformOption'
+            },
+            type: 'array',
+            title: 'Data'
+        }
+    },
+    type: 'object',
+    required: ['data'],
+    title: 'PlatformOptionsPublic',
+    description: '平台选项列表响应'
+} as const;
+
 export const PrivateUserCreateSchema = {
     properties: {
         email: {
@@ -741,10 +783,9 @@ export const SupplierBalancePublicSchema = {
 export const SupplierCreateSchema = {
     properties: {
         platform: {
-            type: 'string',
-            maxLength: 64,
+            '$ref': '#/components/schemas/PlatformEnum',
             title: '平台',
-            description: '供应商平台标识，如 openai、azure、deepseek'
+            description: '供应商平台标识'
         },
         name: {
             type: 'string',
@@ -823,10 +864,9 @@ export const SupplierCreateSchema = {
 export const SupplierPublicSchema = {
     properties: {
         platform: {
-            type: 'string',
-            maxLength: 64,
+            '$ref': '#/components/schemas/PlatformEnum',
             title: '平台',
-            description: '供应商平台标识，如 openai、azure、deepseek'
+            description: '供应商平台标识'
         },
         name: {
             type: 'string',
@@ -953,14 +993,12 @@ export const SupplierUpdateSchema = {
         platform: {
             anyOf: [
                 {
-                    type: 'string',
-                    maxLength: 64
+                    '$ref': '#/components/schemas/PlatformEnum'
                 },
                 {
                     type: 'null'
                 }
-            ],
-            title: 'Platform'
+            ]
         },
         name: {
             anyOf: [

@@ -1,10 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
+import type { PlatformOption, SupplierCreate } from "@/client"
 import { SuppliersService } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
@@ -37,7 +38,6 @@ import {
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
-const PLATFORMS = ["openai", "azure", "deepseek", "anthropic", "google", "other"]
 const STATUS_OPTIONS = [
   { value: "active", label: "启用" },
   { value: "inactive", label: "停用" },
@@ -67,10 +67,14 @@ type FormData = z.infer<typeof formSchema>
 const AddSupplier = () => {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
+  const { data: platformOptions } = useQuery({
+    queryKey: ["platform-options"],
+    queryFn: () => SuppliersService.getPlatformOptions(),
+  })
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+const form = useForm<FormData>({
+    resolver: zodResolver(formSchema) as any,
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
@@ -87,9 +91,9 @@ const AddSupplier = () => {
     },
   })
 
-  const mutation = useMutation({
+const mutation = useMutation({
     mutationFn: (data: FormData) =>
-      SuppliersService.createSupplier({ requestBody: data }),
+      SuppliersService.createSupplier({ requestBody: data as SupplierCreate }),
     onSuccess: () => {
       showSuccessToast("供应商创建成功")
       form.reset()
@@ -157,9 +161,9 @@ const AddSupplier = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {PLATFORMS.map((p) => (
-                            <SelectItem key={p} value={p}>
-                              {p}
+                          {platformOptions?.data?.map((opt: PlatformOption) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
                             </SelectItem>
                           ))}
                         </SelectContent>

@@ -1,15 +1,15 @@
-import { useSuspenseQuery } from "@tanstack/react-query"
+﻿import { useSuspenseQuery } from "@tanstack/react-query"
 import { Suspense } from "react"
 
-import { ImagesService } from "frontend/src/client"
-import { DataTable } from "frontend/src/components/Common/DataTable"
-import PendingCategories from "frontend/src/components/Pending/PendingCategories"
+import { ImageCategoriesService } from "@/client"
+import { DataTable } from "@/components/Common/DataTable"
+import PendingCategories from "@/components/Pending/PendingCategories"
 import { categoryColumns } from "./CategoryColumns"
 import AddCategory from "./AddCategory"
 
 function getCategoriesQueryOptions() {
   return {
-    queryFn: () => ImagesService.readCategories(),
+    queryFn: () => ImageCategoriesService.readCategories(),
     queryKey: ["image-categories"],
   }
 }

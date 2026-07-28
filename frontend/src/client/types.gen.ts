@@ -183,6 +183,32 @@ export type NewPassword = {
 };
 
 /**
+ * 供应商平台枚举
+ */
+export type PlatformEnum = 'ylsup';
+
+/**
+ * 平台选项——供前端下拉菜单使用
+ */
+export type PlatformOption = {
+    /**
+     * 枚举值，用于表单提交
+     */
+    value: string;
+    /**
+     * 展示名称，用于下拉菜单展示
+     */
+    label: string;
+};
+
+/**
+ * 平台选项列表响应
+ */
+export type PlatformOptionsPublic = {
+    data: Array<PlatformOption>;
+};
+
+/**
  * 内部创建用户请求（仅管理员接口使用）
  */
 export type PrivateUserCreate = {
@@ -207,9 +233,9 @@ export type SupplierBalancePublic = {
  */
 export type SupplierCreate = {
     /**
-     * 供应商平台标识，如 openai、azure、deepseek
+     * 供应商平台标识
      */
-    platform: string;
+    platform: PlatformEnum;
     /**
      * 供应商名称标识
      */
@@ -253,9 +279,9 @@ export type SupplierCreate = {
  */
 export type SupplierPublic = {
     /**
-     * 供应商平台标识，如 openai、azure、deepseek
+     * 供应商平台标识
      */
-    platform: string;
+    platform: PlatformEnum;
     /**
      * 供应商名称标识
      */
@@ -311,7 +337,7 @@ export type SuppliersPublic = {
  * 更新供应商请求（全部可选，不含 balance）
  */
 export type SupplierUpdate = {
-    platform?: (string | null);
+    platform?: (PlatformEnum | null);
     name?: (string | null);
     base_url?: (string | null);
     app_key?: (string | null);
@@ -568,6 +594,8 @@ export type SuppliersCreateSupplierData = {
 };
 
 export type SuppliersCreateSupplierResponse = (SupplierPublic);
+
+export type SuppliersGetPlatformOptionsResponse = (PlatformOptionsPublic);
 
 export type SuppliersReadSupplierData = {
     id: string;

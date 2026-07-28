@@ -1,11 +1,10 @@
-import { useQuery } from "@tanstack/react-query"
+﻿import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { Image, ListFilter } from "lucide-react"
 import { useState } from "react"
-
-import { ImagesService } from "@/client"
-import { ImageCard } from "@/components/Images/ImageCard"
-import UploadImage from "@/components/Images/UploadImage"
+import { ImageCategoriesService, ImagesService } from "@/client"
+import { ImageCard } from "@/components/Admin/Images/ImageCard"
+import UploadImage from "@/components/Admin/Images/UploadImage"
 import {
   Pagination,
   PaginationContent,
@@ -22,9 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-
 const PAGE_SIZE = 12
-
 function getImagesQueryOptions(
   skip: number,
   limit: number,
@@ -35,14 +32,12 @@ function getImagesQueryOptions(
     queryFn: () => ImagesService.readImages({ skip, limit, category }),
   }
 }
-
 export const Route = createFileRoute("/_layout/images")({
   component: Images,
   head: () => ({
     meta: [{ title: "Images - FastAPI Template" }],
   }),
 })
-
 function getPageNumbers(currentPage: number, totalPages: number) {
   const pages: (number | "ellipsis")[] = []
   const maxVisible = 5
@@ -59,7 +54,6 @@ function getPageNumbers(currentPage: number, totalPages: number) {
   }
   return pages
 }
-
 function CategoryFilter({
   options,
   value,
@@ -96,33 +90,26 @@ function CategoryFilter({
     </div>
   )
 }
-
 function Images() {
   const [currentPage, setCurrentPage] = useState(1)
   const [category, setCategory] = useState("")
-
   const skip = (currentPage - 1) * PAGE_SIZE
-
   const { data: imagesData, isPending } = useQuery(
     getImagesQueryOptions(skip, PAGE_SIZE, category || undefined),
   )
-
   const { data: categoryOptions } = useQuery<string[]>({
     queryKey: ["image-category-options"],
-    queryFn: () => ImagesService.readCategoryOptions(),
+    queryFn: () => ImageCategoriesService.readCategoryOptions(),
     staleTime: 5 * 60 * 1000,
     retry: false,
   })
-
   const images = imagesData?.data ?? []
   const totalCount = imagesData?.count ?? 0
   const totalPages = Math.ceil(totalCount / PAGE_SIZE)
-
   const handleCategoryChange = (value: string) => {
     setCategory(value)
     setCurrentPage(1)
   }
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -132,13 +119,11 @@ function Images() {
         </div>
         <UploadImage />
       </div>
-
       <CategoryFilter
         options={categoryOptions}
         value={category}
         onChange={handleCategoryChange}
       />
-
       {isPending ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
           {Array.from({ length: PAGE_SIZE }).map((_, i) => (
@@ -165,7 +150,6 @@ function Images() {
               <ImageCard key={image.id} image={image} />
             ))}
           </div>
-
           {totalPages > 1 && (
             <Pagination>
               <PaginationContent>
@@ -181,7 +165,6 @@ function Images() {
                     }
                   />
                 </PaginationItem>
-
                 {getPageNumbers(currentPage, totalPages).map((page, i) =>
                   page === "ellipsis" ? (
                     <PaginationItem key={`e-${i}`}>
@@ -202,7 +185,6 @@ function Images() {
                     </PaginationItem>
                   ),
                 )}
-
                 <PaginationItem>
                   <PaginationNext
                     href="#"

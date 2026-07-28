@@ -1,12 +1,12 @@
-import { zodResolver } from "@hookform/resolvers/zod"
+﻿import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Pencil } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { type ImageCategoryPublic, ImagesService } from "frontend/src/client"
-import { Button } from "frontend/src/components/ui/button"
+import { type ImageCategoryPublic, ImageCategoriesService } from "@/client"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogClose,
@@ -15,8 +15,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "frontend/src/components/ui/dialog"
-import { DropdownMenuItem } from "frontend/src/components/ui/dropdown-menu"
+} from "@/components/ui/dialog"
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import {
   Form,
   FormControl,
@@ -24,18 +24,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "frontend/src/components/ui/form"
-import { Input } from "frontend/src/components/ui/input"
-import { LoadingButton } from "frontend/src/components/ui/loading-button"
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { LoadingButton } from "@/components/ui/loading-button"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "frontend/src/components/ui/select"
-import useCustomToast from "frontend/src/hooks/useCustomToast"
-import { handleError } from "frontend/src/utils"
+} from "@/components/ui/select"
+import useCustomToast from "@/hooks/useCustomToast"
+import { handleError } from "@/utils"
 
 const formSchema = z.object({
   description: z.string().optional().or(z.literal("")),
@@ -71,7 +71,7 @@ const EditCategory = ({ category, onSuccess }: EditCategoryProps) => {
   const mutation = useMutation({
     mutationFn: (data: FormData) => {
       const { is_active, ...rest } = data
-      return ImagesService.updateCategory({
+      return ImageCategoriesService.updateExistingCategory({
         id: category.id,
         requestBody: {
           ...rest,
