@@ -1,6 +1,6 @@
 ---
-name: library-skills
-description: Use Library Skills to discover, install, refresh, repair, check, and manage agent skills from installed packages.
+name: library-shadcn-ui-skills
+description: Use Library Skills to discover, install, refresh, repair, check, and manage agent shadcn-ui-skills from installed packages.
 ---
 
 # Library Skills

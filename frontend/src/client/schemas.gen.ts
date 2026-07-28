@@ -84,6 +84,192 @@ export const HTTPValidationErrorSchema = {
     title: 'HTTPValidationError'
 } as const;
 
+export const ImageCategoriesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ImageCategoryPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ImageCategoriesPublic',
+    description: '分类列表响应'
+} as const;
+
+export const ImageCategoryCreateSchema = {
+    properties: {
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '描述'
+        },
+        sort_order: {
+            type: 'integer',
+            title: '排序权重',
+            default: 0
+        },
+        icon: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 64
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '图标名称'
+        },
+        name: {
+            type: 'string',
+            maxLength: 32,
+            minLength: 1,
+            title: '分类标识',
+            description: '小写英文字母开头，仅允许小写字母、数字、下划线'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'ImageCategoryCreate',
+    description: '创建分类请求'
+} as const;
+
+export const ImageCategoryPublicSchema = {
+    properties: {
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '描述'
+        },
+        sort_order: {
+            type: 'integer',
+            title: '排序权重',
+            default: 0
+        },
+        icon: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 64
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '图标名称'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active'
+        },
+        image_count: {
+            type: 'integer',
+            title: 'Image Count'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'is_active', 'image_count'],
+    title: 'ImageCategoryPublic',
+    description: '分类公开响应'
+} as const;
+
+export const ImageCategoryUpdateSchema = {
+    properties: {
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '描述'
+        },
+        sort_order: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '排序权重'
+        },
+        icon: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 64
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '图标名称'
+        },
+        is_active: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '激活状态'
+        }
+    },
+    type: 'object',
+    title: 'ImageCategoryUpdate',
+    description: '更新分类请求（全部可选）'
+} as const;
+
 export const ImagePublicSchema = {
     properties: {
         filename: {
@@ -102,6 +288,18 @@ export const ImagePublicSchema = {
         height: {
             type: 'integer',
             title: 'Height'
+        },
+        category: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 32
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '分类'
         },
         id: {
             type: 'string',
@@ -134,6 +332,26 @@ export const ImagePublicSchema = {
     required: ['filename', 'file_size', 'width', 'height', 'id', 'owner_id', 'url'],
     title: 'ImagePublic',
     description: '图片公开响应'
+} as const;
+
+export const ImageUpdateSchema = {
+    properties: {
+        category: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 32
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '分类'
+        }
+    },
+    type: 'object',
+    title: 'ImageUpdate',
+    description: '更新图片请求'
 } as const;
 
 export const ImagesPublicSchema = {
@@ -320,6 +538,113 @@ export const ItemsPublicSchema = {
     description: '物品列表响应'
 } as const;
 
+export const LevelPublicSchema = {
+    properties: {
+        level: {
+            type: 'integer',
+            maximum: 10,
+            minimum: 1,
+            title: '等级编号',
+            description: '等级编号，范围 1～10，固定不可修改'
+        },
+        name: {
+            type: 'string',
+            maxLength: 255,
+            title: '等级名称',
+            description: '等级名称，如「练气期」'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '等级描述'
+        },
+        is_default: {
+            type: 'boolean',
+            title: '是否默认',
+            description: '是否为新用户的默认等级',
+            default: false
+        },
+        id: {
+            type: 'string',
+            title: 'Id'
+        }
+    },
+    type: 'object',
+    required: ['level', 'name', 'id'],
+    title: 'LevelPublic',
+    description: '等级公开响应'
+} as const;
+
+export const LevelUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '等级名称'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '等级描述'
+        },
+        is_default: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '是否默认'
+        }
+    },
+    type: 'object',
+    title: 'LevelUpdate',
+    description: '更新等级请求（全部可选）'
+} as const;
+
+export const LevelsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/LevelPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'LevelsPublic',
+    description: '等级列表响应'
+} as const;
+
 export const MessageSchema = {
     properties: {
         message: {
@@ -376,6 +701,401 @@ export const PrivateUserCreateSchema = {
     required: ['email', 'password', 'full_name'],
     title: 'PrivateUserCreate',
     description: '内部创建用户请求（仅管理员接口使用）'
+} as const;
+
+export const SupplierBalancePublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        balance: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Balance'
+        },
+        message: {
+            type: 'string',
+            title: 'Message',
+            default: '余额已同步'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name'],
+    title: 'SupplierBalancePublic',
+    description: '余额同步响应'
+} as const;
+
+export const SupplierCreateSchema = {
+    properties: {
+        platform: {
+            type: 'string',
+            maxLength: 64,
+            title: '平台',
+            description: '供应商平台标识，如 openai、azure、deepseek'
+        },
+        name: {
+            type: 'string',
+            maxLength: 255,
+            title: '供应商名称',
+            description: '供应商名称标识'
+        },
+        base_url: {
+            type: 'string',
+            maxLength: 512,
+            title: 'API 基础地址',
+            description: 'API 请求的基础 URL'
+        },
+        app_key: {
+            type: 'string',
+            maxLength: 512,
+            title: '应用密钥 Key',
+            description: 'API 认证密钥 Key'
+        },
+        app_secret: {
+            type: 'string',
+            maxLength: 512,
+            title: '应用密钥 Secret',
+            description: 'API 认证密钥 Secret，响应中脱敏'
+        },
+        status: {
+            type: 'string',
+            maxLength: 32,
+            title: '状态',
+            description: 'active=启用中, inactive=已停用, suspended=异常冻结',
+            default: 'active'
+        },
+        connection_status: {
+            type: 'string',
+            maxLength: 32,
+            title: '连接状态',
+            description: 'online=可达, offline=不可达, unknown=未知',
+            default: 'unknown'
+        },
+        timeout_seconds: {
+            type: 'integer',
+            maximum: 300,
+            minimum: 1,
+            title: '超时秒数',
+            description: 'API 请求超时时间',
+            default: 30
+        },
+        retry_times: {
+            type: 'integer',
+            maximum: 10,
+            minimum: 0,
+            title: '重试次数',
+            description: '请求失败时的重试次数',
+            default: 3
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1024
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '描述',
+            description: '备注说明'
+        }
+    },
+    type: 'object',
+    required: ['platform', 'name', 'base_url', 'app_key', 'app_secret'],
+    title: 'SupplierCreate',
+    description: '创建供应商请求'
+} as const;
+
+export const SupplierPublicSchema = {
+    properties: {
+        platform: {
+            type: 'string',
+            maxLength: 64,
+            title: '平台',
+            description: '供应商平台标识，如 openai、azure、deepseek'
+        },
+        name: {
+            type: 'string',
+            maxLength: 255,
+            title: '供应商名称',
+            description: '供应商名称标识'
+        },
+        base_url: {
+            type: 'string',
+            maxLength: 512,
+            title: 'API 基础地址',
+            description: 'API 请求的基础 URL'
+        },
+        app_key: {
+            type: 'string',
+            maxLength: 512,
+            title: '应用密钥 Key',
+            description: 'API 认证密钥 Key'
+        },
+        app_secret: {
+            type: 'string',
+            maxLength: 512,
+            title: '应用密钥 Secret',
+            description: 'API 认证密钥 Secret，响应中脱敏'
+        },
+        status: {
+            type: 'string',
+            maxLength: 32,
+            title: '状态',
+            description: 'active=启用中, inactive=已停用, suspended=异常冻结',
+            default: 'active'
+        },
+        connection_status: {
+            type: 'string',
+            maxLength: 32,
+            title: '连接状态',
+            description: 'online=可达, offline=不可达, unknown=未知',
+            default: 'unknown'
+        },
+        timeout_seconds: {
+            type: 'integer',
+            maximum: 300,
+            minimum: 1,
+            title: '超时秒数',
+            description: 'API 请求超时时间',
+            default: 30
+        },
+        retry_times: {
+            type: 'integer',
+            maximum: 10,
+            minimum: 0,
+            title: '重试次数',
+            description: '请求失败时的重试次数',
+            default: 3
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1024
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '描述',
+            description: '备注说明'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active',
+            default: true
+        },
+        balance: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Balance'
+        }
+    },
+    type: 'object',
+    required: ['platform', 'name', 'base_url', 'app_key', 'app_secret', 'id'],
+    title: 'SupplierPublic',
+    description: '供应商公开响应'
+} as const;
+
+export const SupplierUpdateSchema = {
+    properties: {
+        platform: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 64
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Platform'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        base_url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 512
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Base Url'
+        },
+        app_key: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 512
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'App Key'
+        },
+        app_secret: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 512
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'App Secret'
+        },
+        status: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 32
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Status'
+        },
+        connection_status: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 32
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Connection Status'
+        },
+        timeout_seconds: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 300,
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Timeout Seconds'
+        },
+        retry_times: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 10,
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Retry Times'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1024
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        }
+    },
+    type: 'object',
+    title: 'SupplierUpdate',
+    description: '更新供应商请求（全部可选，不含 balance）'
+} as const;
+
+export const SuppliersPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/SupplierPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'SuppliersPublic',
+    description: '供应商列表响应'
 } as const;
 
 export const TokenSchema = {

@@ -11,5 +11,6 @@ from app.modules.level.models import UserLevel
 from app.modules.image.models import Image, ImageCategory
 from app.modules.item.models import Item
 from app.modules.user.models import User
+from app.modules.supplier.models import Supplier
 
-__all__ = ["SQLModel", "UserLevel", "Item", "User", "Image", "ImageCategory"]
+__all__ = ["SQLModel", "UserLevel", "Item", "User", "Image", "ImageCategory", "Supplier"]

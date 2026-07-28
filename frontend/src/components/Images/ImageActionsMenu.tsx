@@ -8,7 +8,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Separator } from "@/components/ui/separator"
 import DeleteImage from "./DeleteImage"
 import EditImageCategory from "./EditImageCategory"
 

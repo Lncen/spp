@@ -15,7 +15,6 @@ import { Route as RecoverPasswordRouteImport } from './routes/recover-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
-import { Route as LayoutSuppliersRouteImport } from './routes/_layout/suppliers'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutImagesRouteImport } from './routes/_layout/images'
@@ -49,11 +48,6 @@ const LayoutRoute = LayoutRouteImport.update({
 const LayoutIndexRoute = LayoutIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutSuppliersRoute = LayoutSuppliersRouteImport.update({
-  id: '/suppliers',
-  path: '/suppliers',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
@@ -93,7 +87,6 @@ export interface FileRoutesByFullPath {
   '/images': typeof LayoutImagesRoute
   '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
-  '/suppliers': typeof LayoutSuppliersRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -105,7 +98,6 @@ export interface FileRoutesByTo {
   '/images': typeof LayoutImagesRoute
   '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
-  '/suppliers': typeof LayoutSuppliersRoute
   '/': typeof LayoutIndexRoute
 }
 export interface FileRoutesById {
@@ -120,7 +112,6 @@ export interface FileRoutesById {
   '/_layout/images': typeof LayoutImagesRoute
   '/_layout/items': typeof LayoutItemsRoute
   '/_layout/settings': typeof LayoutSettingsRoute
-  '/_layout/suppliers': typeof LayoutSuppliersRoute
   '/_layout/': typeof LayoutIndexRoute
 }
 export interface FileRouteTypes {
@@ -136,7 +127,6 @@ export interface FileRouteTypes {
     | '/images'
     | '/items'
     | '/settings'
-    | '/suppliers'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -148,7 +138,6 @@ export interface FileRouteTypes {
     | '/images'
     | '/items'
     | '/settings'
-    | '/suppliers'
     | '/'
   id:
     | '__root__'
@@ -162,7 +151,6 @@ export interface FileRouteTypes {
     | '/_layout/images'
     | '/_layout/items'
     | '/_layout/settings'
-    | '/_layout/suppliers'
     | '/_layout/'
   fileRoutesById: FileRoutesById
 }
@@ -218,13 +206,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/_layout/suppliers': {
-      id: '/_layout/suppliers'
-      path: '/suppliers'
-      fullPath: '/suppliers'
-      preLoaderRoute: typeof LayoutSuppliersRouteImport
-      parentRoute: typeof LayoutRoute
-    }
     '/_layout/settings': {
       id: '/_layout/settings'
       path: '/settings'
@@ -269,7 +250,6 @@ interface LayoutRouteChildren {
   LayoutImagesRoute: typeof LayoutImagesRoute
   LayoutItemsRoute: typeof LayoutItemsRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
-  LayoutSuppliersRoute: typeof LayoutSuppliersRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
 
@@ -279,7 +259,6 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutImagesRoute: LayoutImagesRoute,
   LayoutItemsRoute: LayoutItemsRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
-  LayoutSuppliersRoute: LayoutSuppliersRoute,
   LayoutIndexRoute: LayoutIndexRoute,
 }
 

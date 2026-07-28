@@ -1,8 +1,8 @@
 """init system
 
-Revision ID: ae20ccecdeb2
+Revision ID: 597b3fbac2b4
 Revises: 
-Create Date: 2026-07-27 18:50:23.846680
+Create Date: 2026-07-28 10:43:17.025136
 
 """
 from alembic import op
@@ -11,7 +11,7 @@ import sqlmodel.sql.sqltypes
 
 
 # revision identifiers, used by Alembic.
-revision = 'ae20ccecdeb2'
+revision = '597b3fbac2b4'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -33,6 +33,26 @@ def upgrade():
     )
     op.create_index(op.f('ix_imagecategory_is_active'), 'imagecategory', ['is_active'], unique=False)
     op.create_index(op.f('ix_imagecategory_name'), 'imagecategory', ['name'], unique=True)
+    op.create_table('supplier',
+    sa.Column('platform', sqlmodel.sql.sqltypes.AutoString(length=64), nullable=False),
+    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
+    sa.Column('base_url', sqlmodel.sql.sqltypes.AutoString(length=512), nullable=False),
+    sa.Column('app_key', sqlmodel.sql.sqltypes.AutoString(length=512), nullable=False),
+    sa.Column('app_secret', sqlmodel.sql.sqltypes.AutoString(length=512), nullable=False),
+    sa.Column('status', sqlmodel.sql.sqltypes.AutoString(length=32), nullable=False),
+    sa.Column('connection_status', sqlmodel.sql.sqltypes.AutoString(length=32), nullable=False),
+    sa.Column('timeout_seconds', sa.Integer(), nullable=False),
+    sa.Column('retry_times', sa.Integer(), nullable=False),
+    sa.Column('description', sqlmodel.sql.sqltypes.AutoString(length=1024), nullable=True),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('balance', sa.Numeric(precision=12, scale=2), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
+    )
+    op.create_index(op.f('ix_supplier_is_active'), 'supplier', ['is_active'], unique=False)
     op.create_table('user_level',
     sa.Column('level', sa.Integer(), nullable=False),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
@@ -110,6 +130,8 @@ def downgrade():
     op.drop_table('user')
     op.drop_index(op.f('ix_user_level_is_active'), table_name='user_level')
     op.drop_table('user_level')
+    op.drop_index(op.f('ix_supplier_is_active'), table_name='supplier')
+    op.drop_table('supplier')
     op.drop_index(op.f('ix_imagecategory_name'), table_name='imagecategory')
     op.drop_index(op.f('ix_imagecategory_is_active'), table_name='imagecategory')
     op.drop_table('imagecategory')

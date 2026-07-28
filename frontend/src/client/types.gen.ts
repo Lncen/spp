@@ -18,7 +18,52 @@ export type HTTPValidationError = {
 };
 
 /**
- * 鍥剧墖鍏紑鍝嶅簲
+ * 分类列表响应
+ */
+export type ImageCategoriesPublic = {
+    data: Array<ImageCategoryPublic>;
+    count: number;
+};
+
+/**
+ * 创建分类请求
+ */
+export type ImageCategoryCreate = {
+    description?: (string | null);
+    sort_order?: number;
+    icon?: (string | null);
+    /**
+     * 小写英文字母开头，仅允许小写字母、数字、下划线
+     */
+    name: string;
+};
+
+/**
+ * 分类公开响应
+ */
+export type ImageCategoryPublic = {
+    description?: (string | null);
+    sort_order?: number;
+    icon?: (string | null);
+    id: string;
+    name: string;
+    is_active: boolean;
+    image_count: number;
+    created_at?: (string | null);
+};
+
+/**
+ * 更新分类请求（全部可选）
+ */
+export type ImageCategoryUpdate = {
+    description?: (string | null);
+    sort_order?: (number | null);
+    icon?: (string | null);
+    is_active?: (boolean | null);
+};
+
+/**
+ * 图片公开响应
  */
 export type ImagePublic = {
     filename: string;
@@ -33,7 +78,7 @@ export type ImagePublic = {
 };
 
 /**
- * 鍥剧墖鍒楄〃鍝嶅簲
+ * 图片列表响应
  */
 export type ImagesPublic = {
     data: Array<ImagePublic>;
@@ -41,16 +86,22 @@ export type ImagesPublic = {
 };
 
 /**
- * 鍒涘缓鐗╁搧璇锋眰
+ * 更新图片请求
  */
-export type ItemCreate = {
-    title: string;
-    description?: (string | null);
+export type ImageUpdate = {
     category?: (string | null);
 };
 
 /**
- * 鐗╁搧鍏紑鍝嶅簲
+ * 创建物品请求
+ */
+export type ItemCreate = {
+    title: string;
+    description?: (string | null);
+};
+
+/**
+ * 物品公开响应
  */
 export type ItemPublic = {
     title: string;
@@ -60,11 +111,10 @@ export type ItemPublic = {
     created_at?: (string | null);
     image_id?: (string | null);
     image_url?: (string | null);
-    category?: (string | null);
 };
 
 /**
- * 鐗╁搧鍒楄〃鍝嶅簲
+ * 物品列表响应
  */
 export type ItemsPublic = {
     data: Array<ItemPublic>;
@@ -72,24 +122,60 @@ export type ItemsPublic = {
 };
 
 /**
- * 鏇存柊鐗╁搧璇锋眰锛堝叏閮ㄥ彲閫夛級
+ * 更新物品请求（全部可选）
  */
 export type ItemUpdate = {
     title?: (string | null);
     description?: (string | null);
     image_id?: (string | null);
-    category?: (string | null);
 };
 
 /**
- * 閫氱敤鍝嶅簲娑堟伅
+ * 等级公开响应
+ */
+export type LevelPublic = {
+    /**
+     * 等级编号，范围 1～10，固定不可修改
+     */
+    level: number;
+    /**
+     * 等级名称，如「练气期」
+     */
+    name: string;
+    description?: (string | null);
+    /**
+     * 是否为新用户的默认等级
+     */
+    is_default?: boolean;
+    id: string;
+};
+
+/**
+ * 等级列表响应
+ */
+export type LevelsPublic = {
+    data: Array<LevelPublic>;
+    count: number;
+};
+
+/**
+ * 更新等级请求（全部可选）
+ */
+export type LevelUpdate = {
+    name?: (string | null);
+    description?: (string | null);
+    is_default?: (boolean | null);
+};
+
+/**
+ * 通用响应消息
  */
 export type Message = {
     message: string;
 };
 
 /**
- * 閲嶇疆瀵嗙爜璇锋眰
+ * 重置密码请求
  */
 export type NewPassword = {
     token: string;
@@ -97,7 +183,7 @@ export type NewPassword = {
 };
 
 /**
- * 鍐呴儴鍒涘缓鐢ㄦ埛璇锋眰锛堜粎绠＄悊鍛樻帴鍙ｄ娇鐢級
+ * 内部创建用户请求（仅管理员接口使用）
  */
 export type PrivateUserCreate = {
     email: string;
@@ -107,7 +193,138 @@ export type PrivateUserCreate = {
 };
 
 /**
- * 璁块棶浠ょ墝鍝嶅簲
+ * 余额同步响应
+ */
+export type SupplierBalancePublic = {
+    id: string;
+    name: string;
+    balance?: (string | null);
+    message?: string;
+};
+
+/**
+ * 创建供应商请求
+ */
+export type SupplierCreate = {
+    /**
+     * 供应商平台标识，如 openai、azure、deepseek
+     */
+    platform: string;
+    /**
+     * 供应商名称标识
+     */
+    name: string;
+    /**
+     * API 请求的基础 URL
+     */
+    base_url: string;
+    /**
+     * API 认证密钥 Key
+     */
+    app_key: string;
+    /**
+     * API 认证密钥 Secret，响应中脱敏
+     */
+    app_secret: string;
+    /**
+     * active=启用中, inactive=已停用, suspended=异常冻结
+     */
+    status?: string;
+    /**
+     * online=可达, offline=不可达, unknown=未知
+     */
+    connection_status?: string;
+    /**
+     * API 请求超时时间
+     */
+    timeout_seconds?: number;
+    /**
+     * 请求失败时的重试次数
+     */
+    retry_times?: number;
+    /**
+     * 备注说明
+     */
+    description?: (string | null);
+};
+
+/**
+ * 供应商公开响应
+ */
+export type SupplierPublic = {
+    /**
+     * 供应商平台标识，如 openai、azure、deepseek
+     */
+    platform: string;
+    /**
+     * 供应商名称标识
+     */
+    name: string;
+    /**
+     * API 请求的基础 URL
+     */
+    base_url: string;
+    /**
+     * API 认证密钥 Key
+     */
+    app_key: string;
+    /**
+     * API 认证密钥 Secret，响应中脱敏
+     */
+    app_secret: string;
+    /**
+     * active=启用中, inactive=已停用, suspended=异常冻结
+     */
+    status?: string;
+    /**
+     * online=可达, offline=不可达, unknown=未知
+     */
+    connection_status?: string;
+    /**
+     * API 请求超时时间
+     */
+    timeout_seconds?: number;
+    /**
+     * 请求失败时的重试次数
+     */
+    retry_times?: number;
+    /**
+     * 备注说明
+     */
+    description?: (string | null);
+    id: string;
+    created_at?: (string | null);
+    updated_at?: (string | null);
+    is_active?: boolean;
+    balance?: (string | null);
+};
+
+/**
+ * 供应商列表响应
+ */
+export type SuppliersPublic = {
+    data: Array<SupplierPublic>;
+    count: number;
+};
+
+/**
+ * 更新供应商请求（全部可选，不含 balance）
+ */
+export type SupplierUpdate = {
+    platform?: (string | null);
+    name?: (string | null);
+    base_url?: (string | null);
+    app_key?: (string | null);
+    app_secret?: (string | null);
+    status?: (string | null);
+    connection_status?: (string | null);
+    timeout_seconds?: (number | null);
+    retry_times?: (number | null);
+    description?: (string | null);
+};
+
+/**
+ * 访问令牌响应
  */
 export type Token = {
     access_token: string;
@@ -115,7 +332,7 @@ export type Token = {
 };
 
 /**
- * 淇敼瀵嗙爜璇锋眰
+ * 修改密码请求
  */
 export type UpdatePassword = {
     current_password: string;
@@ -123,7 +340,7 @@ export type UpdatePassword = {
 };
 
 /**
- * 鍒涘缓鐢ㄦ埛璇锋眰
+ * 创建用户请求
  */
 export type UserCreate = {
     email: string;
@@ -134,7 +351,7 @@ export type UserCreate = {
 };
 
 /**
- * 鐢ㄦ埛鍏紑鍝嶅簲
+ * 用户公开响应
  */
 export type UserPublic = {
     email: string;
@@ -146,7 +363,7 @@ export type UserPublic = {
 };
 
 /**
- * 鐢ㄦ埛娉ㄥ唽璇锋眰
+ * 用户注册请求
  */
 export type UserRegister = {
     email: string;
@@ -155,7 +372,7 @@ export type UserRegister = {
 };
 
 /**
- * 鐢ㄦ埛鍒楄〃鍝嶅簲
+ * 用户列表响应
  */
 export type UsersPublic = {
     data: Array<UserPublic>;
@@ -163,7 +380,7 @@ export type UsersPublic = {
 };
 
 /**
- * 鏇存柊鐢ㄦ埛璇锋眰锛堝叏閮ㄥ彲閫夛級
+ * 更新用户请求（全部可选）
  */
 export type UserUpdate = {
     email?: (string | null);
@@ -174,7 +391,7 @@ export type UserUpdate = {
 };
 
 /**
- * 褰撳墠鐢ㄦ埛鏇存柊涓汉淇℃伅璇锋眰
+ * 当前用户更新个人信息请求
  */
 export type UserUpdateMe = {
     full_name?: (string | null);
@@ -191,7 +408,39 @@ export type ValidationError = {
     };
 };
 
+export type ImageCategoriesReadCategoriesResponse = (ImageCategoriesPublic);
+
+export type ImageCategoriesCreateNewCategoryData = {
+    requestBody: ImageCategoryCreate;
+};
+
+export type ImageCategoriesCreateNewCategoryResponse = (ImageCategoryPublic);
+
+export type ImageCategoriesReadCategoryOptionsResponse = (Array<(string)>);
+
+export type ImageCategoriesReadCategoryData = {
+    id: string;
+};
+
+export type ImageCategoriesReadCategoryResponse = (ImageCategoryPublic);
+
+export type ImageCategoriesUpdateExistingCategoryData = {
+    id: string;
+    requestBody: ImageCategoryUpdate;
+};
+
+export type ImageCategoriesUpdateExistingCategoryResponse = (ImageCategoryPublic);
+
+export type ImageCategoriesDeleteExistingCategoryData = {
+    id: string;
+};
+
+export type ImageCategoriesDeleteExistingCategoryResponse = (Message);
+
 export type ImagesReadImagesData = {
+    /**
+     * 按分类筛选：avatar, product, product_detail
+     */
     category?: (string | null);
     limit?: number;
     skip?: number;
@@ -209,11 +458,7 @@ export type ImagesDeleteImageData = {
     id: string;
 };
 
-export type ImagesDeleteImageResponse = (Message);;
-
-export type ImageUpdate = {
-    category?: (string | null);
-};
+export type ImagesDeleteImageResponse = (Message);
 
 export type ImagesUpdateImageData = {
     id: string;
@@ -222,91 +467,15 @@ export type ImagesUpdateImageData = {
 
 export type ImagesUpdateImageResponse = (ImagePublic);
 
-
-
-/**
- * 分类公开响应
- */
-export type ImageCategoryPublic = {
-    description?: (string | null);
-    sort_order?: number;
-    icon?: (string | null);
-    id: string;
-    name: string;
-    is_active: boolean;
-    image_count: number;
-    created_at?: (string | null);
-};
-
-/**
- * 分类列表响应
- */
-export type ImageCategoriesPublic = {
-    data: Array<ImageCategoryPublic>;
-    count: number;
-};
-
-/**
- * 创建分类请求
- */
-export type ImageCategoryCreate = {
-    description?: (string | null);
-    sort_order?: number;
-    icon?: (string | null);
-    name: string;
-};
-
-/**
- * 更新分类请求（全部可选）
- */
-export type ImageCategoryUpdate = {
-    description?: (string | null);
-    sort_order?: (number | null);
-    icon?: (string | null);
-    is_active?: (boolean | null);
-};
-
-export type ImageCategoriesReadCategoriesResponse = (ImageCategoriesPublic);
-
-export type ImageCategoriesReadCategoryData = {
-    id: string;
-};
-
-export type ImageCategoriesReadCategoryResponse = (ImageCategoryPublic);
-
-export type ImageCategoriesCreateCategoryData = {
-    requestBody: ImageCategoryCreate;
-};
-
-export type ImageCategoriesCreateCategoryResponse = (ImageCategoryPublic);
-
-export type ImageCategoriesUpdateCategoryData = {
-    id: string;
-    requestBody: ImageCategoryUpdate;
-};
-
-export type ImageCategoriesUpdateCategoryResponse = (ImageCategoryPublic);
-
-export type ImageCategoriesDeleteCategoryData = {
-    id: string;
-};
-
-export type ImageCategoriesDeleteCategoryResponse = (Message);
-
-
 export type ImagesUploadImageData = {
-    formData: Body_images_upload_image;
+    /**
+     * 图片分类：avatar, product, product_detail
+     */
     category?: (string | null);
+    formData: Body_images_upload_image;
 };
 
 export type ImagesUploadImageResponse = (ImagePublic);
-
-/**
- * 鍒嗙被閫夐」锛堜緵涓婁紶琛ㄥ崟浣跨敤锛? */
-export type ImageCategoryOption = {
-    name: string;
-    label: string;
-};
 
 export type ItemsReadItemsData = {
     limit?: number;
@@ -340,6 +509,21 @@ export type ItemsDeleteItemData = {
 
 export type ItemsDeleteItemResponse = (Message);
 
+export type LevelsReadLevelsResponse = (LevelsPublic);
+
+export type LevelsReadLevelData = {
+    level: number;
+};
+
+export type LevelsReadLevelResponse = (LevelPublic);
+
+export type LevelsUpdateLevelEndpointData = {
+    level: number;
+    requestBody: LevelUpdate;
+};
+
+export type LevelsUpdateLevelEndpointResponse = (LevelPublic);
+
 export type LoginLoginAccessTokenData = {
     formData: Body_login_login_access_token;
 };
@@ -371,6 +555,44 @@ export type PrivateCreateUserPrivateData = {
 };
 
 export type PrivateCreateUserPrivateResponse = (UserPublic);
+
+export type SuppliersReadSuppliersData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type SuppliersReadSuppliersResponse = (SuppliersPublic);
+
+export type SuppliersCreateSupplierData = {
+    requestBody: SupplierCreate;
+};
+
+export type SuppliersCreateSupplierResponse = (SupplierPublic);
+
+export type SuppliersReadSupplierData = {
+    id: string;
+};
+
+export type SuppliersReadSupplierResponse = (SupplierPublic);
+
+export type SuppliersUpdateSupplierData = {
+    id: string;
+    requestBody: SupplierUpdate;
+};
+
+export type SuppliersUpdateSupplierResponse = (SupplierPublic);
+
+export type SuppliersDeleteSupplierData = {
+    id: string;
+};
+
+export type SuppliersDeleteSupplierResponse = (Message);
+
+export type SuppliersSyncSupplierBalanceData = {
+    id: string;
+};
+
+export type SuppliersSyncSupplierBalanceResponse = (SupplierBalancePublic);
 
 export type UsersReadUsersData = {
     limit?: number;
@@ -433,4 +655,3 @@ export type UtilsTestEmailData = {
 export type UtilsTestEmailResponse = (Message);
 
 export type UtilsHealthCheckResponse = (boolean);
-

@@ -1,0 +1,10 @@
+﻿STATUS_OPTIONS = [
+  { value: "active", label: "启用" },
+  { value: "inactive", label: "停用" },
+  { value: "suspended", label: "冻结" },
+]
+CONNECTION_OPTIONS = [
+  { value: "online", label: "在线" },
+  { value: "offline", label: "离线" },
+  { value: "unknown", label: "未知" },
+]
