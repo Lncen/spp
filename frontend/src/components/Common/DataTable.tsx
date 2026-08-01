@@ -1,7 +1,9 @@
 import {
   type ColumnDef,
+  type ExpandedState,
   flexRender,
   getCoreRowModel,
+  getExpandedRowModel,
   getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table"
@@ -11,6 +13,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react"
+import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -38,11 +41,19 @@ export function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
+  const [expanded, setExpanded] = useState<ExpandedState>(true)
   const table = useReactTable({
     data,
     columns,
+    state: {
+      expanded,
+    },
+    onExpandedChange: setExpanded,
     getCoreRowModel: getCoreRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getSubRows: (row) => (row as { subRows?: TData[] }).subRows,
+    getRowCanExpand: (row) => row.subRows.length > 0,
   })
 
   return (

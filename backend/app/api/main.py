@@ -20,6 +20,19 @@ from app.modules.price_template.models import (  # noqa: F401
     PriceTemplateRule,
 )
 from app.modules.price_template.router import router as price_template_router
+from app.modules.product.category.models import ProductCategory  # noqa: F401
+from app.modules.product.category.router import (
+    category_router as product_category_router,
+)
+from app.modules.product.product.models import (  # noqa: F401
+    Product,
+    ProductBuyParam,
+    ProductFulfillment,
+    ProductInventory,
+    ProductPricing,
+    ProductSupplier,
+)
+from app.modules.product.product.router import product_router
 from app.modules.supplier.models import Supplier  # noqa: F401
 from app.modules.supplier.router import router as supplier_router
 from app.modules.user.models import User  # noqa: F401
@@ -36,6 +49,8 @@ api_router.include_router(image_router)
 api_router.include_router(image_category_router)
 api_router.include_router(price_template_router)
 api_router.include_router(supplier_router)
+api_router.include_router(product_router)
+api_router.include_router(product_category_router)
 
 if settings.ENVIRONMENT == "local":
     api_router.include_router(private_router)

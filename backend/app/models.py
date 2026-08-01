@@ -11,6 +11,15 @@ from app.modules.image.models import Image, ImageCategory
 from app.modules.item.models import Item
 from app.modules.level.models import UserLevel
 from app.modules.price_template.models import PriceTemplate, PriceTemplateRule
+from app.modules.product.category.models import ProductCategory
+from app.modules.product.product.models import (
+    Product,
+    ProductBuyParam,
+    ProductFulfillment,
+    ProductInventory,
+    ProductPricing,
+    ProductSupplier,
+)
 from app.modules.supplier.models import Supplier
 from app.modules.user.models import User
 
@@ -24,4 +33,11 @@ __all__ = [
     "Supplier",
     "PriceTemplate",
     "PriceTemplateRule",
+    "ProductCategory",
+    "Product",
+    "ProductSupplier",
+    "ProductPricing",
+    "ProductInventory",
+    "ProductFulfillment",
+    "ProductBuyParam",
 ]

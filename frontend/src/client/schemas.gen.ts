@@ -374,6 +374,13 @@ export const ImagesPublicSchema = {
     description: '图片列表响应'
 } as const;
 
+export const InputTypeSchema = {
+    type: 'integer',
+    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    title: 'InputType',
+    description: '下单参数输入类型'
+} as const;
+
 export const ItemCreateSchema = {
     properties: {
         title: {
@@ -977,6 +984,1793 @@ export const PrivateUserCreateSchema = {
     required: ['email', 'password', 'full_name'],
     title: 'PrivateUserCreate',
     description: '内部创建用户请求（仅管理员接口使用）'
+} as const;
+
+export const ProductBuyParamCreateSchema = {
+    properties: {
+        key: {
+            type: 'string',
+            maxLength: 128,
+            minLength: 1,
+            title: '参数 Key',
+            description: '参数键，同一商品内唯一'
+        },
+        label: {
+            type: 'string',
+            maxLength: 128,
+            minLength: 1,
+            title: '参数名称'
+        },
+        value: {
+            type: 'string',
+            maxLength: 128,
+            title: '参数值',
+            default: ''
+        },
+        description: {
+            type: 'string',
+            title: '参数描述/提示',
+            default: ''
+        },
+        input_type: {
+            '$ref': '#/components/schemas/InputType',
+            title: '输入类型',
+            default: 1
+        },
+        type_config: {
+            items: {
+                additionalProperties: true,
+                type: 'object'
+            },
+            type: 'array',
+            title: '类型扩展配置'
+        },
+        default_value: {
+            type: 'string',
+            title: '默认值',
+            default: ''
+        },
+        use_default: {
+            type: 'boolean',
+            title: '是否使用默认值',
+            default: false
+        },
+        is_required: {
+            type: 'boolean',
+            title: '是否必填',
+            default: true
+        },
+        is_hidden: {
+            type: 'boolean',
+            title: '是否隐藏',
+            default: false
+        },
+        is_edit: {
+            type: 'boolean',
+            title: '是否可以修改',
+            default: false
+        },
+        validate_min: {
+            type: 'integer',
+            minimum: 0,
+            title: '最小长度/值',
+            default: 1
+        },
+        validate_max: {
+            type: 'integer',
+            minimum: 0,
+            title: '最大长度/值',
+            default: 100
+        }
+    },
+    type: 'object',
+    required: ['key', 'label'],
+    title: 'ProductBuyParamCreate',
+    description: '商品下单参数创建请求'
+} as const;
+
+export const ProductBuyParamPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        key: {
+            type: 'string',
+            title: 'Key'
+        },
+        label: {
+            type: 'string',
+            title: 'Label'
+        },
+        value: {
+            type: 'string',
+            title: 'Value'
+        },
+        description: {
+            type: 'string',
+            title: 'Description'
+        },
+        input_type: {
+            '$ref': '#/components/schemas/InputType'
+        },
+        type_config: {
+            items: {
+                additionalProperties: true,
+                type: 'object'
+            },
+            type: 'array',
+            title: 'Type Config'
+        },
+        default_value: {
+            type: 'string',
+            title: 'Default Value'
+        },
+        use_default: {
+            type: 'boolean',
+            title: 'Use Default'
+        },
+        is_required: {
+            type: 'boolean',
+            title: 'Is Required'
+        },
+        is_hidden: {
+            type: 'boolean',
+            title: 'Is Hidden'
+        },
+        is_edit: {
+            type: 'boolean',
+            title: 'Is Edit'
+        },
+        validate_min: {
+            type: 'integer',
+            title: 'Validate Min'
+        },
+        validate_max: {
+            type: 'integer',
+            title: 'Validate Max'
+        }
+    },
+    type: 'object',
+    required: ['id', 'key', 'label', 'value', 'description', 'input_type', 'type_config', 'default_value', 'use_default', 'is_required', 'is_hidden', 'is_edit', 'validate_min', 'validate_max'],
+    title: 'ProductBuyParamPublic',
+    description: '商品下单参数公开响应'
+} as const;
+
+export const ProductBuyParamUpdateSchema = {
+    properties: {
+        key: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 128,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '参数 Key'
+        },
+        label: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 128,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '参数名称'
+        },
+        value: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 128
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '参数值'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '参数描述/提示'
+        },
+        input_type: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/InputType'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '输入类型'
+        },
+        type_config: {
+            anyOf: [
+                {
+                    items: {
+                        additionalProperties: true,
+                        type: 'object'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '类型扩展配置'
+        },
+        default_value: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '默认值'
+        },
+        use_default: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '是否使用默认值'
+        },
+        is_required: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '是否必填'
+        },
+        is_hidden: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '是否隐藏'
+        },
+        is_edit: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '是否可以修改'
+        },
+        validate_min: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '最小长度/值'
+        },
+        validate_max: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '最大长度/值'
+        }
+    },
+    type: 'object',
+    title: 'ProductBuyParamUpdate',
+    description: '商品下单参数更新请求（全部可选）'
+} as const;
+
+export const ProductCategoriesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ProductCategoryTreePublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ProductCategoriesPublic',
+    description: '商品分类列表响应'
+} as const;
+
+export const ProductCategoryCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 100,
+            minLength: 1,
+            title: '分类名称',
+            description: '分类名称，同一父级下应保持唯一'
+        },
+        parent_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '上级分类 ID',
+            description: '为空表示顶级分类'
+        },
+        icon_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '分类图标 ID',
+            description: '分类图标对应的图片资源 UUID'
+        },
+        sort: {
+            type: 'integer',
+            minimum: 0,
+            title: '排序',
+            description: '数值越小越靠前',
+            default: 0
+        },
+        is_active: {
+            type: 'boolean',
+            title: '是否启用',
+            default: true
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'ProductCategoryCreate',
+    description: '创建商品分类请求'
+} as const;
+
+export const ProductCategoryPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        parent_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Parent Id'
+        },
+        icon_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Icon Id'
+        },
+        icon_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Icon Url'
+        },
+        product_count: {
+            type: 'integer',
+            title: 'Product Count'
+        },
+        sort: {
+            type: 'integer',
+            title: 'Sort'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'parent_id', 'icon_id', 'product_count', 'sort', 'is_active'],
+    title: 'ProductCategoryPublic',
+    description: '商品分类公开响应'
+} as const;
+
+export const ProductCategoryTreePublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        parent_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Parent Id'
+        },
+        icon_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Icon Id'
+        },
+        icon_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Icon Url'
+        },
+        product_count: {
+            type: 'integer',
+            title: 'Product Count'
+        },
+        sort: {
+            type: 'integer',
+            title: 'Sort'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At'
+        },
+        children: {
+            items: {
+                '$ref': '#/components/schemas/ProductCategoryTreePublic'
+            },
+            type: 'array',
+            title: '子分类',
+            description: '按 sort 排序的子分类树节点'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'parent_id', 'icon_id', 'product_count', 'sort', 'is_active'],
+    title: 'ProductCategoryTreePublic',
+    description: '商品分类树节点响应'
+} as const;
+
+export const ProductCategoryUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 100,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '分类名称'
+        },
+        parent_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '上级分类 ID'
+        },
+        icon_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '分类图标 ID'
+        },
+        sort: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '排序'
+        },
+        is_active: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '是否启用'
+        }
+    },
+    type: 'object',
+    title: 'ProductCategoryUpdate',
+    description: '更新商品分类请求（全部可选）'
+} as const;
+
+export const ProductCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: '商品名称'
+        },
+        category_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '本地分类 ID'
+        },
+        source_type: {
+            '$ref': '#/components/schemas/SourceType',
+            title: '商品来源',
+            default: 2
+        },
+        status: {
+            '$ref': '#/components/schemas/ProductStatus',
+            title: '商品状态',
+            default: 1
+        },
+        is_closed: {
+            type: 'boolean',
+            title: '是否关闭下单',
+            default: false
+        },
+        sort: {
+            type: 'integer',
+            minimum: 0,
+            title: '排序权重',
+            default: 0
+        },
+        type: {
+            '$ref': '#/components/schemas/ProductType',
+            title: '商品类型',
+            default: 1
+        },
+        supplier: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ProductSupplierCreate'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '商品货源'
+        },
+        pricing: {
+            '$ref': '#/components/schemas/ProductPricingCreate'
+        },
+        inventory: {
+            '$ref': '#/components/schemas/ProductInventoryCreate',
+            title: '库存配置'
+        },
+        fulfillment: {
+            '$ref': '#/components/schemas/ProductFulfillmentCreate',
+            title: '履约配置'
+        },
+        buy_params: {
+            items: {
+                '$ref': '#/components/schemas/ProductBuyParamCreate'
+            },
+            type: 'array',
+            title: '下单参数列表'
+        }
+    },
+    type: 'object',
+    required: ['name', 'pricing'],
+    title: 'ProductCreate',
+    description: '创建商品请求'
+} as const;
+
+export const ProductFulfillmentCreateSchema = {
+    properties: {
+        fulfillment_type: {
+            '$ref': '#/components/schemas/RedeemType',
+            title: '发货方式',
+            default: 1
+        },
+        can_refund: {
+            type: 'boolean',
+            title: '是否允许退款',
+            default: false
+        },
+        after_sale_rules: {
+            type: 'string',
+            title: '售后规则说明',
+            default: ''
+        },
+        description: {
+            type: 'string',
+            title: '商品描述',
+            default: ''
+        },
+        unit: {
+            type: 'string',
+            maxLength: 32,
+            title: '数量单位',
+            default: '1'
+        },
+        input_fields_overridden: {
+            type: 'boolean',
+            title: '参数是否被本地修改',
+            default: false
+        },
+        params_template: {
+            items: {
+                additionalProperties: true,
+                type: 'object'
+            },
+            type: 'array',
+            title: '购买参数模板'
+        }
+    },
+    type: 'object',
+    title: 'ProductFulfillmentCreate',
+    description: '商品履约配置创建请求'
+} as const;
+
+export const ProductFulfillmentPublicSchema = {
+    properties: {
+        fulfillment_type: {
+            '$ref': '#/components/schemas/RedeemType'
+        },
+        can_refund: {
+            type: 'boolean',
+            title: 'Can Refund'
+        },
+        after_sale_rules: {
+            type: 'string',
+            title: 'After Sale Rules'
+        },
+        description: {
+            type: 'string',
+            title: 'Description'
+        },
+        unit: {
+            type: 'string',
+            title: 'Unit'
+        },
+        input_fields_overridden: {
+            type: 'boolean',
+            title: 'Input Fields Overridden'
+        },
+        params_template: {
+            items: {
+                additionalProperties: true,
+                type: 'object'
+            },
+            type: 'array',
+            title: 'Params Template'
+        }
+    },
+    type: 'object',
+    required: ['fulfillment_type', 'can_refund', 'after_sale_rules', 'description', 'unit', 'input_fields_overridden', 'params_template'],
+    title: 'ProductFulfillmentPublic',
+    description: '商品履约配置公开响应'
+} as const;
+
+export const ProductFulfillmentUpdateSchema = {
+    properties: {
+        fulfillment_type: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/RedeemType'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '发货方式'
+        },
+        can_refund: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '是否允许退款'
+        },
+        after_sale_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '售后规则说明'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '商品描述'
+        },
+        unit: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 32
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '数量单位'
+        },
+        input_fields_overridden: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '参数是否被本地修改'
+        },
+        params_template: {
+            anyOf: [
+                {
+                    items: {
+                        additionalProperties: true,
+                        type: 'object'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '购买参数模板'
+        }
+    },
+    type: 'object',
+    title: 'ProductFulfillmentUpdate',
+    description: '商品履约配置更新请求（全部可选）'
+} as const;
+
+export const ProductInventoryCreateSchema = {
+    properties: {
+        min_quantity: {
+            type: 'integer',
+            minimum: 1,
+            title: '最小购买数量',
+            default: 1
+        },
+        max_quantity: {
+            type: 'integer',
+            minimum: 1,
+            title: '最大购买数量',
+            default: 1000000
+        },
+        is_repeatable: {
+            type: 'boolean',
+            title: '是否允许重复购买',
+            default: false
+        },
+        is_batch: {
+            type: 'boolean',
+            title: '是否支持批量购买',
+            default: true
+        },
+        purchase_step: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,6}|(?=[\\d.]{1,11}0*$)\\d{0,6}\\.\\d{0,4}0*$)'
+                }
+            ],
+            title: '购买步长',
+            default: '1'
+        },
+        stock: {
+            type: 'integer',
+            minimum: -1,
+            title: '库存数量',
+            description: '-1 表示无限库存',
+            default: -1
+        }
+    },
+    type: 'object',
+    title: 'ProductInventoryCreate',
+    description: '商品库存配置创建请求'
+} as const;
+
+export const ProductInventoryPublicSchema = {
+    properties: {
+        min_quantity: {
+            type: 'integer',
+            title: 'Min Quantity'
+        },
+        max_quantity: {
+            type: 'integer',
+            title: 'Max Quantity'
+        },
+        is_repeatable: {
+            type: 'boolean',
+            title: 'Is Repeatable'
+        },
+        is_batch: {
+            type: 'boolean',
+            title: 'Is Batch'
+        },
+        purchase_step: {
+            type: 'string',
+            pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+            title: 'Purchase Step'
+        },
+        stock: {
+            type: 'integer',
+            title: 'Stock'
+        }
+    },
+    type: 'object',
+    required: ['min_quantity', 'max_quantity', 'is_repeatable', 'is_batch', 'purchase_step', 'stock'],
+    title: 'ProductInventoryPublic',
+    description: '商品库存配置公开响应'
+} as const;
+
+export const ProductInventoryUpdateSchema = {
+    properties: {
+        min_quantity: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '最小购买数量'
+        },
+        max_quantity: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '最大购买数量'
+        },
+        is_repeatable: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '是否允许重复购买'
+        },
+        is_batch: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '是否支持批量购买'
+        },
+        purchase_step: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,6}|(?=[\\d.]{1,11}0*$)\\d{0,6}\\.\\d{0,4}0*$)'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '购买步长'
+        },
+        stock: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: -1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '库存数量'
+        }
+    },
+    type: 'object',
+    title: 'ProductInventoryUpdate',
+    description: '商品库存配置更新请求（全部可选）'
+} as const;
+
+export const ProductPricingCreateSchema = {
+    properties: {
+        price_template_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '价格模板 ID',
+            description: '关联价格模板的 UUID，与固定价格、商品系数互斥'
+        },
+        cost_price: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,19}0*$)\\d{0,10}\\.\\d{0,8}0*$)'
+                }
+            ],
+            title: '成本价',
+            default: '0.00'
+        },
+        loss_price: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,19}0*$)\\d{0,10}\\.\\d{0,8}0*$)'
+                }
+            ],
+            title: '固定损耗',
+            default: '0.00'
+        },
+        fixed_price: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,19}0*$)\\d{0,10}\\.\\d{0,8}0*$)'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '固定价格',
+            description: '设置后直接作为最终售价，与价格模板、商品独立系数互斥'
+        },
+        item_coefficient: {
+            anyOf: [
+                {
+                    type: 'number',
+                    maximum: 9.99,
+                    minimum: 0.01
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,2}|(?=[\\d.]{1,7}0*$)\\d{0,2}\\.\\d{0,4}0*$)'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '商品独立系数',
+            description: '替代模板加价率，与价格模板、固定价格互斥'
+        },
+        price_display_precision: {
+            type: 'integer',
+            maximum: 32767,
+            minimum: 0,
+            title: '价格展示精度',
+            description: '前端显示价格时保留的小数位数',
+            default: 8
+        }
+    },
+    type: 'object',
+    title: 'ProductPricingCreate',
+    description: '商品价格配置创建请求'
+} as const;
+
+export const ProductPricingPublicSchema = {
+    properties: {
+        price_template_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price Template Id'
+        },
+        cost_price: {
+            type: 'string',
+            pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+            title: 'Cost Price'
+        },
+        loss_price: {
+            type: 'string',
+            pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+            title: 'Loss Price'
+        },
+        fixed_price: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Fixed Price'
+        },
+        item_coefficient: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Item Coefficient'
+        },
+        price_display_precision: {
+            type: 'integer',
+            title: 'Price Display Precision'
+        },
+        rule_type: {
+            '$ref': '#/components/schemas/RuleType'
+        },
+        config_mode: {
+            type: 'string',
+            title: 'Config Mode'
+        }
+    },
+    type: 'object',
+    required: ['price_template_id', 'cost_price', 'loss_price', 'fixed_price', 'item_coefficient', 'price_display_precision', 'rule_type', 'config_mode'],
+    title: 'ProductPricingPublic',
+    description: '商品价格配置公开响应'
+} as const;
+
+export const ProductPricingUpdateSchema = {
+    properties: {
+        price_template_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '价格模板 ID',
+            description: '显式传 null 表示清除价格模板'
+        },
+        cost_price: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,19}0*$)\\d{0,10}\\.\\d{0,8}0*$)'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '成本价'
+        },
+        loss_price: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,19}0*$)\\d{0,10}\\.\\d{0,8}0*$)'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '固定损耗'
+        },
+        fixed_price: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,19}0*$)\\d{0,10}\\.\\d{0,8}0*$)'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '固定价格',
+            description: '显式传 null 表示清除固定价格'
+        },
+        item_coefficient: {
+            anyOf: [
+                {
+                    type: 'number',
+                    maximum: 9.99,
+                    minimum: 0.01
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,2}|(?=[\\d.]{1,7}0*$)\\d{0,2}\\.\\d{0,4}0*$)'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '商品独立系数',
+            description: '显式传 null 表示清除商品独立系数'
+        },
+        price_display_precision: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 32767,
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '价格展示精度'
+        }
+    },
+    type: 'object',
+    title: 'ProductPricingUpdate',
+    description: '商品价格配置更新请求（全部可选）'
+} as const;
+
+export const ProductPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        category_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Category Id'
+        },
+        category_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Category Name'
+        },
+        source_type: {
+            '$ref': '#/components/schemas/SourceType'
+        },
+        status: {
+            '$ref': '#/components/schemas/ProductStatus'
+        },
+        is_closed: {
+            type: 'boolean',
+            title: 'Is Closed'
+        },
+        sort: {
+            type: 'integer',
+            title: 'Sort'
+        },
+        type: {
+            '$ref': '#/components/schemas/ProductType'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At'
+        },
+        supplier: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ProductSupplierPublic'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        pricing: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ProductPricingPublic'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        inventory: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ProductInventoryPublic'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        fulfillment: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ProductFulfillmentPublic'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        buy_params: {
+            items: {
+                '$ref': '#/components/schemas/ProductBuyParamPublic'
+            },
+            type: 'array',
+            title: 'Buy Params'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'category_id', 'source_type', 'status', 'is_closed', 'sort', 'type', 'is_active'],
+    title: 'ProductPublic',
+    description: '商品公开响应'
+} as const;
+
+export const ProductStatusSchema = {
+    type: 'integer',
+    enum: [1, 2, 3, 5, 6, 7, 8],
+    title: 'ProductStatus',
+    description: '商品状态'
+} as const;
+
+export const ProductSupplierCreateSchema = {
+    properties: {
+        supplier_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '供应商 ID',
+            description: '为空表示未关联供应商'
+        },
+        sku_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '供应商 SKU',
+            description: '供应商侧的商品 SKU 标识'
+        }
+    },
+    type: 'object',
+    title: 'ProductSupplierCreate',
+    description: '商品货源创建请求'
+} as const;
+
+export const ProductSupplierPublicSchema = {
+    properties: {
+        supplier_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supplier Id'
+        },
+        supplier_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supplier Name'
+        },
+        sku_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Sku Id'
+        }
+    },
+    type: 'object',
+    required: ['supplier_id'],
+    title: 'ProductSupplierPublic',
+    description: '商品货源公开响应'
+} as const;
+
+export const ProductSupplierUpdateSchema = {
+    properties: {
+        supplier_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '供应商 ID'
+        },
+        sku_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '供应商 SKU'
+        }
+    },
+    type: 'object',
+    title: 'ProductSupplierUpdate',
+    description: '商品货源更新请求（全部可选）'
+} as const;
+
+export const ProductTypeSchema = {
+    type: 'integer',
+    enum: [1, 2, 3, 4, 5, 6, 7, 8],
+    title: 'ProductType',
+    description: '商品类型'
+} as const;
+
+export const ProductUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '商品名称'
+        },
+        category_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '本地分类 ID'
+        },
+        source_type: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/SourceType'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '商品来源'
+        },
+        status: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ProductStatus'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '商品状态'
+        },
+        is_closed: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '是否关闭下单'
+        },
+        sort: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '排序权重'
+        },
+        type: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ProductType'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '商品类型'
+        },
+        is_active: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '是否启用'
+        },
+        supplier: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ProductSupplierUpdate'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '商品货源',
+            description: '传 null 表示清除货源记录'
+        },
+        pricing: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ProductPricingUpdate'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '价格配置',
+            description: '传 null 将被拒绝，商品必须保留价格配置'
+        },
+        inventory: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ProductInventoryUpdate'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '库存配置',
+            description: '传 null 将被拒绝，商品必须保留库存配置'
+        },
+        fulfillment: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ProductFulfillmentUpdate'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '履约配置',
+            description: '传 null 将被拒绝，商品必须保留履约配置'
+        },
+        buy_params: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/ProductBuyParamUpdate'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '下单参数列表',
+            description: '传 null 表示清空下单参数，传列表表示整体替换'
+        }
+    },
+    type: 'object',
+    title: 'ProductUpdate',
+    description: '更新商品请求（全部可选）'
+} as const;
+
+export const ProductsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ProductPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ProductsPublic',
+    description: '商品列表响应'
+} as const;
+
+export const RedeemTypeSchema = {
+    type: 'integer',
+    enum: [1, 2, 3],
+    title: 'RedeemType',
+    description: '发货方式'
+} as const;
+
+export const RuleTypeSchema = {
+    type: 'integer',
+    enum: [1, 2, 3],
+    title: 'RuleType',
+    description: '定价规则（由字段派生，不落库）'
+} as const;
+
+export const SourceTypeSchema = {
+    type: 'integer',
+    enum: [1, 2, 3, 4, 5, 6, 7, 8],
+    title: 'SourceType',
+    description: '商品来源'
 } as const;
 
 export const SupplierCreateSchema = {

@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ImageCategoriesReadCategoriesResponse, ImageCategoriesCreateNewCategoryData, ImageCategoriesCreateNewCategoryResponse, ImageCategoriesReadCategoryOptionsResponse, ImageCategoriesReadCategoryData, ImageCategoriesReadCategoryResponse, ImageCategoriesUpdateExistingCategoryData, ImageCategoriesUpdateExistingCategoryResponse, ImageCategoriesDeleteExistingCategoryData, ImageCategoriesDeleteExistingCategoryResponse, ImagesReadImagesData, ImagesReadImagesResponse, ImagesReadImageData, ImagesReadImageResponse, ImagesDeleteImageData, ImagesDeleteImageResponse, ImagesUpdateImageData, ImagesUpdateImageResponse, ImagesUploadImageData, ImagesUploadImageResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LevelsReadLevelsResponse, LevelsReadLevelData, LevelsReadLevelResponse, LevelsUpdateLevelEndpointData, LevelsUpdateLevelEndpointResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PriceTemplatesReadPriceTemplatesData, PriceTemplatesReadPriceTemplatesResponse, PriceTemplatesCreatePriceTemplateData, PriceTemplatesCreatePriceTemplateResponse, PriceTemplatesReadPriceTemplateData, PriceTemplatesReadPriceTemplateResponse, PriceTemplatesUpdatePriceTemplateData, PriceTemplatesUpdatePriceTemplateResponse, PriceTemplatesDeletePriceTemplateData, PriceTemplatesDeletePriceTemplateResponse, PrivateCreateUserPrivateData, PrivateCreateUserPrivateResponse, SuppliersReadSuppliersData, SuppliersReadSuppliersResponse, SuppliersCreateSupplierData, SuppliersCreateSupplierResponse, SuppliersGetPlatformOptionsResponse, SuppliersReadSupplierData, SuppliersReadSupplierResponse, SuppliersUpdateSupplierData, SuppliersUpdateSupplierResponse, SuppliersDeleteSupplierData, SuppliersDeleteSupplierResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { ImageCategoriesReadCategoriesResponse, ImageCategoriesCreateNewCategoryData, ImageCategoriesCreateNewCategoryResponse, ImageCategoriesReadCategoryOptionsResponse, ImageCategoriesReadCategoryData, ImageCategoriesReadCategoryResponse, ImageCategoriesUpdateExistingCategoryData, ImageCategoriesUpdateExistingCategoryResponse, ImageCategoriesDeleteExistingCategoryData, ImageCategoriesDeleteExistingCategoryResponse, ImagesReadImagesData, ImagesReadImagesResponse, ImagesReadImageData, ImagesReadImageResponse, ImagesDeleteImageData, ImagesDeleteImageResponse, ImagesUpdateImageData, ImagesUpdateImageResponse, ImagesUploadImageData, ImagesUploadImageResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LevelsReadLevelsResponse, LevelsReadLevelData, LevelsReadLevelResponse, LevelsUpdateLevelEndpointData, LevelsUpdateLevelEndpointResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PriceTemplatesReadPriceTemplatesData, PriceTemplatesReadPriceTemplatesResponse, PriceTemplatesCreatePriceTemplateData, PriceTemplatesCreatePriceTemplateResponse, PriceTemplatesReadPriceTemplateData, PriceTemplatesReadPriceTemplateResponse, PriceTemplatesUpdatePriceTemplateData, PriceTemplatesUpdatePriceTemplateResponse, PriceTemplatesDeletePriceTemplateData, PriceTemplatesDeletePriceTemplateResponse, PrivateCreateUserPrivateData, PrivateCreateUserPrivateResponse, ProductCategoriesReadProductCategoriesResponse, ProductCategoriesCreateProductCategoryData, ProductCategoriesCreateProductCategoryResponse, ProductCategoriesReadProductCategoryData, ProductCategoriesReadProductCategoryResponse, ProductCategoriesUpdateProductCategoryData, ProductCategoriesUpdateProductCategoryResponse, ProductCategoriesDeleteProductCategoryData, ProductCategoriesDeleteProductCategoryResponse, ProductsReadProductsData, ProductsReadProductsResponse, ProductsCreateProductData, ProductsCreateProductResponse, ProductsReadProductData, ProductsReadProductResponse, ProductsUpdateProductData, ProductsUpdateProductResponse, ProductsDeleteProductData, ProductsDeleteProductResponse, SuppliersReadSuppliersData, SuppliersReadSuppliersResponse, SuppliersCreateSupplierData, SuppliersCreateSupplierResponse, SuppliersGetPlatformOptionsResponse, SuppliersReadSupplierData, SuppliersReadSupplierResponse, SuppliersUpdateSupplierData, SuppliersUpdateSupplierResponse, SuppliersDeleteSupplierData, SuppliersDeleteSupplierResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class ImageCategoriesService {
     /**
@@ -629,6 +629,228 @@ export class PrivateService {
             url: '/api/v1/private/users/',
             body: data.requestBody,
             mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class ProductCategoriesService {
+    /**
+     * Read Product Categories
+     * 获取商品分类列表（仅超管）
+     * @returns ProductCategoriesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readProductCategories(): CancelablePromise<ProductCategoriesReadProductCategoriesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/product-categories/'
+        });
+    }
+    
+    /**
+     * Create Product Category
+     * 创建商品分类（仅超管）
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns ProductCategoryPublic Successful Response
+     * @throws ApiError
+     */
+    public static createProductCategory(data: ProductCategoriesCreateProductCategoryData): CancelablePromise<ProductCategoriesCreateProductCategoryResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/product-categories/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Product Category
+     * 根据 ID 获取商品分类（仅超管）
+     * @param data The data for the request.
+     * @param data.categoryId
+     * @returns ProductCategoryPublic Successful Response
+     * @throws ApiError
+     */
+    public static readProductCategory(data: ProductCategoriesReadProductCategoryData): CancelablePromise<ProductCategoriesReadProductCategoryResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/product-categories/{category_id}',
+            path: {
+                category_id: data.categoryId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Product Category
+     * 更新商品分类（仅超管）
+     * @param data The data for the request.
+     * @param data.categoryId
+     * @param data.requestBody
+     * @returns ProductCategoryPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateProductCategory(data: ProductCategoriesUpdateProductCategoryData): CancelablePromise<ProductCategoriesUpdateProductCategoryResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/product-categories/{category_id}',
+            path: {
+                category_id: data.categoryId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Product Category
+     * 删除商品分类（仅超管，有子分类或商品时拒绝）
+     * @param data The data for the request.
+     * @param data.categoryId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteProductCategory(data: ProductCategoriesDeleteProductCategoryData): CancelablePromise<ProductCategoriesDeleteProductCategoryResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/product-categories/{category_id}',
+            path: {
+                category_id: data.categoryId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class ProductsService {
+    /**
+     * Read Products
+     * 分页查询商品（仅超管）
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @param data.categoryId
+     * @param data.status
+     * @param data.sourceType
+     * @param data.isClosed
+     * @param data.name
+     * @returns ProductsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readProducts(data: ProductsReadProductsData = {}): CancelablePromise<ProductsReadProductsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/products/',
+            query: {
+                skip: data.skip,
+                limit: data.limit,
+                category_id: data.categoryId,
+                status: data.status,
+                source_type: data.sourceType,
+                is_closed: data.isClosed,
+                name: data.name
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Product
+     * 创建商品及其关联配置（仅超管）
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns ProductPublic Successful Response
+     * @throws ApiError
+     */
+    public static createProduct(data: ProductsCreateProductData): CancelablePromise<ProductsCreateProductResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/products/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Product
+     * 根据 ID 获取商品（仅超管）
+     * @param data The data for the request.
+     * @param data.productId
+     * @returns ProductPublic Successful Response
+     * @throws ApiError
+     */
+    public static readProduct(data: ProductsReadProductData): CancelablePromise<ProductsReadProductResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/products/{product_id}',
+            path: {
+                product_id: data.productId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Product
+     * 更新商品及其关联配置（仅超管）
+     * @param data The data for the request.
+     * @param data.productId
+     * @param data.requestBody
+     * @returns ProductPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateProduct(data: ProductsUpdateProductData): CancelablePromise<ProductsUpdateProductResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/products/{product_id}',
+            path: {
+                product_id: data.productId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Product
+     * 删除商品及其关联配置（仅超管）
+     * @param data The data for the request.
+     * @param data.productId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteProduct(data: ProductsDeleteProductData): CancelablePromise<ProductsDeleteProductResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/products/{product_id}',
+            path: {
+                product_id: data.productId
+            },
             errors: {
                 422: 'Validation Error'
             }

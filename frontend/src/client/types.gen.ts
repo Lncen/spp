@@ -93,6 +93,11 @@ export type ImageUpdate = {
 };
 
 /**
+ * 下单参数输入类型
+ */
+export type InputType = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
+
+/**
  * 创建物品请求
  */
 export type ItemCreate = {
@@ -289,6 +294,433 @@ export type PrivateUserCreate = {
     full_name: string;
     is_verified?: boolean;
 };
+
+/**
+ * 商品下单参数创建请求
+ */
+export type ProductBuyParamCreate = {
+    /**
+     * 参数键，同一商品内唯一
+     */
+    key: string;
+    label: string;
+    value?: string;
+    description?: string;
+    input_type?: InputType;
+    type_config?: Array<{
+        [key: string]: unknown;
+    }>;
+    default_value?: string;
+    use_default?: boolean;
+    is_required?: boolean;
+    is_hidden?: boolean;
+    is_edit?: boolean;
+    validate_min?: number;
+    validate_max?: number;
+};
+
+/**
+ * 商品下单参数公开响应
+ */
+export type ProductBuyParamPublic = {
+    id: string;
+    key: string;
+    label: string;
+    value: string;
+    description: string;
+    input_type: InputType;
+    type_config: Array<{
+        [key: string]: unknown;
+    }>;
+    default_value: string;
+    use_default: boolean;
+    is_required: boolean;
+    is_hidden: boolean;
+    is_edit: boolean;
+    validate_min: number;
+    validate_max: number;
+};
+
+/**
+ * 商品下单参数更新请求（全部可选）
+ */
+export type ProductBuyParamUpdate = {
+    key?: (string | null);
+    label?: (string | null);
+    value?: (string | null);
+    description?: (string | null);
+    input_type?: (InputType | null);
+    type_config?: (Array<{
+    [key: string]: unknown;
+}> | null);
+    default_value?: (string | null);
+    use_default?: (boolean | null);
+    is_required?: (boolean | null);
+    is_hidden?: (boolean | null);
+    is_edit?: (boolean | null);
+    validate_min?: (number | null);
+    validate_max?: (number | null);
+};
+
+/**
+ * 商品分类列表响应
+ */
+export type ProductCategoriesPublic = {
+    data: Array<ProductCategoryTreePublic>;
+    count: number;
+};
+
+/**
+ * 创建商品分类请求
+ */
+export type ProductCategoryCreate = {
+    /**
+     * 分类名称，同一父级下应保持唯一
+     */
+    name: string;
+    /**
+     * 为空表示顶级分类
+     */
+    parent_id?: (string | null);
+    /**
+     * 分类图标对应的图片资源 UUID
+     */
+    icon_id?: (string | null);
+    /**
+     * 数值越小越靠前
+     */
+    sort?: number;
+    is_active?: boolean;
+};
+
+/**
+ * 商品分类公开响应
+ */
+export type ProductCategoryPublic = {
+    id: string;
+    name: string;
+    parent_id: (string | null);
+    icon_id: (string | null);
+    icon_url?: (string | null);
+    product_count: number;
+    sort: number;
+    is_active: boolean;
+    created_at?: (string | null);
+    updated_at?: (string | null);
+};
+
+/**
+ * 商品分类树节点响应
+ */
+export type ProductCategoryTreePublic = {
+    id: string;
+    name: string;
+    parent_id: (string | null);
+    icon_id: (string | null);
+    icon_url?: (string | null);
+    product_count: number;
+    sort: number;
+    is_active: boolean;
+    created_at?: (string | null);
+    updated_at?: (string | null);
+    /**
+     * 按 sort 排序的子分类树节点
+     */
+    children?: Array<ProductCategoryTreePublic>;
+};
+
+/**
+ * 更新商品分类请求（全部可选）
+ */
+export type ProductCategoryUpdate = {
+    name?: (string | null);
+    parent_id?: (string | null);
+    icon_id?: (string | null);
+    sort?: (number | null);
+    is_active?: (boolean | null);
+};
+
+/**
+ * 创建商品请求
+ */
+export type ProductCreate = {
+    name: string;
+    category_id?: (string | null);
+    source_type?: SourceType;
+    status?: ProductStatus;
+    is_closed?: boolean;
+    sort?: number;
+    type?: ProductType;
+    supplier?: (ProductSupplierCreate | null);
+    pricing: ProductPricingCreate;
+    inventory?: ProductInventoryCreate;
+    fulfillment?: ProductFulfillmentCreate;
+    buy_params?: Array<ProductBuyParamCreate>;
+};
+
+/**
+ * 商品履约配置创建请求
+ */
+export type ProductFulfillmentCreate = {
+    fulfillment_type?: RedeemType;
+    can_refund?: boolean;
+    after_sale_rules?: string;
+    description?: string;
+    unit?: string;
+    input_fields_overridden?: boolean;
+    params_template?: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+/**
+ * 商品履约配置公开响应
+ */
+export type ProductFulfillmentPublic = {
+    fulfillment_type: RedeemType;
+    can_refund: boolean;
+    after_sale_rules: string;
+    description: string;
+    unit: string;
+    input_fields_overridden: boolean;
+    params_template: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+/**
+ * 商品履约配置更新请求（全部可选）
+ */
+export type ProductFulfillmentUpdate = {
+    fulfillment_type?: (RedeemType | null);
+    can_refund?: (boolean | null);
+    after_sale_rules?: (string | null);
+    description?: (string | null);
+    unit?: (string | null);
+    input_fields_overridden?: (boolean | null);
+    params_template?: (Array<{
+    [key: string]: unknown;
+}> | null);
+};
+
+/**
+ * 商品库存配置创建请求
+ */
+export type ProductInventoryCreate = {
+    min_quantity?: number;
+    max_quantity?: number;
+    is_repeatable?: boolean;
+    is_batch?: boolean;
+    purchase_step?: (number | string);
+    /**
+     * -1 表示无限库存
+     */
+    stock?: number;
+};
+
+/**
+ * 商品库存配置公开响应
+ */
+export type ProductInventoryPublic = {
+    min_quantity: number;
+    max_quantity: number;
+    is_repeatable: boolean;
+    is_batch: boolean;
+    purchase_step: string;
+    stock: number;
+};
+
+/**
+ * 商品库存配置更新请求（全部可选）
+ */
+export type ProductInventoryUpdate = {
+    min_quantity?: (number | null);
+    max_quantity?: (number | null);
+    is_repeatable?: (boolean | null);
+    is_batch?: (boolean | null);
+    purchase_step?: (number | string | null);
+    stock?: (number | null);
+};
+
+/**
+ * 商品价格配置创建请求
+ */
+export type ProductPricingCreate = {
+    /**
+     * 关联价格模板的 UUID，与固定价格、商品系数互斥
+     */
+    price_template_id?: (string | null);
+    cost_price?: (number | string);
+    loss_price?: (number | string);
+    /**
+     * 设置后直接作为最终售价，与价格模板、商品独立系数互斥
+     */
+    fixed_price?: (number | string | null);
+    /**
+     * 替代模板加价率，与价格模板、固定价格互斥
+     */
+    item_coefficient?: (number | string | null);
+    /**
+     * 前端显示价格时保留的小数位数
+     */
+    price_display_precision?: number;
+};
+
+/**
+ * 商品价格配置公开响应
+ */
+export type ProductPricingPublic = {
+    price_template_id: (string | null);
+    cost_price: string;
+    loss_price: string;
+    fixed_price: (string | null);
+    item_coefficient: (string | null);
+    price_display_precision: number;
+    rule_type: RuleType;
+    config_mode: string;
+};
+
+/**
+ * 商品价格配置更新请求（全部可选）
+ */
+export type ProductPricingUpdate = {
+    /**
+     * 显式传 null 表示清除价格模板
+     */
+    price_template_id?: (string | null);
+    cost_price?: (number | string | null);
+    loss_price?: (number | string | null);
+    /**
+     * 显式传 null 表示清除固定价格
+     */
+    fixed_price?: (number | string | null);
+    /**
+     * 显式传 null 表示清除商品独立系数
+     */
+    item_coefficient?: (number | string | null);
+    price_display_precision?: (number | null);
+};
+
+/**
+ * 商品公开响应
+ */
+export type ProductPublic = {
+    id: string;
+    name: string;
+    category_id: (string | null);
+    category_name?: (string | null);
+    source_type: SourceType;
+    status: ProductStatus;
+    is_closed: boolean;
+    sort: number;
+    type: ProductType;
+    is_active: boolean;
+    created_at?: (string | null);
+    updated_at?: (string | null);
+    supplier?: (ProductSupplierPublic | null);
+    pricing?: (ProductPricingPublic | null);
+    inventory?: (ProductInventoryPublic | null);
+    fulfillment?: (ProductFulfillmentPublic | null);
+    buy_params?: Array<ProductBuyParamPublic>;
+};
+
+/**
+ * 商品列表响应
+ */
+export type ProductsPublic = {
+    data: Array<ProductPublic>;
+    count: number;
+};
+
+/**
+ * 商品状态
+ */
+export type ProductStatus = 1 | 2 | 3 | 5 | 6 | 7 | 8;
+
+/**
+ * 商品货源创建请求
+ */
+export type ProductSupplierCreate = {
+    /**
+     * 为空表示未关联供应商
+     */
+    supplier_id?: (string | null);
+    /**
+     * 供应商侧的商品 SKU 标识
+     */
+    sku_id?: (string | null);
+};
+
+/**
+ * 商品货源公开响应
+ */
+export type ProductSupplierPublic = {
+    supplier_id: (string | null);
+    supplier_name?: (string | null);
+    sku_id?: (string | null);
+};
+
+/**
+ * 商品货源更新请求（全部可选）
+ */
+export type ProductSupplierUpdate = {
+    supplier_id?: (string | null);
+    sku_id?: (string | null);
+};
+
+/**
+ * 商品类型
+ */
+export type ProductType = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+
+/**
+ * 更新商品请求（全部可选）
+ */
+export type ProductUpdate = {
+    name?: (string | null);
+    category_id?: (string | null);
+    source_type?: (SourceType | null);
+    status?: (ProductStatus | null);
+    is_closed?: (boolean | null);
+    sort?: (number | null);
+    type?: (ProductType | null);
+    is_active?: (boolean | null);
+    /**
+     * 传 null 表示清除货源记录
+     */
+    supplier?: (ProductSupplierUpdate | null);
+    /**
+     * 传 null 将被拒绝，商品必须保留价格配置
+     */
+    pricing?: (ProductPricingUpdate | null);
+    /**
+     * 传 null 将被拒绝，商品必须保留库存配置
+     */
+    inventory?: (ProductInventoryUpdate | null);
+    /**
+     * 传 null 将被拒绝，商品必须保留履约配置
+     */
+    fulfillment?: (ProductFulfillmentUpdate | null);
+    /**
+     * 传 null 表示清空下单参数，传列表表示整体替换
+     */
+    buy_params?: (Array<ProductBuyParamUpdate> | null);
+};
+
+/**
+ * 发货方式
+ */
+export type RedeemType = 1 | 2 | 3;
+
+/**
+ * 定价规则（由字段派生，不落库）
+ */
+export type RuleType = 1 | 2 | 3;
+
+/**
+ * 商品来源
+ */
+export type SourceType = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 /**
  * 创建供应商请求
@@ -675,6 +1107,70 @@ export type PrivateCreateUserPrivateData = {
 };
 
 export type PrivateCreateUserPrivateResponse = (UserPublic);
+
+export type ProductCategoriesReadProductCategoriesResponse = (ProductCategoriesPublic);
+
+export type ProductCategoriesCreateProductCategoryData = {
+    requestBody: ProductCategoryCreate;
+};
+
+export type ProductCategoriesCreateProductCategoryResponse = (ProductCategoryPublic);
+
+export type ProductCategoriesReadProductCategoryData = {
+    categoryId: string;
+};
+
+export type ProductCategoriesReadProductCategoryResponse = (ProductCategoryPublic);
+
+export type ProductCategoriesUpdateProductCategoryData = {
+    categoryId: string;
+    requestBody: ProductCategoryUpdate;
+};
+
+export type ProductCategoriesUpdateProductCategoryResponse = (ProductCategoryPublic);
+
+export type ProductCategoriesDeleteProductCategoryData = {
+    categoryId: string;
+};
+
+export type ProductCategoriesDeleteProductCategoryResponse = (Message);
+
+export type ProductsReadProductsData = {
+    categoryId?: (string | null);
+    isClosed?: (boolean | null);
+    limit?: number;
+    name?: (string | null);
+    skip?: number;
+    sourceType?: (SourceType | null);
+    status?: (ProductStatus | null);
+};
+
+export type ProductsReadProductsResponse = (ProductsPublic);
+
+export type ProductsCreateProductData = {
+    requestBody: ProductCreate;
+};
+
+export type ProductsCreateProductResponse = (ProductPublic);
+
+export type ProductsReadProductData = {
+    productId: string;
+};
+
+export type ProductsReadProductResponse = (ProductPublic);
+
+export type ProductsUpdateProductData = {
+    productId: string;
+    requestBody: ProductUpdate;
+};
+
+export type ProductsUpdateProductResponse = (ProductPublic);
+
+export type ProductsDeleteProductData = {
+    productId: string;
+};
+
+export type ProductsDeleteProductResponse = (Message);
 
 export type SuppliersReadSuppliersData = {
     limit?: number;
