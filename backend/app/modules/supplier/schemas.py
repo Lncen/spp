@@ -4,6 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
 
+from pydantic import field_validator
 from sqlmodel import Field, SQLModel
 
 
@@ -28,7 +29,14 @@ class SupplierBase(SQLModel):
 
 class SupplierCreate(SupplierBase):
     """创建供应商请求"""
-    pass
+
+    @field_validator("base_url")
+    @classmethod
+    def sanitize_base_url(cls, v: str) -> str:
+        """自动去除 base_url 末尾的斜杠"""
+        if isinstance(v, str):
+            return v.rstrip("/")
+        return v
 
 
 class SupplierUpdate(SQLModel):
@@ -58,14 +66,6 @@ class SuppliersPublic(SQLModel):
     """供应商列表响应"""
     data: list[SupplierPublic]
     count: int
-
-
-class SupplierBalancePublic(SQLModel):
-    """余额同步响应"""
-    id: uuid.UUID
-    name: str
-    balance: Decimal | None = None
-    message: str = "余额已同步"
 
 
 class PlatformOption(SQLModel):

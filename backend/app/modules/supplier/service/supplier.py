@@ -1,9 +1,13 @@
 """供应商模块：业务逻辑层"""
+
+from collections.abc import Iterator
+from contextlib import contextmanager
+
 from sqlmodel import Session
 
 from app.modules.supplier.models import Supplier
 from app.modules.supplier.schemas import SupplierCreate
-from app.modules.supplier.service.clients import get_client
+from app.modules.supplier.service.clients.base import ClientMeta, SupplierClientBase
 
 
 def create_supplier(*, session: Session, supplier_in: SupplierCreate) -> Supplier:
@@ -15,13 +19,15 @@ def create_supplier(*, session: Session, supplier_in: SupplierCreate) -> Supplie
     return db_supplier
 
 
-def sync_balance(*, session: Session, supplier: Supplier) -> Supplier:
-    """通过供应商 API 查询并更新余额"""
-    with get_client(supplier) as client:
-        balance = client.query_balance()
+@contextmanager
+def supplier_client(*, session: Session, supplier_id) -> Iterator[SupplierClientBase]:
+    """根据供应商ID获取客户端，作为上下文管理器使用，退出时自动关闭"""
+    sup = session.get(Supplier, supplier_id)
+    if not sup:
+        raise ValueError(f"供应商不存在 (ID: {supplier_id})")
 
-    supplier.balance = balance
-    session.add(supplier)
-    session.commit()
-    session.refresh(supplier)
-    return supplier
+    client = ClientMeta.get_client(sup)
+    try:
+        yield client
+    finally:
+        client.close()

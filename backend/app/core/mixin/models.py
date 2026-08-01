@@ -52,6 +52,15 @@ class ActiveMixin:
         description="标识该记录是否处于有效/激活状态，默认为 True"
     )
 
+    @property
+    def is_enabled(self) -> bool:
+        """判断当前记录是否处于激活状态（只读属性）"""
+        return self.is_active
+
+    def toggle_active(self) -> None:
+        """切换激活状态"""
+        self.is_active = not self.is_active
+
 
 class SoftDeleteMixin:
     """软删除混入，is_deleted 标记 + deleted_at 时间戳"""

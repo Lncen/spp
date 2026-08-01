@@ -1,8 +1,8 @@
 """init system
 
-Revision ID: 999500a25a7a
+Revision ID: 126ad2abbc6d
 Revises: 
-Create Date: 2026-07-28 12:03:09.671468
+Create Date: 2026-07-28 18:09:39.937607
 
 """
 from alembic import op
@@ -11,7 +11,7 @@ import sqlmodel.sql.sqltypes
 
 
 # revision identifiers, used by Alembic.
-revision = '999500a25a7a'
+revision = '126ad2abbc6d'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -50,6 +50,7 @@ def upgrade():
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('balance', sa.Numeric(precision=12, scale=2), nullable=True),
     sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('base_url'),
     sa.UniqueConstraint('name')
     )
     op.create_index(op.f('ix_supplier_is_active'), 'supplier', ['is_active'], unique=False)

@@ -1,4 +1,5 @@
-﻿"""供应商模块：路由层"""
+"""供应商模块：路由层"""
+# ruff: noqa: ARG001  # current_user 仅用于 FastAPI 权限依赖
 import uuid
 from typing import Annotated, Any
 
@@ -12,7 +13,6 @@ from app.modules.supplier.schemas import (
     PlatformEnum,
     PlatformOption,
     PlatformOptionsPublic,
-    SupplierBalancePublic,
     SupplierCreate,
     SupplierPublic,
     SuppliersPublic,
@@ -20,9 +20,7 @@ from app.modules.supplier.schemas import (
 )
 from app.modules.supplier.service import (
     create_supplier as create_supplier_service,
-    sync_balance as sync_balance_service,
 )
-from app.modules.supplier.service.clients.base import SupplierClientError
 from app.modules.user.models import User
 
 router = APIRouter(prefix="/suppliers", tags=["suppliers"])
@@ -153,28 +151,3 @@ def delete_supplier(
     session.delete(supplier)
     session.commit()
     return Message(message="供应商已删除")
-
-
-@router.post("/{id}/sync-balance", response_model=SupplierBalancePublic)
-def sync_supplier_balance(
-    session: SessionDep,
-    current_user: SuperuserDep,
-    id: uuid.UUID = ...,
-) -> Any:
-    """同步供应商余额（通过供应商 API 查询更新，超管权限）"""
-    supplier = session.get(Supplier, id)
-    if not supplier:
-        raise HTTPException(status_code=404, detail="供应商不存在")
-
-    try:
-        supplier = sync_balance_service(session=session, supplier=supplier)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except SupplierClientError as e:
-        raise HTTPException(status_code=502, detail=str(e))
-
-    return SupplierBalancePublic(
-        id=supplier.id,
-        name=supplier.name,
-        balance=supplier.balance,
-    )
