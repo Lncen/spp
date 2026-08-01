@@ -7,10 +7,21 @@
 
 from sqlmodel import SQLModel
 
-from app.modules.level.models import UserLevel
 from app.modules.image.models import Image, ImageCategory
 from app.modules.item.models import Item
-from app.modules.user.models import User
+from app.modules.level.models import UserLevel
+from app.modules.price_template.models import PriceTemplate, PriceTemplateRule
 from app.modules.supplier.models import Supplier
+from app.modules.user.models import User
 
-__all__ = ["SQLModel", "UserLevel", "Item", "User", "Image", "ImageCategory", "Supplier"]
+__all__ = [
+    "SQLModel",
+    "UserLevel",
+    "Item",
+    "User",
+    "Image",
+    "ImageCategory",
+    "Supplier",
+    "PriceTemplate",
+    "PriceTemplateRule",
+]

@@ -1,21 +1,23 @@
 import { EllipsisVertical } from "lucide-react"
 import { useState } from "react"
 
-import type { SupplierPublic } from "@/client"
+import type { PriceTemplatePublic } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import DeleteSupplier from "./DeleteSupplier"
-import EditSupplier from "./EditSupplier"
+import DeletePriceTemplate from "./DeletePriceTemplate"
+import EditPriceTemplate from "./EditPriceTemplate"
 
-interface SupplierActionsMenuProps {
-  supplier: SupplierPublic
+interface PriceTemplateActionsMenuProps {
+  template: PriceTemplatePublic
 }
 
-export const SuppliersActionsMenu = ({ supplier }: SupplierActionsMenuProps) => {
+export const PriceTemplateActionsMenu = ({
+  template,
+}: PriceTemplateActionsMenuProps) => {
   const [open, setOpen] = useState(false)
 
   return (
@@ -26,15 +28,16 @@ export const SuppliersActionsMenu = ({ supplier }: SupplierActionsMenuProps) => 
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <EditSupplier supplier={supplier} onSuccess={() => setOpen(false)} />
-        <DeleteSupplier
-          id={supplier.id}
-          name={supplier.name}
+        <EditPriceTemplate
+          template={template}
+          onSuccess={() => setOpen(false)}
+        />
+        <DeletePriceTemplate
+          id={template.id}
+          name={template.name}
           onSuccess={() => setOpen(false)}
         />
       </DropdownMenuContent>
     </DropdownMenu>
   )
 }
-
-export default SuppliersActionsMenu

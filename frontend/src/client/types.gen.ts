@@ -209,6 +209,78 @@ export type PlatformOptionsPublic = {
 };
 
 /**
+ * 创建价格模板请求；未传的等级自动按 15 折补齐
+ */
+export type PriceTemplateCreate = {
+    /**
+     * 价格模板名称，全局唯一
+     */
+    name: string;
+    description?: (string | null);
+    /**
+     * 1-10 等级折扣，未设置等级的折扣按 15 折（1.5000）
+     */
+    rules?: Array<PriceTemplateRuleIn>;
+};
+
+/**
+ * 价格模板公开响应
+ */
+export type PriceTemplatePublic = {
+    id: string;
+    name: string;
+    description: (string | null);
+    is_active: boolean;
+    created_at: (string | null);
+    updated_at: (string | null);
+    rules: Array<PriceTemplateRulePublic>;
+};
+
+/**
+ * 设置单个等级折扣请求
+ */
+export type PriceTemplateRuleIn = {
+    /**
+     * 用户等级编号 1-10
+     */
+    level: number;
+    /**
+     * 实际价格 = 商品基准价 × 折扣率；15 折为 1.5000
+     */
+    discount_rate?: (number | string);
+};
+
+/**
+ * 价格模板等级折扣响应
+ */
+export type PriceTemplateRulePublic = {
+    id: string;
+    level: number;
+    discount_rate: string;
+};
+
+/**
+ * 价格模板列表响应
+ */
+export type PriceTemplatesPublic = {
+    data: Array<PriceTemplatePublic>;
+    count: number;
+};
+
+/**
+ * 更新价格模板请求（全部可选）；rules 只覆盖传入等级，其余等级保留
+ */
+export type PriceTemplateUpdate = {
+    name?: (string | null);
+    description?: (string | null);
+    is_active?: (boolean | null);
+    /**
+     * 传入的等级折扣将被覆盖，未传入等级保留原折扣
+     */
+    rules?: (Array<PriceTemplateRuleIn> | null);
+};
+
+/**
  * 内部创建用户请求（仅管理员接口使用）
  */
 export type PrivateUserCreate = {
@@ -216,16 +288,6 @@ export type PrivateUserCreate = {
     password: string;
     full_name: string;
     is_verified?: boolean;
-};
-
-/**
- * 余额同步响应
- */
-export type SupplierBalancePublic = {
-    id: string;
-    name: string;
-    balance?: (string | null);
-    message?: string;
 };
 
 /**
@@ -576,6 +638,38 @@ export type LoginRecoverPasswordHtmlContentData = {
 
 export type LoginRecoverPasswordHtmlContentResponse = (string);
 
+export type PriceTemplatesReadPriceTemplatesData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type PriceTemplatesReadPriceTemplatesResponse = (PriceTemplatesPublic);
+
+export type PriceTemplatesCreatePriceTemplateData = {
+    requestBody: PriceTemplateCreate;
+};
+
+export type PriceTemplatesCreatePriceTemplateResponse = (PriceTemplatePublic);
+
+export type PriceTemplatesReadPriceTemplateData = {
+    templateId: string;
+};
+
+export type PriceTemplatesReadPriceTemplateResponse = (PriceTemplatePublic);
+
+export type PriceTemplatesUpdatePriceTemplateData = {
+    requestBody: PriceTemplateUpdate;
+    templateId: string;
+};
+
+export type PriceTemplatesUpdatePriceTemplateResponse = (PriceTemplatePublic);
+
+export type PriceTemplatesDeletePriceTemplateData = {
+    templateId: string;
+};
+
+export type PriceTemplatesDeletePriceTemplateResponse = (Message);
+
 export type PrivateCreateUserPrivateData = {
     requestBody: PrivateUserCreate;
 };
@@ -615,12 +709,6 @@ export type SuppliersDeleteSupplierData = {
 };
 
 export type SuppliersDeleteSupplierResponse = (Message);
-
-export type SuppliersSyncSupplierBalanceData = {
-    id: string;
-};
-
-export type SuppliersSyncSupplierBalanceResponse = (SupplierBalancePublic);
 
 export type UsersReadUsersData = {
     limit?: number;

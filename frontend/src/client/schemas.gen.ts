@@ -719,6 +719,240 @@ export const PlatformOptionsPublicSchema = {
     description: '平台选项列表响应'
 } as const;
 
+export const PriceTemplateCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: '模板名称',
+            description: '价格模板名称，全局唯一'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '模板描述'
+        },
+        rules: {
+            items: {
+                '$ref': '#/components/schemas/PriceTemplateRuleIn'
+            },
+            type: 'array',
+            title: '等级折扣列表',
+            description: '1-10 等级折扣，未设置等级的折扣按 15 折（1.5000）'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'PriceTemplateCreate',
+    description: '创建价格模板请求；未传的等级自动按 15 折补齐'
+} as const;
+
+export const PriceTemplatePublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At'
+        },
+        rules: {
+            items: {
+                '$ref': '#/components/schemas/PriceTemplateRulePublic'
+            },
+            type: 'array',
+            title: 'Rules'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'description', 'is_active', 'created_at', 'updated_at', 'rules'],
+    title: 'PriceTemplatePublic',
+    description: '价格模板公开响应'
+} as const;
+
+export const PriceTemplateRuleInSchema = {
+    properties: {
+        level: {
+            type: 'integer',
+            maximum: 10,
+            minimum: 1,
+            title: '用户等级',
+            description: '用户等级编号 1-10'
+        },
+        discount_rate: {
+            anyOf: [
+                {
+                    type: 'number',
+                    maximum: 10,
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,1}|(?=[\\d.]{1,6}0*$)\\d{0,1}\\.\\d{0,4}0*$)'
+                }
+            ],
+            title: '折扣率',
+            description: '实际价格 = 商品基准价 × 折扣率；15 折为 1.5000',
+            default: '1.5000'
+        }
+    },
+    type: 'object',
+    required: ['level'],
+    title: 'PriceTemplateRuleIn',
+    description: '设置单个等级折扣请求'
+} as const;
+
+export const PriceTemplateRulePublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        level: {
+            type: 'integer',
+            title: 'Level'
+        },
+        discount_rate: {
+            type: 'string',
+            pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+            title: 'Discount Rate'
+        }
+    },
+    type: 'object',
+    required: ['id', 'level', 'discount_rate'],
+    title: 'PriceTemplateRulePublic',
+    description: '价格模板等级折扣响应'
+} as const;
+
+export const PriceTemplateUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '模板名称'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '模板描述'
+        },
+        is_active: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '是否启用'
+        },
+        rules: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/PriceTemplateRuleIn'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '等级折扣列表',
+            description: '传入的等级折扣将被覆盖，未传入等级保留原折扣'
+        }
+    },
+    type: 'object',
+    title: 'PriceTemplateUpdate',
+    description: '更新价格模板请求（全部可选）；rules 只覆盖传入等级，其余等级保留'
+} as const;
+
+export const PriceTemplatesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/PriceTemplatePublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'PriceTemplatesPublic',
+    description: '价格模板列表响应'
+} as const;
+
 export const PrivateUserCreateSchema = {
     properties: {
         email: {
@@ -743,41 +977,6 @@ export const PrivateUserCreateSchema = {
     required: ['email', 'password', 'full_name'],
     title: 'PrivateUserCreate',
     description: '内部创建用户请求（仅管理员接口使用）'
-} as const;
-
-export const SupplierBalancePublicSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Id'
-        },
-        name: {
-            type: 'string',
-            title: 'Name'
-        },
-        balance: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Balance'
-        },
-        message: {
-            type: 'string',
-            title: 'Message',
-            default: '余额已同步'
-        }
-    },
-    type: 'object',
-    required: ['id', 'name'],
-    title: 'SupplierBalancePublic',
-    description: '余额同步响应'
 } as const;
 
 export const SupplierCreateSchema = {

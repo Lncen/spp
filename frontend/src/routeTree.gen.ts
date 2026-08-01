@@ -17,6 +17,8 @@ import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutSuppliersRouteImport } from './routes/_layout/suppliers'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutPriceTemplatesRouteImport } from './routes/_layout/price-templates'
+import { Route as LayoutLevelsRouteImport } from './routes/_layout/levels'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutImagesRouteImport } from './routes/_layout/images'
 import { Route as LayoutCategoriesRouteImport } from './routes/_layout/categories'
@@ -61,6 +63,16 @@ const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutPriceTemplatesRoute = LayoutPriceTemplatesRouteImport.update({
+  id: '/price-templates',
+  path: '/price-templates',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutLevelsRoute = LayoutLevelsRouteImport.update({
+  id: '/levels',
+  path: '/levels',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutItemsRoute = LayoutItemsRouteImport.update({
   id: '/items',
   path: '/items',
@@ -92,6 +104,8 @@ export interface FileRoutesByFullPath {
   '/categories': typeof LayoutCategoriesRoute
   '/images': typeof LayoutImagesRoute
   '/items': typeof LayoutItemsRoute
+  '/levels': typeof LayoutLevelsRoute
+  '/price-templates': typeof LayoutPriceTemplatesRoute
   '/settings': typeof LayoutSettingsRoute
   '/suppliers': typeof LayoutSuppliersRoute
 }
@@ -104,6 +118,8 @@ export interface FileRoutesByTo {
   '/categories': typeof LayoutCategoriesRoute
   '/images': typeof LayoutImagesRoute
   '/items': typeof LayoutItemsRoute
+  '/levels': typeof LayoutLevelsRoute
+  '/price-templates': typeof LayoutPriceTemplatesRoute
   '/settings': typeof LayoutSettingsRoute
   '/suppliers': typeof LayoutSuppliersRoute
   '/': typeof LayoutIndexRoute
@@ -119,6 +135,8 @@ export interface FileRoutesById {
   '/_layout/categories': typeof LayoutCategoriesRoute
   '/_layout/images': typeof LayoutImagesRoute
   '/_layout/items': typeof LayoutItemsRoute
+  '/_layout/levels': typeof LayoutLevelsRoute
+  '/_layout/price-templates': typeof LayoutPriceTemplatesRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/suppliers': typeof LayoutSuppliersRoute
   '/_layout/': typeof LayoutIndexRoute
@@ -135,6 +153,8 @@ export interface FileRouteTypes {
     | '/categories'
     | '/images'
     | '/items'
+    | '/levels'
+    | '/price-templates'
     | '/settings'
     | '/suppliers'
   fileRoutesByTo: FileRoutesByTo
@@ -147,6 +167,8 @@ export interface FileRouteTypes {
     | '/categories'
     | '/images'
     | '/items'
+    | '/levels'
+    | '/price-templates'
     | '/settings'
     | '/suppliers'
     | '/'
@@ -161,6 +183,8 @@ export interface FileRouteTypes {
     | '/_layout/categories'
     | '/_layout/images'
     | '/_layout/items'
+    | '/_layout/levels'
+    | '/_layout/price-templates'
     | '/_layout/settings'
     | '/_layout/suppliers'
     | '/_layout/'
@@ -232,6 +256,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/price-templates': {
+      id: '/_layout/price-templates'
+      path: '/price-templates'
+      fullPath: '/price-templates'
+      preLoaderRoute: typeof LayoutPriceTemplatesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/levels': {
+      id: '/_layout/levels'
+      path: '/levels'
+      fullPath: '/levels'
+      preLoaderRoute: typeof LayoutLevelsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/items': {
       id: '/_layout/items'
       path: '/items'
@@ -268,6 +306,8 @@ interface LayoutRouteChildren {
   LayoutCategoriesRoute: typeof LayoutCategoriesRoute
   LayoutImagesRoute: typeof LayoutImagesRoute
   LayoutItemsRoute: typeof LayoutItemsRoute
+  LayoutLevelsRoute: typeof LayoutLevelsRoute
+  LayoutPriceTemplatesRoute: typeof LayoutPriceTemplatesRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutSuppliersRoute: typeof LayoutSuppliersRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
@@ -278,6 +318,8 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutCategoriesRoute: LayoutCategoriesRoute,
   LayoutImagesRoute: LayoutImagesRoute,
   LayoutItemsRoute: LayoutItemsRoute,
+  LayoutLevelsRoute: LayoutLevelsRoute,
+  LayoutPriceTemplatesRoute: LayoutPriceTemplatesRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutSuppliersRoute: LayoutSuppliersRoute,
   LayoutIndexRoute: LayoutIndexRoute,

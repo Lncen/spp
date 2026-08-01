@@ -79,8 +79,8 @@ export const columns: ColumnDef<SupplierPublic>[] = [
     cell: ({ row }) => {
       const balance = row.original.balance
       return (
-        <span className={cn("font-mono text-sm", balance === null && "text-muted-foreground")}>
-          {balance !== null ? balance.toString() : "—"}
+        <span className={cn("font-mono text-sm", balance == null && "text-muted-foreground")}>
+          {balance != null ? balance.toString() : "—"}
         </span>
       )
     },

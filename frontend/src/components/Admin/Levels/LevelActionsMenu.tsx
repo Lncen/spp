@@ -1,21 +1,20 @@
 import { EllipsisVertical } from "lucide-react"
 import { useState } from "react"
 
-import type { SupplierPublic } from "@/client"
+import type { LevelPublic } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import DeleteSupplier from "./DeleteSupplier"
-import EditSupplier from "./EditSupplier"
+import EditLevel from "./EditLevel"
 
-interface SupplierActionsMenuProps {
-  supplier: SupplierPublic
+interface LevelActionsMenuProps {
+  level: LevelPublic
 }
 
-export const SuppliersActionsMenu = ({ supplier }: SupplierActionsMenuProps) => {
+export const LevelActionsMenu = ({ level }: LevelActionsMenuProps) => {
   const [open, setOpen] = useState(false)
 
   return (
@@ -26,15 +25,8 @@ export const SuppliersActionsMenu = ({ supplier }: SupplierActionsMenuProps) => 
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <EditSupplier supplier={supplier} onSuccess={() => setOpen(false)} />
-        <DeleteSupplier
-          id={supplier.id}
-          name={supplier.name}
-          onSuccess={() => setOpen(false)}
-        />
+        <EditLevel level={level} onSuccess={() => setOpen(false)} />
       </DropdownMenuContent>
     </DropdownMenu>
   )
 }
-
-export default SuppliersActionsMenu
