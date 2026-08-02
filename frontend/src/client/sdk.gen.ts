@@ -747,6 +747,7 @@ export class ProductsService {
      * @param data.categoryId
      * @param data.status
      * @param data.sourceType
+     * @param data.productType
      * @param data.isClosed
      * @param data.name
      * @returns ProductsPublic Successful Response
@@ -762,6 +763,7 @@ export class ProductsService {
                 category_id: data.categoryId,
                 status: data.status,
                 source_type: data.sourceType,
+                product_type: data.productType,
                 is_closed: data.isClosed,
                 name: data.name
             },

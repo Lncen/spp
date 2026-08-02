@@ -62,6 +62,8 @@ def create_product(
     is_closed: bool = False,
     price_mode: str = "template",
 ) -> dict:
+    if category_id is None:
+        category_id = create_category(client, superuser_token_headers)["id"]
     if price_mode == "template":
         pricing = {
             "price_template_id": price_template_id,
@@ -377,6 +379,9 @@ def test_create_product_rejects_multiple_price_rules(
             headers=superuser_token_headers,
             json={
                 "name": random_lower_string(),
+                "category_id": create_category(
+                    client, superuser_token_headers
+                )["id"],
                 "pricing": pricing,
             },
         )
@@ -569,11 +574,13 @@ def test_update_product_supplier_clear(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
     template = create_price_template(client, superuser_token_headers)
+    category = create_category(client, superuser_token_headers)
     response = client.post(
         f"{settings.API_V1_STR}/products/",
         headers=superuser_token_headers,
         json={
             "name": random_lower_string(),
+            "category_id": category["id"],
             "pricing": {"price_template_id": template["id"]},
             "supplier": {"supplier_id": None, "sku_id": "SKU-001"},
         },
@@ -658,11 +665,13 @@ def test_create_product_rejects_invalid_inventory_bounds(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
     template = create_price_template(client, superuser_token_headers)
+    category = create_category(client, superuser_token_headers)
     response = client.post(
         f"{settings.API_V1_STR}/products/",
         headers=superuser_token_headers,
         json={
             "name": random_lower_string(),
+            "category_id": category["id"],
             "pricing": {"price_template_id": template["id"]},
             "inventory": {"min_quantity": 5, "max_quantity": 1},
         },
@@ -670,14 +679,51 @@ def test_create_product_rejects_invalid_inventory_bounds(
     assert response.status_code == 422
 
 
-def test_create_product_rejects_missing_price_template(
+def test_create_product_requires_category(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
+    template = create_price_template(client, superuser_token_headers)
     response = client.post(
         f"{settings.API_V1_STR}/products/",
         headers=superuser_token_headers,
         json={
             "name": random_lower_string(),
+            "pricing": {"price_template_id": template["id"]},
+        },
+    )
+    assert response.status_code == 422
+    assert "category_id" in response.json()["detail"][0]["loc"]
+
+
+def test_create_product_rejects_decimal_purchase_step(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    template = create_price_template(client, superuser_token_headers)
+    category = create_category(client, superuser_token_headers)
+    response = client.post(
+        f"{settings.API_V1_STR}/products/",
+        headers=superuser_token_headers,
+        json={
+            "name": random_lower_string(),
+            "category_id": category["id"],
+            "pricing": {"price_template_id": template["id"]},
+            "inventory": {"purchase_step": 1.5},
+        },
+    )
+    assert response.status_code == 422
+    assert "purchase_step" in response.json()["detail"][0]["loc"]
+
+
+def test_create_product_rejects_missing_price_template(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    category = create_category(client, superuser_token_headers)
+    response = client.post(
+        f"{settings.API_V1_STR}/products/",
+        headers=superuser_token_headers,
+        json={
+            "name": random_lower_string(),
+            "category_id": category["id"],
             "pricing": {"price_template_id": str(uuid.uuid4())},
         },
     )
@@ -706,11 +752,13 @@ def test_create_product_rejects_duplicate_buy_param_keys(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
     template = create_price_template(client, superuser_token_headers)
+    category = create_category(client, superuser_token_headers)
     response = client.post(
         f"{settings.API_V1_STR}/products/",
         headers=superuser_token_headers,
         json={
             "name": random_lower_string(),
+            "category_id": category["id"],
             "pricing": {"price_template_id": template["id"]},
             "buy_params": [
                 {"key": "account", "label": "账号"},

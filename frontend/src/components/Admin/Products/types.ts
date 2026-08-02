@@ -31,6 +31,7 @@ export type BuyParamFormValues = {
 export type ProductFormValues = {
   name: string
   categoryId: string
+  imageId: string
   sourceType: number
   status: number
   type: number
@@ -56,7 +57,6 @@ export type ProductFormValues = {
   afterSaleRules: string
   fulfillmentDescription: string
   unit: string
-  inputFieldsOverridden: boolean
   paramsTemplate: Record<string, unknown>[]
   buyParams: BuyParamFormValues[]
 }
@@ -80,6 +80,7 @@ export const emptyBuyParam = (): BuyParamFormValues => ({
 export const emptyProductFormValues = (): ProductFormValues => ({
   name: "",
   categoryId: "",
+  imageId: "",
   sourceType: 2,
   status: 1,
   type: 1,
@@ -93,7 +94,7 @@ export const emptyProductFormValues = (): ProductFormValues => ({
   lossPrice: "0.00",
   fixedPrice: "",
   itemCoefficient: "",
-  priceDisplayPrecision: 2,
+  priceDisplayPrecision: 6,
   minQuantity: 1,
   maxQuantity: 1_000_000,
   isRepeatable: false,
@@ -105,7 +106,6 @@ export const emptyProductFormValues = (): ProductFormValues => ({
   afterSaleRules: "",
   fulfillmentDescription: "",
   unit: "1",
-  inputFieldsOverridden: false,
   paramsTemplate: [],
   buyParams: [],
 })
@@ -146,7 +146,8 @@ export const productFormSchema = z
       .string()
       .min(1, "请输入商品名称")
       .max(255, "商品名称不能超过 255 个字符"),
-    categoryId: z.string().optional(),
+    categoryId: z.string().min(1, "请选择商品分类"),
+    imageId: z.string().optional(),
     sourceType: z.coerce.number().int().min(1).max(8),
     status: z.coerce.number().int().min(1).max(8),
     type: z.coerce.number().int().min(1).max(8),
@@ -172,7 +173,6 @@ export const productFormSchema = z
     afterSaleRules: z.string().optional(),
     fulfillmentDescription: z.string().optional(),
     unit: z.string().max(32, "数量单位不能超过 32 个字符").optional(),
-    inputFieldsOverridden: z.boolean(),
     paramsTemplate: z.array(z.record(z.string(), z.unknown())).optional(),
     buyParams: z.array(buyParamSchema),
   })
@@ -225,11 +225,14 @@ export const productFormSchema = z
       })
     }
     const purchaseStep = parseDecimal(values.purchaseStep)
-    if (purchaseStep !== undefined && purchaseStep <= 0) {
+    if (
+      purchaseStep !== undefined &&
+      (!Number.isInteger(purchaseStep) || purchaseStep <= 0)
+    ) {
       ctx.addIssue({
         code: "custom",
         path: ["purchaseStep"],
-        message: "购买步长必须大于 0",
+        message: "购买步长必须是大于 0 的整数",
       })
     }
     if (values.minQuantity > values.maxQuantity) {
@@ -273,7 +276,6 @@ function buildFulfillment(values: ProductFormValues): ProductFulfillmentCreate {
     after_sale_rules: values.afterSaleRules || "",
     description: values.fulfillmentDescription || "",
     unit: values.unit || "1",
-    input_fields_overridden: values.inputFieldsOverridden,
     params_template: values.paramsTemplate,
   }
 }
@@ -299,7 +301,8 @@ function buildBuyParam(param: BuyParamFormValues): ProductBuyParamCreate {
 export function productFormToCreate(values: ProductFormValues): ProductCreate {
   return {
     name: values.name.trim(),
-    category_id: values.categoryId || null,
+    category_id: values.categoryId,
+    image_id: values.imageId || null,
     source_type: values.sourceType as ProductCreate["source_type"],
     status: values.status as ProductCreate["status"],
     is_closed: values.isClosed,
@@ -318,7 +321,8 @@ export function productFormToCreate(values: ProductFormValues): ProductCreate {
 export function productFormToUpdate(values: ProductFormValues): ProductUpdate {
   return {
     name: values.name.trim(),
-    category_id: values.categoryId || null,
+    category_id: values.categoryId,
+    image_id: values.imageId || null,
     source_type: values.sourceType as ProductUpdate["source_type"],
     status: values.status as ProductUpdate["status"],
     is_closed: values.isClosed,
@@ -348,6 +352,7 @@ export function productToFormValues(product: ProductPublic): ProductFormValues {
   return {
     name: product.name,
     categoryId: product.category_id ?? "",
+    imageId: product.image_id ?? "",
     sourceType: product.source_type,
     status: product.status,
     type: product.type,
@@ -361,7 +366,7 @@ export function productToFormValues(product: ProductPublic): ProductFormValues {
     lossPrice: pricing?.loss_price ?? "",
     fixedPrice: pricing?.fixed_price ?? "",
     itemCoefficient: pricing?.item_coefficient ?? "",
-    priceDisplayPrecision: pricing?.price_display_precision ?? 2,
+    priceDisplayPrecision: pricing?.price_display_precision ?? 6,
     minQuantity: inventory?.min_quantity ?? 1,
     maxQuantity: inventory?.max_quantity ?? 1_000_000,
     isRepeatable: inventory?.is_repeatable ?? false,
@@ -373,7 +378,6 @@ export function productToFormValues(product: ProductPublic): ProductFormValues {
     afterSaleRules: fulfillment?.after_sale_rules ?? "",
     fulfillmentDescription: fulfillment?.description ?? "",
     unit: fulfillment?.unit ?? "1",
-    inputFieldsOverridden: fulfillment?.input_fields_overridden ?? false,
     paramsTemplate: fulfillment?.params_template ?? [],
     buyParams: (product.buy_params ?? []).map((param) => ({
       key: param.key,

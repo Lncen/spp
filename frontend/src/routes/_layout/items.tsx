@@ -5,9 +5,9 @@ import { Suspense } from "react"
 
 import { ItemsService } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
-import AddItem from "@/components/Items/AddItem"
-import { columns } from "@/components/Items/columns"
-import PendingItems from "@/components/Pending/PendingItems"
+import AddItem from "@/components/Admin/Items/AddItem"
+import { columns } from "@/components/Admin/Items/columns"
+import PendingItems from "@/components/Admin/Pending/PendingItems"
 
 function getItemsQueryOptions() {
   return {

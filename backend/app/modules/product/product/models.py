@@ -40,6 +40,15 @@ class Product(BaseModelMixin, SQLModel, table=True):
         title="本地分类 ID",
         description="本地分类的 UUID，删除分类后置空",
     )
+    image_id: uuid.UUID | None = Field(
+        default=None,
+        foreign_key="image.id",
+        nullable=True,
+        ondelete="SET NULL",
+        index=True,
+        title="商品主图 ID",
+        description="商品主图对应的图片资源 UUID，删除图片后置空",
+    )
     source_type: SourceType = Field(
         default=SourceType.LOCAL,
         sa_type=Integer,

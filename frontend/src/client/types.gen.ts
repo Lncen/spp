@@ -446,6 +446,7 @@ export type ProductCategoryUpdate = {
 export type ProductCreate = {
     name: string;
     category_id?: (string | null);
+    image_id?: (string | null);
     source_type?: SourceType;
     status?: ProductStatus;
     is_closed?: boolean;
@@ -609,6 +610,8 @@ export type ProductPublic = {
     name: string;
     category_id: (string | null);
     category_name?: (string | null);
+    image_id?: (string | null);
+    image_url?: (string | null);
     source_type: SourceType;
     status: ProductStatus;
     is_closed: boolean;
@@ -679,6 +682,10 @@ export type ProductType = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 export type ProductUpdate = {
     name?: (string | null);
     category_id?: (string | null);
+    /**
+     * 显式传 null 表示清除商品主图
+     */
+    image_id?: (string | null);
     source_type?: (SourceType | null);
     status?: (ProductStatus | null);
     is_closed?: (boolean | null);
@@ -1140,6 +1147,7 @@ export type ProductsReadProductsData = {
     isClosed?: (boolean | null);
     limit?: number;
     name?: (string | null);
+    productType?: (ProductType | null);
     skip?: number;
     sourceType?: (SourceType | null);
     status?: (ProductStatus | null);

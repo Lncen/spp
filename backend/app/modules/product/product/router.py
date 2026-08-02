@@ -8,8 +8,14 @@ from sqlmodel import select
 
 from app.api.deps import SessionDep, get_current_active_superuser
 from app.common.models import Message
+from app.core.config import settings
+from app.modules.image.models import Image
 from app.modules.product.category.models import ProductCategory
-from app.modules.product.constants import ProductStatus, SourceType
+from app.modules.product.constants import (
+    ProductStatus,
+    ProductType,
+    SourceType,
+)
 from app.modules.product.product.models import (
     Product,
     ProductBuyParam,
@@ -55,11 +61,20 @@ from app.modules.supplier.models import Supplier
 product_router = APIRouter(prefix="/products", tags=["products"])
 
 
+def _build_image_url(image: Image) -> str:
+    """构建图片访问 URL"""
+    if settings.STATIC_URL_BASE:
+        base = settings.STATIC_URL_BASE.rstrip("/")
+        return f"{base}/uploads/{image.file_path}"
+    return f"/uploads/{image.file_path}"
+
+
 def _product_to_public(
     product: Product,
     *,
     category_names: dict[uuid.UUID, str],
     supplier_names: dict[uuid.UUID, str],
+    image_url: str | None,
     supplier: ProductSupplier | None,
     pricing: ProductPricing | None,
     inventory: ProductInventory | None,
@@ -124,6 +139,8 @@ def _product_to_public(
             if product.category_id is not None
             else None
         ),
+        image_id=product.image_id,
+        image_url=image_url,
         source_type=product.source_type,
         status=product.status,
         is_closed=product.is_closed,
@@ -173,6 +190,12 @@ def _products_to_public(
         ).all()
         category_names = {category.id: category.name for category in categories}
 
+    image_ids = {product.image_id for product in products if product.image_id}
+    images: dict[uuid.UUID, Image] = {}
+    if image_ids:
+        rows = session.exec(select(Image).where(Image.id.in_(image_ids))).all()
+        images = {image.id: image for image in rows}
+
     supplier_ids = {
         supplier.supplier_id
         for supplier in supplier_map.values()
@@ -190,6 +213,11 @@ def _products_to_public(
             product,
             category_names=category_names,
             supplier_names=supplier_names,
+            image_url=(
+                _build_image_url(images[product.image_id])
+                if product.image_id in images
+                else None
+            ),
             supplier=supplier_map.get(product.id),
             pricing=pricing_map.get(product.id),
             inventory=inventory_map.get(product.id),
@@ -212,6 +240,7 @@ def read_products(
     category_id: uuid.UUID | None = None,
     status: ProductStatus | None = None,
     source_type: SourceType | None = None,
+    product_type: ProductType | None = None,
     is_closed: bool | None = None,
     name: str | None = None,
 ) -> Any:
@@ -223,6 +252,7 @@ def read_products(
         category_id=category_id,
         status=status,
         source_type=source_type,
+        product_type=product_type,
         is_closed=is_closed,
         name=name,
     )
@@ -231,6 +261,7 @@ def read_products(
         category_id=category_id,
         status=status,
         source_type=source_type,
+        product_type=product_type,
         is_closed=is_closed,
         name=name,
     )

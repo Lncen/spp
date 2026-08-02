@@ -1648,6 +1648,18 @@ export const ProductCreateSchema = {
             ],
             title: '本地分类 ID'
         },
+        image_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '商品主图 ID'
+        },
         source_type: {
             '$ref': '#/components/schemas/SourceType',
             title: '商品来源',
@@ -2347,6 +2359,29 @@ export const ProductPublicSchema = {
             ],
             title: 'Category Name'
         },
+        image_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Id'
+        },
+        image_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Url'
+        },
         source_type: {
             '$ref': '#/components/schemas/SourceType'
         },
@@ -2595,6 +2630,19 @@ export const ProductUpdateSchema = {
                 }
             ],
             title: '本地分类 ID'
+        },
+        image_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '商品主图 ID',
+            description: '显式传 null 表示清除商品主图'
         },
         source_type: {
             anyOf: [

@@ -3,7 +3,7 @@ import { Suspense } from "react"
 
 import { LevelsService } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
-import PendingLevels from "@/components/Pending/PendingLevels"
+import PendingLevels from "@/components/Admin/Pending/PendingLevels"
 import { levelColumns } from "./LevelColumns"
 
 function getLevelsQueryOptions() {

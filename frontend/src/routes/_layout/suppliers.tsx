@@ -7,7 +7,7 @@ import { UsersService } from "@/client"
 import AddSupplier from "@/components/Admin/Suppliers/AddSupplier"
 import { columns } from "@/components/Admin/Suppliers/columns"
 import { DataTable } from "@/components/Common/DataTable"
-import Pending from "@/components/Pending/PendingItems"
+import Pending from "@/components/Admin/Pending/PendingItems"
 
 function getSuppliersQueryOptions() {
   return {

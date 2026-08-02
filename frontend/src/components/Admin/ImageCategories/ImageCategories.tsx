@@ -3,7 +3,7 @@ import { Suspense } from "react"
 
 import { ImageCategoriesService } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
-import PendingCategories from "@/components/Pending/PendingCategories"
+import PendingCategories from "@/components/Admin/Pending/PendingCategories"
 import { categoryColumns } from "./CategoryColumns"
 import AddCategory from "./AddCategory"
 

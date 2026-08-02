@@ -5,7 +5,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, Self
 
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from sqlmodel import Field, SQLModel
 
 from app.modules.product.constants import (
@@ -83,7 +83,7 @@ class ProductPricingCreate(SQLModel):
         description="替代模板加价率，与价格模板、固定价格互斥",
     )
     price_display_precision: int = Field(
-        default=8,
+        default=6,
         ge=0,
         le=32767,
         title="价格展示精度",
@@ -174,6 +174,13 @@ class ProductInventoryCreate(SQLModel):
         description="-1 表示无限库存",
     )
 
+    @field_validator("purchase_step")
+    @classmethod
+    def validate_purchase_step_integer(cls, value: Decimal) -> Decimal:
+        if value != value.to_integral_value():
+            raise ValueError("购买步长必须是整数")
+        return value
+
     @model_validator(mode="after")
     def validate_quantity_bounds(self) -> Self:
         if self.min_quantity > self.max_quantity:
@@ -196,6 +203,13 @@ class ProductInventoryUpdate(SQLModel):
         title="购买步长",
     )
     stock: int | None = Field(default=None, ge=-1, title="库存数量")
+
+    @field_validator("purchase_step")
+    @classmethod
+    def validate_purchase_step_integer(cls, value: Decimal | None) -> Decimal | None:
+        if value is not None and value != value.to_integral_value():
+            raise ValueError("购买步长必须是整数")
+        return value
 
     @model_validator(mode="after")
     def validate_quantity_bounds(self) -> Self:
@@ -299,7 +313,8 @@ class ProductCreate(SQLModel):
     """创建商品请求"""
 
     name: str = Field(min_length=1, max_length=255, title="商品名称")
-    category_id: uuid.UUID | None = Field(default=None, title="本地分类 ID")
+    category_id: uuid.UUID = Field(title="本地分类 ID")
+    image_id: uuid.UUID | None = Field(default=None, title="商品主图 ID")
     source_type: SourceType = Field(
         default=SourceType.LOCAL,
         title="商品来源",
@@ -335,6 +350,11 @@ class ProductUpdate(SQLModel):
 
     name: str | None = Field(default=None, min_length=1, max_length=255, title="商品名称")
     category_id: uuid.UUID | None = Field(default=None, title="本地分类 ID")
+    image_id: uuid.UUID | None = Field(
+        default=None,
+        title="商品主图 ID",
+        description="显式传 null 表示清除商品主图",
+    )
     source_type: SourceType | None = Field(default=None, title="商品来源")
     status: ProductStatus | None = Field(default=None, title="商品状态")
     is_closed: bool | None = Field(default=None, title="是否关闭下单")
@@ -438,6 +458,8 @@ class ProductPublic(SQLModel):
     name: str
     category_id: uuid.UUID | None
     category_name: str | None = None
+    image_id: uuid.UUID | None = None
+    image_url: str | None = None
     source_type: SourceType
     status: ProductStatus
     is_closed: bool

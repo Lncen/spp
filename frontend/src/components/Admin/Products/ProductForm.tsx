@@ -1,11 +1,18 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Plus, Trash2 } from "lucide-react"
+import {
+  CalendarDays,
+  Clock,
+  Image as ImageIcon,
+  Plus,
+  Trash2,
+} from "lucide-react"
 import { useEffect } from "react"
 import { useFieldArray, useForm } from "react-hook-form"
 
 import type { ProductPublic } from "@/client"
 import {
+  ImagesService,
   PriceTemplatesService,
   ProductCategoriesService,
   ProductsService,
@@ -84,6 +91,32 @@ function emptyOnNone(value: string) {
   return value === "none" ? "" : value
 }
 
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return "—"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "—"
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: "Asia/Shanghai",
+  }).format(date)
+}
+
+function SectionHeading({ step, title }: { step: string; title: string }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-primary">
+        {step}
+      </span>
+      <h3 className="text-sm font-semibold">{title}</h3>
+    </div>
+  )
+}
+
 const ProductFormDialog = ({
   product,
   isOpen,
@@ -105,6 +138,10 @@ const ProductFormDialog = ({
   const { data: suppliers } = useQuery({
     queryKey: ["suppliers"],
     queryFn: () => SuppliersService.readSuppliers({ skip: 0, limit: 100 }),
+  })
+  const { data: images } = useQuery({
+    queryKey: ["images"],
+    queryFn: () => ImagesService.readImages({ skip: 0, limit: 200 }),
   })
 
   const form = useForm<ProductFormValues>({
@@ -155,6 +192,8 @@ const ProductFormDialog = ({
   }
 
   const priceRule = form.watch("priceRule")
+  const imageId = form.watch("imageId")
+  const selectedImage = images?.data.find((image) => image.id === imageId)
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -166,12 +205,24 @@ const ProductFormDialog = ({
               ? `修改「${product.name}」的商品信息。`
               : "创建商品并配置定价、库存、履约与下单参数。"}
           </DialogDescription>
+          {product && (
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 rounded-lg bg-muted/60 px-3.5 py-2.5 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <CalendarDays className="size-3.5" />
+                创建时间：{formatDateTime(product.created_at)}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Clock className="size-3.5" />
+                更新时间：{formatDateTime(product.updated_at)}
+              </span>
+            </div>
+          )}
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-            <div className="grid gap-5 py-2 max-h-[70vh] overflow-y-auto pr-2">
+            <div className="grid gap-5 py-2 max-h-[70vh] overflow-y-auto pr-2 [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
               <section className="space-y-4">
-                <h3 className="text-sm font-semibold">基本信息</h3>
+                <SectionHeading step="01" title="基本信息" />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
@@ -198,7 +249,10 @@ const ProductFormDialog = ({
                     name="categoryId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>商品分类</FormLabel>
+                        <FormLabel>
+                          商品分类
+                          <span className="text-destructive">*</span>
+                        </FormLabel>
                         <Select
                           value={stringOrEmpty(field.value)}
                           onValueChange={(value) =>
@@ -211,7 +265,6 @@ const ProductFormDialog = ({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="none">未分类</SelectItem>
                             {flattenProductCategories(
                               categories?.data ?? [],
                             ).map((category) => (
@@ -220,6 +273,57 @@ const ProductFormDialog = ({
                                   categories?.data ?? [],
                                   category.id,
                                 ) ?? category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="flex items-end gap-4">
+                  <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/60">
+                    {selectedImage ? (
+                      <img
+                        src={selectedImage.url}
+                        alt=""
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      <ImageIcon className="size-6 text-muted-foreground" />
+                    )}
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="imageId"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>商品主图</FormLabel>
+                        <Select
+                          value={stringOrEmpty(field.value)}
+                          onValueChange={(value) =>
+                            field.onChange(emptyOnNone(value))
+                          }
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="从图片库选择主图" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">无主图</SelectItem>
+                            {images?.data.map((image) => (
+                              <SelectItem key={image.id} value={image.id}>
+                                <span className="flex items-center gap-2">
+                                  <img
+                                    src={image.url}
+                                    alt=""
+                                    className="size-5 rounded object-cover"
+                                  />
+                                  {image.filename}
+                                </span>
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -365,7 +469,7 @@ const ProductFormDialog = ({
               <Separator />
 
               <section className="space-y-4">
-                <h3 className="text-sm font-semibold">货源配置</h3>
+                <SectionHeading step="02" title="货源配置" />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
@@ -416,7 +520,7 @@ const ProductFormDialog = ({
               <Separator />
 
               <section className="space-y-4">
-                <h3 className="text-sm font-semibold">价格配置</h3>
+                <SectionHeading step="03" title="价格配置" />
                 <div className="grid gap-4 sm:grid-cols-3">
                   <FormField
                     control={form.control}
@@ -582,7 +686,7 @@ const ProductFormDialog = ({
               <Separator />
 
               <section className="space-y-4">
-                <h3 className="text-sm font-semibold">库存配置</h3>
+                <SectionHeading step="04" title="库存配置" />
                 <div className="grid gap-4 sm:grid-cols-3">
                   <FormField
                     control={form.control}
@@ -619,8 +723,8 @@ const ProductFormDialog = ({
                         <FormControl>
                           <Input
                             type="number"
-                            min={0.0001}
-                            step="0.0001"
+                            min={1}
+                            step={1}
                             {...field}
                           />
                         </FormControl>
@@ -684,7 +788,7 @@ const ProductFormDialog = ({
               <Separator />
 
               <section className="space-y-4">
-                <h3 className="text-sm font-semibold">履约配置</h3>
+                <SectionHeading step="05" title="履约配置" />
                 <div className="grid gap-4 sm:grid-cols-3">
                   <FormField
                     control={form.control}
@@ -773,22 +877,6 @@ const ProductFormDialog = ({
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="inputFieldsOverridden"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center gap-2 space-y-0 pt-6">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormLabel>参数已本地修改</FormLabel>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
               </section>
 
@@ -796,7 +884,7 @@ const ProductFormDialog = ({
 
               <section className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold">下单参数</h3>
+                  <SectionHeading step="06" title="下单参数" />
                   <Button
                     type="button"
                     variant="outline"

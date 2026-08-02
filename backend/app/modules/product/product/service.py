@@ -6,10 +6,11 @@ from typing import Any
 from fastapi import HTTPException
 from sqlmodel import Session, col, delete, func, select
 
+from app.modules.image.models import Image
 from app.modules.price_template.models import PriceTemplate
 from app.modules.product.category.models import ProductCategory
 from app.modules.product.category.service import sync_category_product_count
-from app.modules.product.constants import ProductStatus, SourceType
+from app.modules.product.constants import ProductStatus, ProductType, SourceType
 from app.modules.product.product.models import (
     Product,
     ProductBuyParam,
@@ -28,8 +29,9 @@ def _validate_product_refs(
     category_id: uuid.UUID | None,
     price_template_id: uuid.UUID | None,
     supplier_id: uuid.UUID | None,
+    image_id: uuid.UUID | None = None,
 ) -> None:
-    """校验商品关联的分类、价格模板与供应商存在"""
+    """校验商品关联的分类、价格模板、供应商与主图存在"""
     if category_id is not None and session.get(ProductCategory, category_id) is None:
         raise HTTPException(status_code=400, detail="商品分类不存在")
     if (
@@ -39,6 +41,8 @@ def _validate_product_refs(
         raise HTTPException(status_code=400, detail="价格模板不存在")
     if supplier_id is not None and session.get(Supplier, supplier_id) is None:
         raise HTTPException(status_code=400, detail="供应商不存在")
+    if image_id is not None and session.get(Image, image_id) is None:
+        raise HTTPException(status_code=400, detail="商品主图不存在")
 
 
 def _validate_buy_params(*, params: list[Any]) -> None:
@@ -59,12 +63,14 @@ def create_product(*, session: Session, product_in: ProductCreate) -> Product:
         supplier_id=(
             product_in.supplier.supplier_id if product_in.supplier else None
         ),
+        image_id=product_in.image_id,
     )
     _validate_buy_params(params=product_in.buy_params)
 
     db_product = Product(
         name=product_in.name,
         category_id=product_in.category_id,
+        image_id=product_in.image_id,
         source_type=product_in.source_type,
         status=product_in.status,
         is_closed=product_in.is_closed,
@@ -130,6 +136,7 @@ def _product_filters(
     category_id: uuid.UUID | None,
     status: ProductStatus | None,
     source_type: SourceType | None,
+    product_type: ProductType | None,
     is_closed: bool | None,
     name: str | None,
 ) -> list[Any]:
@@ -140,6 +147,8 @@ def _product_filters(
         filters.append(Product.status == status)
     if source_type is not None:
         filters.append(Product.source_type == source_type)
+    if product_type is not None:
+        filters.append(Product.type == product_type)
     if is_closed is not None:
         filters.append(Product.is_closed == is_closed)
     if name:
@@ -155,14 +164,16 @@ def list_products(
     category_id: uuid.UUID | None = None,
     status: ProductStatus | None = None,
     source_type: SourceType | None = None,
+    product_type: ProductType | None = None,
     is_closed: bool | None = None,
     name: str | None = None,
 ) -> list[Product]:
-    """分页查询商品，支持分类/状态/来源/关闭状态/名称筛选"""
+    """分页查询商品，支持分类/状态/来源/类型/关闭状态/名称筛选"""
     filters = _product_filters(
         category_id=category_id,
         status=status,
         source_type=source_type,
+        product_type=product_type,
         is_closed=is_closed,
         name=name,
     )
@@ -185,6 +196,7 @@ def get_product_count(
     category_id: uuid.UUID | None = None,
     status: ProductStatus | None = None,
     source_type: SourceType | None = None,
+    product_type: ProductType | None = None,
     is_closed: bool | None = None,
     name: str | None = None,
 ) -> int:
@@ -193,6 +205,7 @@ def get_product_count(
         category_id=category_id,
         status=status,
         source_type=source_type,
+        product_type=product_type,
         is_closed=is_closed,
         name=name,
     )
@@ -236,6 +249,15 @@ def update_product(
             category_id=new_category_id,
             price_template_id=None,
             supplier_id=None,
+            image_id=update_dict.get("image_id"),
+        )
+    if "image_id" in update_dict:
+        _validate_product_refs(
+            session=session,
+            category_id=None,
+            price_template_id=None,
+            supplier_id=None,
+            image_id=update_dict["image_id"],
         )
 
     db_product.sqlmodel_update(update_dict)

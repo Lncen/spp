@@ -20,9 +20,19 @@ function formatPrice(product: ProductPublic) {
     return `系数 ${Number(pricing.item_coefficient).toFixed(2)}`
   }
   if (pricing?.price_template_id != null) {
-    return "模板价"
+    const precision = pricing.price_display_precision ?? 2
+    return `${Number(pricing.cost_price).toFixed(precision)}`
   }
   return "未配置"
+}
+
+function formatLossPrice(product: ProductPublic) {
+  const lossPrice = product.pricing?.loss_price
+  if (lossPrice == null) {
+    return "未配置"
+  }
+  const precision = product.pricing?.price_display_precision ?? 2
+  return Number(lossPrice).toFixed(precision)
 }
 
 function formatStock(product: ProductPublic) {
@@ -84,9 +94,16 @@ export const columns: ColumnDef<ProductPublic>[] = [
   },
   {
     id: "price",
-    header: "价格",
+    header: "成本价格",
     cell: ({ row }) => (
       <span className="font-mono text-sm">{formatPrice(row.original)}</span>
+    ),
+  },
+  {
+    id: "loss_price",
+    header: "固定损耗",
+    cell: ({ row }) => (
+      <span className="font-mono text-sm">{formatLossPrice(row.original)}</span>
     ),
   },
   {
