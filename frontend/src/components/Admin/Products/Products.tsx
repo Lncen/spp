@@ -1,13 +1,12 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query"
 import { Suspense, useState } from "react"
-
-import { ProductCategoriesService, ProductsService } from "@/client"
 import type { ProductType } from "@/client"
-import { DataTable } from "@/components/Common/DataTable"
+import { ProductCategoriesService, ProductsService } from "@/client"
 import {
   flattenProductCategories,
   getProductCategoryPath,
 } from "@/components/Admin/ProductCategories/types"
+import { DataTable } from "@/components/Common/DataTable"
 import {
   Select,
   SelectContent,
@@ -40,7 +39,8 @@ function getProductsQueryOptions(filters: ProductsFilters) {
         skip: 0,
         limit: 100,
         productType: toProductType(filters.productType),
-        categoryId: filters.categoryId === NONE ? undefined : filters.categoryId,
+        categoryId:
+          filters.categoryId === NONE ? undefined : filters.categoryId,
       }),
     queryKey: ["products", filters.productType, filters.categoryId],
   }

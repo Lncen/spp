@@ -5,7 +5,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { type ImageCategoryPublic, ImageCategoriesService } from "@/client"
+import { ImageCategoriesService, type ImageCategoryPublic } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -135,7 +135,11 @@ const EditCategory = ({ category, onSuccess }: EditCategoryProps) => {
                   <FormItem>
                     <FormLabel>图标名称</FormLabel>
                     <FormControl>
-                      <Input placeholder="lucide 图标名" type="text" {...field} />
+                      <Input
+                        placeholder="lucide 图标名"
+                        type="text"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

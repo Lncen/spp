@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Tag } from "lucide-react"
 import { useState } from "react"
-
-import { ImagesService, type ImagePublic } from "@/client"
-import { ImageCategoriesService } from "@/client"
+import {
+  ImageCategoriesService,
+  type ImagePublic,
+  ImagesService,
+} from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -97,7 +99,10 @@ const EditImageCategory = ({ image, onSuccess }: EditImageCategoryProps) => {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label>分类</Label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <Select
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="选择分类" />
                 </SelectTrigger>

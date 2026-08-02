@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
+from typing import Any
 
 from pydantic import field_validator
 from sqlmodel import Field, SQLModel
@@ -77,3 +78,75 @@ class PlatformOption(SQLModel):
 class PlatformOptionsPublic(SQLModel):
     """平台选项列表响应"""
     data: list[PlatformOption]
+
+
+class BalancePublic(SQLModel):
+    """供应商上游实时余额响应"""
+    balance: Decimal | None = Field(title="余额", description="上游账户实时余额")
+
+
+class UpstreamProductPublic(SQLModel):
+    """上游商品列表项（与本地货源匹配状态）"""
+    upstream_id: str = Field(title="上游商品 ID", description="上游商品 ID")
+    name: str = Field(title="商品名称", description="上游商品名称")
+    cost_price: Decimal | None = Field(
+        default=None,
+        title="成本价",
+        description="上游价格；列表接口可能不返回",
+    )
+    synced: bool = Field(
+        default=False,
+        title="是否已同步",
+        description="是否已存在匹配的本地商品货源",
+    )
+    local_product_id: uuid.UUID | None = Field(
+        default=None,
+        title="本地商品 ID",
+        description="已同步时对应的本地商品 UUID",
+    )
+
+
+class UpstreamCategoryPublic(SQLModel):
+    """上游商品分类选项"""
+
+    id: str = Field(title="分类 ID", description="上游商品分类 ID")
+    name: str = Field(title="分类名称", description="上游商品分类名称")
+    parent_id: str | None = Field(
+        default=None,
+        title="父分类 ID",
+        description="父分类 ID，0 或空表示顶级分类",
+    )
+
+
+class UpstreamCategoriesPublic(SQLModel):
+    """上游商品分类列表响应"""
+
+    data: list[UpstreamCategoryPublic]
+
+
+class UpstreamProductsPublic(SQLModel):
+    """上游商品列表响应"""
+    data: list[UpstreamProductPublic]
+    count: int
+
+
+class UpstreamProductSyncRequest(SQLModel):
+    """提交同步的上游商品 ID 列表"""
+    product_ids: list[str] = Field(title="上游商品 ID 列表")
+    category_id: uuid.UUID | None = Field(
+        default=None,
+        title="本地分类 ID",
+        description="同步时写入商品的本地分类，不传则保持原分类",
+    )
+
+
+class UpstreamProductSyncPublic(SQLModel):
+    """创建同步任务响应"""
+    task_id: str = Field(title="Celery 任务 ID")
+
+
+class TaskStatusPublic(SQLModel):
+    """同步任务状态响应"""
+    status: str = Field(title="任务状态")
+    success: bool | None = Field(default=None, title="是否成功")
+    result: dict[str, Any] | None = Field(default=None, title="任务结果")

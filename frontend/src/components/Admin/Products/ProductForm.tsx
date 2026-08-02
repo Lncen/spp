@@ -721,12 +721,7 @@ const ProductFormDialog = ({
                       <FormItem>
                         <FormLabel>购买步长</FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            min={1}
-                            step={1}
-                            {...field}
-                          />
+                          <Input type="number" min={1} step={1} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

@@ -61,6 +61,9 @@ def create_product(
     source_type: int = 2,
     is_closed: bool = False,
     price_mode: str = "template",
+    loss_price: str | None = None,
+    fulfillment_type: int = 2,
+    can_refund: bool = True,
 ) -> dict:
     if category_id is None:
         category_id = create_category(client, superuser_token_headers)["id"]
@@ -81,6 +84,8 @@ def create_product(
         }
     else:
         raise ValueError(f"未知价格模式: {price_mode}")
+    if loss_price is not None:
+        pricing["loss_price"] = loss_price
     data = {
         "name": name or random_lower_string(),
         "category_id": category_id,
@@ -94,8 +99,8 @@ def create_product(
             "stock": 100,
         },
         "fulfillment": {
-            "fulfillment_type": 2,
-            "can_refund": True,
+            "fulfillment_type": fulfillment_type,
+            "can_refund": can_refund,
             "unit": "件",
         },
         "buy_params": [

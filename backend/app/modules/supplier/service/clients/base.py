@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Any, Self
 
 import httpx
+from sqlmodel import Session
 
 from app.modules.supplier.models import Supplier
 
@@ -28,7 +29,11 @@ class ClientMeta(ABCMeta):
         return new_cls
 
     @classmethod
-    def get_client(cls, supplier: Supplier) -> SupplierClientBase:
+    def get_client(
+        cls,
+        supplier: Supplier,
+        session: Session | None = None,
+    ) -> SupplierClientBase:
         """工厂方法：传入 supplier，自动路由并返回实例"""
         client_cls = cls._registry.get(supplier.platform)
         if not client_cls:
@@ -36,15 +41,16 @@ class ClientMeta(ABCMeta):
                 f"未找到 platform='{supplier.platform}' 的供应商客户端。"
                 f"已注册: {list(cls._registry.keys())}"
             )
-        return client_cls(supplier)
+        return client_cls(supplier, session=session)
 
 
 # ================= 2. HTTP 传输层基类 =================
 class BaseHttpClient(ABC):
     code: str  # 仅作为注册键，不参与 HTTP 配置
 
-    def __init__(self, supplier: Supplier) -> None:
+    def __init__(self, supplier: Supplier, session: Session | None = None) -> None:
         self.supplier = supplier
+        self._session = session
 
         self._client = httpx.Client(
             base_url=supplier.base_url,
@@ -76,6 +82,10 @@ class BaseHttpClient(ABC):
                 response = self._client.request(method, path, **kwargs)
 
                 if response.is_success:
+                    self.supplier.connection_status = "online"
+                    if self._session is not None:
+                        self._session.add(self.supplier)
+                        self._session.commit()
                     return response
 
                 if 400 <= response.status_code < 500 and response.status_code != 429:
@@ -123,10 +133,7 @@ class SupplierClientBase(BaseHttpClient, metaclass=ClientMeta):
     def query_balance(self) -> Decimal: ...
 
     @abstractmethod
-    def probe(self) -> bool: ...
-
-    @abstractmethod
-    def query_products(
+    def query_products_list(
         self,
         *,
         page: int = 1,
@@ -136,7 +143,7 @@ class SupplierClientBase(BaseHttpClient, metaclass=ClientMeta):
     ) -> list[dict[str, Any]]: ...
 
     @abstractmethod
-    def get_product_detail(self, product_id: str) -> dict[str, Any]: ...
+    def query_product_detail(self, product_id: str) -> dict[str, Any]: ...
 
     @abstractmethod
     def get_categories(self) -> list[dict[str, Any]]: ...
@@ -147,7 +154,7 @@ class SupplierClientBase(BaseHttpClient, metaclass=ClientMeta):
     ) -> dict[str, Any]: ...
 
     @abstractmethod
-    def query_order(self, order_id: str) -> dict[str, Any]: ...
+    def query_order(self, order_ids: list[int]) -> dict[str, Any]: ...
 
     @abstractmethod
     def cancel_order(self, order_id: str) -> dict[str, Any]: ...

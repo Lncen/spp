@@ -46,6 +46,13 @@ class User(BaseModelMixin, SQLModel, table=True):
         description="用户的真实姓名或显示名称，选填，长度不超过255个字符"
     )
 
+    can_order: bool = Field(
+        default=True,
+        index=True,
+        title="是否允许下单",
+        description="独立控制用户是否可创建订单，与账号启用状态互不影响"
+    )
+
     hashed_password: str = Field(
         title="加密密码",
         description="经过哈希处理后的用户密码，用于安全验证，禁止明文存储"

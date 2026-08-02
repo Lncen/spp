@@ -4,14 +4,17 @@ import { Suspense } from "react"
 
 import type { SupplierPublic } from "@/client"
 import { UsersService } from "@/client"
+import Pending from "@/components/Admin/Pending/PendingItems"
 import AddSupplier from "@/components/Admin/Suppliers/AddSupplier"
 import { columns } from "@/components/Admin/Suppliers/columns"
 import { DataTable } from "@/components/Common/DataTable"
-import Pending from "@/components/Admin/Pending/PendingItems"
 
 function getSuppliersQueryOptions() {
   return {
-    queryFn: () => import("@/client").then((m) => m.SuppliersService.readSuppliers({ skip: 0, limit: 100 })),
+    queryFn: () =>
+      import("@/client").then((m) =>
+        m.SuppliersService.readSuppliers({ skip: 0, limit: 100 }),
+      ),
     queryKey: ["suppliers"],
   }
 }
@@ -38,9 +41,11 @@ export const Route = createFileRoute("/_layout/suppliers")({
 function SuppliersTableContent() {
   const { data: suppliers } = useSuspenseQuery(getSuppliersQueryOptions())
 
-  const tableData: SupplierPublic[] = suppliers.data.map((s: SupplierPublic) => ({
-    ...s,
-  }))
+  const tableData: SupplierPublic[] = suppliers.data.map(
+    (s: SupplierPublic) => ({
+      ...s,
+    }),
+  )
 
   return <DataTable columns={columns} data={tableData} />
 }

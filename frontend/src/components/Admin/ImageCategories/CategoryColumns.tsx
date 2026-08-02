@@ -14,7 +14,12 @@ export const categoryColumns: ColumnDef<ImageCategoryPublic>[] = [
     accessorKey: "description",
     header: "描述",
     cell: ({ row }) => (
-      <span className={cn("text-muted-foreground", !row.original.description && "italic")}>
+      <span
+        className={cn(
+          "text-muted-foreground",
+          !row.original.description && "italic",
+        )}
+      >
         {row.original.description || "无描述"}
       </span>
     ),
@@ -30,7 +35,9 @@ export const categoryColumns: ColumnDef<ImageCategoryPublic>[] = [
     accessorKey: "sort_order",
     header: "排序",
     cell: ({ row }) => (
-      <span className="text-muted-foreground">{row.original.sort_order ?? 0}</span>
+      <span className="text-muted-foreground">
+        {row.original.sort_order ?? 0}
+      </span>
     ),
   },
   {

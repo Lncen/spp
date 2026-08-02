@@ -73,7 +73,7 @@ const AddSupplier = () => {
   })
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
-const form = useForm<FormData>({
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema) as any,
     mode: "onBlur",
     criteriaMode: "all",
@@ -91,7 +91,7 @@ const form = useForm<FormData>({
     },
   })
 
-const mutation = useMutation({
+  const mutation = useMutation({
     mutationFn: (data: FormData) =>
       SuppliersService.createSupplier({ requestBody: data as SupplierCreate }),
     onSuccess: () => {
@@ -137,7 +137,11 @@ const mutation = useMutation({
                         名称 <span className="text-destructive">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="例如：OpenAI 生产" {...field} required />
+                        <Input
+                          placeholder="例如：OpenAI 生产"
+                          {...field}
+                          required
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -204,11 +208,7 @@ const mutation = useMutation({
                         应用 Key <span className="text-destructive">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="API Key"
-                          {...field}
-                          required
-                        />
+                        <Input placeholder="API Key" {...field} required />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -341,10 +341,7 @@ const mutation = useMutation({
                   <FormItem>
                     <FormLabel>备注</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="备注说明（可选）"
-                        {...field}
-                      />
+                      <Input placeholder="备注说明（可选）" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -1,9 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Upload } from "lucide-react"
 import { useState } from "react"
-
-import { ImagesService } from "@/client"
-import { ImageCategoriesService } from "@/client"
+import { ImageCategoriesService, ImagesService } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -103,9 +101,7 @@ const UploadImage = () => {
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>上传图片</DialogTitle>
-            <DialogDescription>
-              支持 JPEG、PNG、WebP 格式。
-            </DialogDescription>
+            <DialogDescription>支持 JPEG、PNG、WebP 格式。</DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">

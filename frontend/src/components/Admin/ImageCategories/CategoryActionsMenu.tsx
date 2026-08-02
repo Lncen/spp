@@ -27,7 +27,11 @@ export const CategoryActionsMenu = ({ category }: CategoryActionsMenuProps) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <EditCategory category={category} onSuccess={() => setOpen(false)} />
-        <DeleteCategory id={category.id} name={category.name} onSuccess={() => setOpen(false)} />
+        <DeleteCategory
+          id={category.id}
+          name={category.name}
+          onSuccess={() => setOpen(false)}
+        />
       </DropdownMenuContent>
     </DropdownMenu>
   )

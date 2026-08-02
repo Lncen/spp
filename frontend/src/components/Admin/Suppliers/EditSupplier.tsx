@@ -4,9 +4,7 @@ import { Pencil } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-
-import type { SupplierPublic } from "@/client"
-import type { PlatformOption, SupplierUpdate } from "@/client"
+import type { PlatformOption, SupplierPublic, SupplierUpdate } from "@/client"
 import { SuppliersService } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
@@ -79,7 +77,7 @@ const EditSupplier = ({ supplier, onSuccess }: EditSupplierProps) => {
   })
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
-const form = useForm<FormData>({
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema) as any,
     mode: "onBlur",
     criteriaMode: "all",
@@ -225,7 +223,7 @@ const form = useForm<FormData>({
                       <FormControl>
                         <Input
                           type="password"
-                        placeholder="留空则保持原值"
+                          placeholder="留空则保持原值"
                           {...field}
                         />
                       </FormControl>
@@ -340,10 +338,7 @@ const form = useForm<FormData>({
                   <FormItem>
                     <FormLabel>备注</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="备注说明（可选）"
-                        {...field}
-                      />
+                      <Input placeholder="备注说明（可选）" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

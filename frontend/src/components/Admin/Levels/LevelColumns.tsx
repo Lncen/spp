@@ -10,15 +10,15 @@ export const levelColumns: ColumnDef<LevelPublic>[] = [
     accessorKey: "level",
     header: "编号",
     cell: ({ row }) => (
-      <span className="font-mono text-sm font-medium">{row.original.level}</span>
+      <span className="font-mono text-sm font-medium">
+        {row.original.level}
+      </span>
     ),
   },
   {
     accessorKey: "name",
     header: "名称",
-    cell: ({ row }) => (
-      <span className="font-medium">{row.original.name}</span>
-    ),
+    cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
   },
   {
     accessorKey: "description",

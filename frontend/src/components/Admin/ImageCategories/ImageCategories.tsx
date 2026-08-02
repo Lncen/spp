@@ -2,10 +2,10 @@
 import { Suspense } from "react"
 
 import { ImageCategoriesService } from "@/client"
-import { DataTable } from "@/components/Common/DataTable"
 import PendingCategories from "@/components/Admin/Pending/PendingCategories"
-import { categoryColumns } from "./CategoryColumns"
+import { DataTable } from "@/components/Common/DataTable"
 import AddCategory from "./AddCategory"
+import { categoryColumns } from "./CategoryColumns"
 
 function getCategoriesQueryOptions() {
   return {

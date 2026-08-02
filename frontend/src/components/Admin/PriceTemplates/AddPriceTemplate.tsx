@@ -160,7 +160,11 @@ const AddPriceTemplate = () => {
                   <FormItem>
                     <FormLabel>描述</FormLabel>
                     <FormControl>
-                      <Input placeholder="模板用途说明" type="text" {...field} />
+                      <Input
+                        placeholder="模板用途说明"
+                        type="text"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

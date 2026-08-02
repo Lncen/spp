@@ -9,9 +9,7 @@ export const priceTemplateColumns: ColumnDef<PriceTemplatePublic>[] = [
   {
     accessorKey: "name",
     header: "模板名称",
-    cell: ({ row }) => (
-      <span className="font-medium">{row.original.name}</span>
-    ),
+    cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
   },
   {
     accessorKey: "description",
@@ -41,9 +39,7 @@ export const priceTemplateColumns: ColumnDef<PriceTemplatePublic>[] = [
     accessorKey: "rules",
     header: "等级折扣",
     cell: ({ row }) => {
-      const rules = [...row.original.rules].sort(
-        (a, b) => a.level - b.level,
-      )
+      const rules = [...row.original.rules].sort((a, b) => a.level - b.level)
       if (rules.length === 0) {
         return <span className="italic text-muted-foreground">未设置</span>
       }

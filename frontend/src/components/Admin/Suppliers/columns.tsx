@@ -28,7 +28,10 @@ export const columns: ColumnDef<SupplierPublic>[] = [
     accessorKey: "base_url",
     header: "接口地址",
     cell: ({ row }) => (
-      <span className="max-w-[200px] truncate block text-muted-foreground text-sm" title={row.original.base_url}>
+      <span
+        className="max-w-[200px] truncate block text-muted-foreground text-sm"
+        title={row.original.base_url}
+      >
         {row.original.base_url}
       </span>
     ),
@@ -48,7 +51,11 @@ export const columns: ColumnDef<SupplierPublic>[] = [
                 : "secondary"
           }
         >
-          {status === "active" ? "启用" : status === "inactive" ? "停用" : "冻结"}
+          {status === "active"
+            ? "启用"
+            : status === "inactive"
+              ? "停用"
+              : "冻结"}
         </Badge>
       )
     },
@@ -68,7 +75,9 @@ export const columns: ColumnDef<SupplierPublic>[] = [
               conn === "unknown" && "bg-yellow-500",
             )}
           />
-          <span className="text-sm">{conn === "online" ? "在线" : conn === "offline" ? "离线" : "未知"}</span>
+          <span className="text-sm">
+            {conn === "online" ? "在线" : conn === "offline" ? "离线" : "未知"}
+          </span>
         </div>
       )
     },
@@ -79,7 +88,12 @@ export const columns: ColumnDef<SupplierPublic>[] = [
     cell: ({ row }) => {
       const balance = row.original.balance
       return (
-        <span className={cn("font-mono text-sm", balance == null && "text-muted-foreground")}>
+        <span
+          className={cn(
+            "font-mono text-sm",
+            balance == null && "text-muted-foreground",
+          )}
+        >
           {balance != null ? balance.toString() : "—"}
         </span>
       )
@@ -89,14 +103,18 @@ export const columns: ColumnDef<SupplierPublic>[] = [
     accessorKey: "timeout_seconds",
     header: "超时",
     cell: ({ row }) => (
-      <span className="text-muted-foreground text-sm">{row.original.timeout_seconds}s</span>
+      <span className="text-muted-foreground text-sm">
+        {row.original.timeout_seconds}s
+      </span>
     ),
   },
   {
     accessorKey: "retry_times",
     header: "重试次数",
     cell: ({ row }) => (
-      <span className="text-muted-foreground text-sm">{row.original.retry_times}</span>
+      <span className="text-muted-foreground text-sm">
+        {row.original.retry_times}
+      </span>
     ),
   },
   {

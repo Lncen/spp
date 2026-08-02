@@ -67,8 +67,8 @@ const DeleteCategory = ({ id, name, onSuccess }: DeleteCategoryProps) => {
           <DialogHeader>
             <DialogTitle>删除分类</DialogTitle>
             <DialogDescription>
-              确定要删除分类 "<strong>{name}</strong>" 吗？如有图片引用该分类，操作将被拒绝。
-              此操作不可撤销。
+              确定要删除分类 "<strong>{name}</strong>"
+              吗？如有图片引用该分类，操作将被拒绝。 此操作不可撤销。
             </DialogDescription>
           </DialogHeader>
 

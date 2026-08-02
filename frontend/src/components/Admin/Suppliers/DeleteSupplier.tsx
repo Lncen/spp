@@ -74,7 +74,7 @@ const DeleteSupplier = ({ id, name, onSuccess }: DeleteSupplierProps) => {
           <DialogFooter className="mt-4">
             <DialogClose asChild>
               <Button variant="outline" disabled={mutation.isPending}>
-                  取消
+                取消
               </Button>
             </DialogClose>
             <LoadingButton

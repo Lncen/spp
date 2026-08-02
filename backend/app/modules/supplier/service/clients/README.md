@@ -17,7 +17,7 @@ def check_supplier_balance(supplier: Supplier) -> Decimal:
 def place_order(supplier: Supplier, product_id: str, qty: int):
     with ClientMeta.get_client(supplier) as client:
         result = client.create_order(product_id=product_id, quantity=qty)
-        order_info = client.query_order(result["order_id"])
+        order_info = client.query_order([int(result["order_id"])])
         return order_info
 
 

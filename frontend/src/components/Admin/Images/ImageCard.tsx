@@ -16,7 +16,7 @@ function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 B"
   const units = ["B", "KB", "MB", "GB"]
   const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  const size = bytes / Math.pow(1024, i)
+  const size = bytes / 1024 ** i
   return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`
 }
 
@@ -51,7 +51,10 @@ export const ImageCard = ({ image }: ImageCardProps) => {
             <DropdownMenuContent align="end">
               <DeleteImage id={image.id} onSuccess={() => setMenuOpen(false)} />
               <Separator className="my-1" />
-              <EditImageCategory image={image} onSuccess={() => setMenuOpen(false)} />
+              <EditImageCategory
+                image={image}
+                onSuccess={() => setMenuOpen(false)}
+              />
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -68,7 +71,9 @@ export const ImageCard = ({ image }: ImageCardProps) => {
               {image.category}
             </span>
           )}
-          <span>{image.width} x {image.height}</span>
+          <span>
+            {image.width} x {image.height}
+          </span>
           <span className="text-border">|</span>
           <span>{formatFileSize(image.file_size)}</span>
         </div>

@@ -41,5 +41,6 @@ celery_app.conf.beat_schedule = {
 
 def discover_tasks() -> None:
     """自动发现任务模块（确保模块被导入，Celery 能注册到任务表中）"""
-    import app.tasks.product  # noqa: F401
     import app.tasks.cleanup  # noqa: F401
+    import app.tasks.product  # noqa: F401
+    import app.tasks.supplier  # noqa: F401

@@ -2,8 +2,8 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { Suspense } from "react"
 
 import { LevelsService } from "@/client"
-import { DataTable } from "@/components/Common/DataTable"
 import PendingLevels from "@/components/Admin/Pending/PendingLevels"
+import { DataTable } from "@/components/Common/DataTable"
 import { levelColumns } from "./LevelColumns"
 
 function getLevelsQueryOptions() {

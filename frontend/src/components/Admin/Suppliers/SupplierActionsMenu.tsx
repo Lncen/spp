@@ -10,12 +10,16 @@ import {
 } from "@/components/ui/dropdown-menu"
 import DeleteSupplier from "./DeleteSupplier"
 import EditSupplier from "./EditSupplier"
+import SyncProducts from "./SyncProducts"
+import UpdateBalance from "./UpdateBalance"
 
 interface SupplierActionsMenuProps {
   supplier: SupplierPublic
 }
 
-export const SuppliersActionsMenu = ({ supplier }: SupplierActionsMenuProps) => {
+export const SuppliersActionsMenu = ({
+  supplier,
+}: SupplierActionsMenuProps) => {
   const [open, setOpen] = useState(false)
 
   return (
@@ -27,6 +31,8 @@ export const SuppliersActionsMenu = ({ supplier }: SupplierActionsMenuProps) => 
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <EditSupplier supplier={supplier} onSuccess={() => setOpen(false)} />
+        <UpdateBalance id={supplier.id} />
+        <SyncProducts id={supplier.id} />
         <DeleteSupplier
           id={supplier.id}
           name={supplier.name}

@@ -1,4 +1,3 @@
-﻿
 from fastapi import APIRouter
 
 from app.common.router import router as utils_router
@@ -15,6 +14,8 @@ from app.modules.item.models import Item  # noqa: F401
 from app.modules.item.router import router as item_router
 from app.modules.level.models import UserLevel  # noqa: F401
 from app.modules.level.router import router as level_router
+from app.modules.order.models import Order, OrderItem  # noqa: F401
+from app.modules.order.router import router as order_router
 from app.modules.price_template.models import (  # noqa: F401
     PriceTemplate,
     PriceTemplateRule,
@@ -38,13 +39,17 @@ from app.modules.supplier.router import router as supplier_router
 from app.modules.user.models import User  # noqa: F401
 from app.modules.user.router import private_router
 from app.modules.user.router import router as user_router
+from app.modules.wallet.models import Wallet, WalletTransaction  # noqa: F401
+from app.modules.wallet.router import router as wallet_router
 
 api_router = APIRouter()
 api_router.include_router(login_router)
 api_router.include_router(user_router)
+api_router.include_router(wallet_router)
 api_router.include_router(utils_router)
 api_router.include_router(level_router)
 api_router.include_router(item_router)
+api_router.include_router(order_router)
 api_router.include_router(image_router)
 api_router.include_router(image_category_router)
 api_router.include_router(price_template_router)

@@ -35,7 +35,10 @@ const formSchema = z.object({
     .string()
     .min(1, "分类标识不能为空")
     .max(32, "分类标识不能超过 32 个字符")
-    .regex(/^[a-z][a-z0-9_]*$/, "小写英文字母开头，仅允许小写字母、数字、下划线"),
+    .regex(
+      /^[a-z][a-z0-9_]*$/,
+      "小写英文字母开头，仅允许小写字母、数字、下划线",
+    ),
   description: z.string().optional().or(z.literal("")),
   sort_order: z.coerce.number().optional(),
   icon: z.string().optional().or(z.literal("")),
@@ -143,7 +146,11 @@ const AddCategory = () => {
                   <FormItem>
                     <FormLabel>图标名称</FormLabel>
                     <FormControl>
-                      <Input placeholder="lucide 图标名" type="text" {...field} />
+                      <Input
+                        placeholder="lucide 图标名"
+                        type="text"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

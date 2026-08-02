@@ -21,12 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+
 const PAGE_SIZE = 12
-function getImagesQueryOptions(
-  skip: number,
-  limit: number,
-  category?: string,
-) {
+function getImagesQueryOptions(skip: number, limit: number, category?: string) {
   return {
     queryKey: ["images", { skip, limit, category }],
     queryFn: () => ImagesService.readImages({ skip, limit, category }),
@@ -73,9 +70,7 @@ function CategoryFilter({
       >
         <SelectTrigger className="w-44 h-9">
           <SelectValue placeholder="全部分类">
-            {selectValue === "all"
-              ? "全部分类"
-              : value}
+            {selectValue === "all" ? "全部分类" : value}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>

@@ -1,15 +1,19 @@
 """供应商模块：路由层"""
 # ruff: noqa: ARG001  # current_user 仅用于 FastAPI 权限依赖
 import uuid
+from decimal import Decimal
 from typing import Annotated, Any
 
+from celery.result import AsyncResult
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import col, func, select
 
 from app.api.deps import CurrentUser, SessionDep
 from app.common.models import Message
+from app.core.celery_app import celery_app
 from app.modules.supplier.models import Supplier
 from app.modules.supplier.schemas import (
+    BalancePublic,
     PlatformEnum,
     PlatformOption,
     PlatformOptionsPublic,
@@ -17,10 +21,21 @@ from app.modules.supplier.schemas import (
     SupplierPublic,
     SuppliersPublic,
     SupplierUpdate,
+    TaskStatusPublic,
+    UpstreamCategoriesPublic,
+    UpstreamProductsPublic,
+    UpstreamProductSyncPublic,
+    UpstreamProductSyncRequest,
 )
 from app.modules.supplier.service import (
     create_supplier as create_supplier_service,
 )
+from app.modules.supplier.service import (
+    list_upstream_categories,
+    list_upstream_products,
+    supplier_client,
+)
+from app.modules.supplier.service.clients.base import SupplierClientError
 from app.modules.user.models import User
 
 router = APIRouter(prefix="/suppliers", tags=["suppliers"])
@@ -100,6 +115,125 @@ def read_supplier(
     if not supplier:
         raise HTTPException(status_code=404, detail="供应商不存在")
     return _supplier_to_public(supplier)
+
+
+@router.get("/{id}/balance", response_model=BalancePublic)
+def read_supplier_balance(
+    session: SessionDep,
+    current_user: SuperuserDep,
+    id: uuid.UUID,
+) -> Any:
+    """获取供应商上游实时余额（超管权限）"""
+    supplier = session.get(Supplier, id)
+    if not supplier:
+        raise HTTPException(status_code=404, detail="供应商不存在")
+    try:
+        with supplier_client(session=session, supplier_id=supplier.id) as client:
+            balance = client.query_balance()
+    except SupplierClientError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+
+    # 上游余额写回数据库，余额列仅保留两位小数
+    supplier.balance = balance.quantize(Decimal("0.01"))
+    session.add(supplier)
+    session.commit()
+    session.refresh(supplier)
+    return BalancePublic(balance=supplier.balance)
+
+
+@router.get("/{id}/upstream-products", response_model=UpstreamProductsPublic)
+def read_upstream_products(
+    session: SessionDep,
+    current_user: SuperuserDep,
+    id: uuid.UUID,
+    category_id: str | None = None,
+) -> Any:
+    """获取上游商品列表并标记本地同步状态（超管权限）"""
+    supplier = session.get(Supplier, id)
+    if not supplier:
+        raise HTTPException(status_code=404, detail="供应商不存在")
+    try:
+        items = list_upstream_products(
+            session=session,
+            supplier_id=supplier.id,
+            category_id=category_id,
+        )
+    except SupplierClientError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+    return UpstreamProductsPublic(data=items, count=len(items))
+
+
+@router.get("/{id}/upstream-categories", response_model=UpstreamCategoriesPublic)
+def read_upstream_categories(
+    session: SessionDep,
+    current_user: SuperuserDep,
+    id: uuid.UUID,
+) -> Any:
+    """获取上游商品分类列表（超管权限）"""
+    supplier = session.get(Supplier, id)
+    if not supplier:
+        raise HTTPException(status_code=404, detail="供应商不存在")
+    try:
+        items = list_upstream_categories(session=session, supplier_id=supplier.id)
+    except SupplierClientError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+    return UpstreamCategoriesPublic(data=items)
+
+
+@router.post(
+    "/{id}/upstream-products/sync",
+    response_model=UpstreamProductSyncPublic,
+)
+def create_upstream_products_sync(
+    session: SessionDep,
+    current_user: SuperuserDep,
+    id: uuid.UUID,
+    sync_in: UpstreamProductSyncRequest,
+) -> Any:
+    """按勾选的上游商品 ID 创建异步同步任务（超管权限）"""
+    supplier = session.get(Supplier, id)
+    if not supplier:
+        raise HTTPException(status_code=404, detail="供应商不存在")
+    if not sync_in.product_ids:
+        raise HTTPException(status_code=400, detail="请至少选择一个商品")
+    task = celery_app.send_task(
+        "app.tasks.supplier.sync_upstream_products",
+        kwargs={
+            "supplier_id": str(supplier.id),
+            "product_ids": sync_in.product_ids,
+            "category_id": (
+                str(sync_in.category_id) if sync_in.category_id else None
+            ),
+        },
+    )
+    return UpstreamProductSyncPublic(task_id=task.id)
+
+
+@router.get(
+    "/{id}/upstream-products/sync/{task_id}",
+    response_model=TaskStatusPublic,
+)
+def read_upstream_products_sync_status(
+    session: SessionDep,
+    current_user: SuperuserDep,
+    id: uuid.UUID,
+    task_id: str,
+) -> Any:
+    """查询上游商品同步任务状态（超管权限）"""
+    supplier = session.get(Supplier, id)
+    if not supplier:
+        raise HTTPException(status_code=404, detail="供应商不存在")
+
+    result = AsyncResult(task_id, app=celery_app)
+    if result.state in {"PENDING", "STARTED", "RETRY"}:
+        return TaskStatusPublic(status=result.state, success=None)
+    if result.state == "SUCCESS":
+        return TaskStatusPublic(
+            status=result.state,
+            success=True,
+            result=result.result,
+        )
+    return TaskStatusPublic(status=result.state, success=False)
 
 
 @router.post("/", response_model=SupplierPublic)

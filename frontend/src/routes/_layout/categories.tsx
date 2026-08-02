@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
-
-import { ImageCategories } from "../../components/Admin/ImageCategories/ImageCategories"
 import { UsersService } from "@/client"
+import { ImageCategories } from "../../components/Admin/ImageCategories/ImageCategories"
 
 export const Route = createFileRoute("/_layout/categories")({
   component: RouteComponent,
