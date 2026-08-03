@@ -1,8 +1,8 @@
 """init system
 
-Revision ID: c04373dddaf3
+Revision ID: 8bd6d5f41ec2
 Revises: 
-Create Date: 2026-08-02 11:23:54.461007
+Create Date: 2026-08-05 00:27:20.642270
 
 """
 from alembic import op
@@ -11,7 +11,7 @@ import sqlmodel.sql.sqltypes
 
 
 # revision identifiers, used by Alembic.
-revision = 'c04373dddaf3'
+revision = '8bd6d5f41ec2'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -36,6 +36,7 @@ def upgrade():
     op.create_table('price_template',
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('description', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
+    sa.Column('is_default', sa.Boolean(), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
@@ -45,7 +46,6 @@ def upgrade():
     op.create_index(op.f('ix_price_template_is_active'), 'price_template', ['is_active'], unique=False)
     op.create_table('supplier',
     sa.Column('platform', sa.Enum('YLSUP', name='platformenum'), nullable=False),
-    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('base_url', sqlmodel.sql.sqltypes.AutoString(length=512), nullable=False),
     sa.Column('app_key', sqlmodel.sql.sqltypes.AutoString(length=512), nullable=False),
     sa.Column('app_secret', sqlmodel.sql.sqltypes.AutoString(length=512), nullable=False),
@@ -58,6 +58,7 @@ def upgrade():
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('balance', sa.Numeric(precision=12, scale=2), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
@@ -96,15 +97,19 @@ def upgrade():
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('level_id', sa.Uuid(), nullable=True),
+    sa.Column('username', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('email', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('is_superuser', sa.Boolean(), nullable=False),
     sa.Column('full_name', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
+    sa.Column('can_order', sa.Boolean(), nullable=False),
     sa.Column('hashed_password', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.ForeignKeyConstraint(['level_id'], ['user_level.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_index(op.f('ix_user_can_order'), 'user', ['can_order'], unique=False)
     op.create_index(op.f('ix_user_email'), 'user', ['email'], unique=True)
     op.create_index(op.f('ix_user_is_active'), 'user', ['is_active'], unique=False)
+    op.create_index(op.f('ix_user_username'), 'user', ['username'], unique=True)
     op.create_table('image',
     sa.Column('filename', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('file_size', sa.Integer(), nullable=False),
@@ -124,6 +129,43 @@ def upgrade():
     op.create_index(op.f('ix_image_category'), 'image', ['category'], unique=False)
     op.create_index(op.f('ix_image_file_hash'), 'image', ['file_hash'], unique=True)
     op.create_index(op.f('ix_image_is_active'), 'image', ['is_active'], unique=False)
+    op.create_table('orders',
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('order_no', sqlmodel.sql.sqltypes.AutoString(length=64), nullable=False),
+    sa.Column('user_id', sa.Uuid(), nullable=False),
+    sa.Column('status', sa.Integer(), nullable=False),
+    sa.Column('total_amount', sa.Numeric(precision=18, scale=2), nullable=False),
+    sa.Column('currency', sqlmodel.sql.sqltypes.AutoString(length=3), nullable=False),
+    sa.Column('remark', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
+    sa.Column('paid_at', sa.DateTime(), nullable=True),
+    sa.Column('processing_at', sa.DateTime(), nullable=True),
+    sa.Column('completed_at', sa.DateTime(), nullable=True),
+    sa.Column('canceled_at', sa.DateTime(), nullable=True),
+    sa.Column('refunded_at', sa.DateTime(), nullable=True),
+    sa.Column('failed_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_orders_is_active'), 'orders', ['is_active'], unique=False)
+    op.create_index(op.f('ix_orders_order_no'), 'orders', ['order_no'], unique=True)
+    op.create_index(op.f('ix_orders_status'), 'orders', ['status'], unique=False)
+    op.create_index(op.f('ix_orders_user_id'), 'orders', ['user_id'], unique=False)
+    op.create_table('wallet',
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('user_id', sa.Uuid(), nullable=False),
+    sa.Column('balance', sa.Numeric(precision=18, scale=2), nullable=False),
+    sa.Column('currency', sqlmodel.sql.sqltypes.AutoString(length=3), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_wallet_is_active'), 'wallet', ['is_active'], unique=False)
+    op.create_index(op.f('ix_wallet_user_id'), 'wallet', ['user_id'], unique=True)
     op.create_table('item',
     sa.Column('title', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('description', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
@@ -154,6 +196,26 @@ def upgrade():
     )
     op.create_index(op.f('ix_product_category_is_active'), 'product_category', ['is_active'], unique=False)
     op.create_index(op.f('ix_product_category_parent_id'), 'product_category', ['parent_id'], unique=False)
+    op.create_table('wallettransaction',
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('wallet_id', sa.Uuid(), nullable=False),
+    sa.Column('amount', sa.Numeric(precision=18, scale=2), nullable=False),
+    sa.Column('balance_after', sa.Numeric(precision=18, scale=2), nullable=False),
+    sa.Column('tx_type', sqlmodel.sql.sqltypes.AutoString(length=32), nullable=False),
+    sa.Column('ref_type', sqlmodel.sql.sqltypes.AutoString(length=32), nullable=True),
+    sa.Column('ref_id', sa.Uuid(), nullable=True),
+    sa.Column('remark', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
+    sa.Column('operator_id', sa.Uuid(), nullable=True),
+    sa.ForeignKeyConstraint(['operator_id'], ['user.id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['wallet_id'], ['wallet.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_wallettransaction_is_active'), 'wallettransaction', ['is_active'], unique=False)
+    op.create_index(op.f('ix_wallettransaction_tx_type'), 'wallettransaction', ['tx_type'], unique=False)
+    op.create_index(op.f('ix_wallettransaction_wallet_id'), 'wallettransaction', ['wallet_id'], unique=False)
     op.create_table('product',
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
@@ -180,6 +242,32 @@ def upgrade():
     op.create_index(op.f('ix_product_source_type'), 'product', ['source_type'], unique=False)
     op.create_index(op.f('ix_product_status'), 'product', ['status'], unique=False)
     op.create_index('ix_product_status_sort', 'product', ['status', 'sort'], unique=False)
+    op.create_table('order_items',
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('order_id', sa.Uuid(), nullable=False),
+    sa.Column('product_id', sa.Uuid(), nullable=True),
+    sa.Column('product_name', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
+    sa.Column('quantity', sa.Integer(), nullable=False),
+    sa.Column('unit_price', sa.Numeric(precision=18, scale=2), nullable=False),
+    sa.Column('subtotal', sa.Numeric(precision=18, scale=2), nullable=False),
+    sa.Column('base_price', sa.Numeric(precision=18, scale=8), nullable=False),
+    sa.Column('cost_price', sa.Numeric(precision=18, scale=8), nullable=False),
+    sa.Column('loss_price', sa.Numeric(precision=18, scale=8), nullable=False),
+    sa.Column('params', sa.JSON(), nullable=False),
+    sa.Column('fulfillment_type', sa.Integer(), nullable=False),
+    sa.Column('supplier_order_id', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
+    sa.Column('can_refund', sa.Boolean(), nullable=False),
+    sa.ForeignKeyConstraint(['order_id'], ['orders.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['product_id'], ['product.id'], ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_order_items_is_active'), 'order_items', ['is_active'], unique=False)
+    op.create_index(op.f('ix_order_items_order_id'), 'order_items', ['order_id'], unique=False)
+    op.create_index(op.f('ix_order_items_product_id'), 'order_items', ['product_id'], unique=False)
+    op.create_index(op.f('ix_order_items_supplier_order_id'), 'order_items', ['supplier_order_id'], unique=False)
     op.create_table('product_buy_param',
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
@@ -295,6 +383,11 @@ def downgrade():
     op.drop_table('product_fulfillment')
     op.drop_index(op.f('ix_product_buy_param_is_active'), table_name='product_buy_param')
     op.drop_table('product_buy_param')
+    op.drop_index(op.f('ix_order_items_supplier_order_id'), table_name='order_items')
+    op.drop_index(op.f('ix_order_items_product_id'), table_name='order_items')
+    op.drop_index(op.f('ix_order_items_order_id'), table_name='order_items')
+    op.drop_index(op.f('ix_order_items_is_active'), table_name='order_items')
+    op.drop_table('order_items')
     op.drop_index('ix_product_status_sort', table_name='product')
     op.drop_index(op.f('ix_product_status'), table_name='product')
     op.drop_index(op.f('ix_product_source_type'), table_name='product')
@@ -305,17 +398,31 @@ def downgrade():
     op.drop_index('ix_product_category_status', table_name='product')
     op.drop_index(op.f('ix_product_category_id'), table_name='product')
     op.drop_table('product')
+    op.drop_index(op.f('ix_wallettransaction_wallet_id'), table_name='wallettransaction')
+    op.drop_index(op.f('ix_wallettransaction_tx_type'), table_name='wallettransaction')
+    op.drop_index(op.f('ix_wallettransaction_is_active'), table_name='wallettransaction')
+    op.drop_table('wallettransaction')
     op.drop_index(op.f('ix_product_category_parent_id'), table_name='product_category')
     op.drop_index(op.f('ix_product_category_is_active'), table_name='product_category')
     op.drop_table('product_category')
     op.drop_index(op.f('ix_item_is_active'), table_name='item')
     op.drop_table('item')
+    op.drop_index(op.f('ix_wallet_user_id'), table_name='wallet')
+    op.drop_index(op.f('ix_wallet_is_active'), table_name='wallet')
+    op.drop_table('wallet')
+    op.drop_index(op.f('ix_orders_user_id'), table_name='orders')
+    op.drop_index(op.f('ix_orders_status'), table_name='orders')
+    op.drop_index(op.f('ix_orders_order_no'), table_name='orders')
+    op.drop_index(op.f('ix_orders_is_active'), table_name='orders')
+    op.drop_table('orders')
     op.drop_index(op.f('ix_image_is_active'), table_name='image')
     op.drop_index(op.f('ix_image_file_hash'), table_name='image')
     op.drop_index(op.f('ix_image_category'), table_name='image')
     op.drop_table('image')
+    op.drop_index(op.f('ix_user_username'), table_name='user')
     op.drop_index(op.f('ix_user_is_active'), table_name='user')
     op.drop_index(op.f('ix_user_email'), table_name='user')
+    op.drop_index(op.f('ix_user_can_order'), table_name='user')
     op.drop_table('user')
     op.drop_index(op.f('ix_price_template_rule_is_active'), table_name='price_template_rule')
     op.drop_table('price_template_rule')

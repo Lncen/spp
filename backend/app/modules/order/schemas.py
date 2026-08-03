@@ -62,6 +62,11 @@ class OrderPublic(SQLModel):
     id: uuid.UUID
     order_no: str
     user_id: uuid.UUID
+    username: str | None = Field(
+        default=None,
+        title="下单用户",
+        description="下单用户的用户名，管理员接口返回",
+    )
     status: OrderStatus
     total_amount: Decimal
     currency: str
@@ -82,3 +87,51 @@ class OrdersPublic(SQLModel):
 
     data: list[OrderPublic]
     count: int
+
+
+class AdminOrdersCreate(SQLModel):
+    """管理员批量下单请求"""
+
+    orders: list[OrderCreate] = Field(
+        min_length=1,
+        max_length=100,
+        title="订单列表",
+        description="每张订单独立创建，单张失败不影响其他订单",
+    )
+
+
+class AdminOrderResult(SQLModel):
+    """管理员下单单张订单结果"""
+
+    index: int = Field(title="原始顺序索引", description="从 1 开始")
+    success: bool
+    order: OrderPublic | None = None
+    detail: str | None = None
+
+
+class AdminOrdersPublic(SQLModel):
+    """管理员批量下单响应"""
+
+    total: int
+    success_count: int
+    failure_count: int
+    results: list[AdminOrderResult]
+
+
+class AdminOrderPreviewItem(SQLModel):
+    """管理员下单结算预览商品行"""
+
+    index: int = Field(title="原始顺序索引", description="从 1 开始")
+    product_id: uuid.UUID
+    product_name: str
+    quantity: int
+    unit_price: Decimal
+    subtotal: Decimal
+
+
+class AdminOrdersPreviewPublic(SQLModel):
+    """管理员下单结算预览响应"""
+
+    total: int
+    total_amount: Decimal
+    items: list[AdminOrderPreviewItem] = Field(default_factory=list)

@@ -7,6 +7,11 @@ import httpx
 from sqlmodel import Session
 
 from app.modules.supplier.models import Supplier
+from app.modules.supplier.service.dto import (
+    UpstreamCategory,
+    UpstreamProductDetail,
+    UpstreamProductSummary,
+)
 
 
 class SupplierClientError(Exception):
@@ -17,7 +22,12 @@ class SupplierClientError(Exception):
 class ClientMeta(ABCMeta):
     _registry: dict[str, type[SupplierClientBase]] = {}
 
-    def __new__(cls, name, bases, attrs):
+    def __new__(
+        cls,
+        name: str,
+        bases: tuple[type[Any], ...],
+        attrs: dict[str, Any],
+    ) -> type[Any]:
         new_cls = super().__new__(cls, name, bases, attrs)
 
         if name != "SupplierClientBase" and issubclass(new_cls, SupplierClientBase):
@@ -140,13 +150,13 @@ class SupplierClientBase(BaseHttpClient, metaclass=ClientMeta):
         page_size: int = 20,
         keyword: str | None = None,
         category_id: str | None = None,
-    ) -> list[dict[str, Any]]: ...
+    ) -> list[UpstreamProductSummary]: ...
 
     @abstractmethod
-    def query_product_detail(self, product_id: str) -> dict[str, Any]: ...
+    def query_product_detail(self, product_id: str) -> UpstreamProductDetail: ...
 
     @abstractmethod
-    def get_categories(self) -> list[dict[str, Any]]: ...
+    def get_categories(self) -> list[UpstreamCategory]: ...
 
     @abstractmethod
     def create_order(

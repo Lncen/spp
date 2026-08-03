@@ -83,14 +83,27 @@ def _replace_rules(
     session.commit()
 
 
+def _clear_default_flag(*, session: Session) -> None:
+    """将其他模板的默认标记清空，保证同一时间只有一个默认模板"""
+    defaults = session.exec(
+        select(PriceTemplate).where(PriceTemplate.is_default)
+    ).all()
+    for row in defaults:
+        row.is_default = False
+        session.add(row)
+
+
 def create_price_template(
     *, session: Session, template_in: PriceTemplateCreate
 ) -> PriceTemplate:
     """创建价格模板，并为 1-10 等级补齐折扣规则"""
     _check_name_unique(session=session, name=template_in.name)
+    if template_in.is_default:
+        _clear_default_flag(session=session)
     db_template = PriceTemplate(
         name=template_in.name,
         description=template_in.description,
+        is_default=template_in.is_default,
     )
     session.add(db_template)
     session.commit()
@@ -108,6 +121,16 @@ def get_price_template(
     if not db_template:
         raise HTTPException(status_code=404, detail="价格模板不存在")
     return db_template
+
+
+def get_default_price_template(*, session: Session) -> PriceTemplate | None:
+    """获取当前启用的默认价格模板"""
+    return session.exec(
+        select(PriceTemplate).where(
+            PriceTemplate.is_default,
+            PriceTemplate.is_active,
+        )
+    ).first()
 
 
 def get_all_price_templates(
@@ -170,6 +193,10 @@ def update_price_template(
     db_template = get_price_template(session=session, template_id=template_id)
     rules_in = template_in.rules
     update_dict = template_in.model_dump(exclude_unset=True, exclude={"rules"})
+
+    # 如果设置了 is_default=True，先将其他模板设为非默认
+    if update_dict.get("is_default") is True:
+        _clear_default_flag(session=session)
 
     new_name = update_dict.get("name")
     if new_name is not None:

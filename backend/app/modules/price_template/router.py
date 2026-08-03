@@ -53,6 +53,7 @@ def _template_to_public(
         id=template.id,
         name=template.name,
         description=template.description,
+        is_default=template.is_default,
         is_active=template.is_active,
         created_at=template.created_at,
         updated_at=template.updated_at,

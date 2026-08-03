@@ -1,13 +1,18 @@
 """订单模块：API 与业务测试"""
 
+import uuid
 from decimal import Decimal
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from app.core.config import settings
 from app.modules.level.models import UserLevel
+from app.modules.product.product.models import ProductSupplier
+from app.modules.supplier.service.clients.base import SupplierClientError
+from app.modules.supplier.service.clients.ylsup import YlsupClient
 from app.modules.user.models import User
 from app.modules.wallet.models import Wallet
 from tests.api.routes.test_products import (
@@ -15,13 +20,12 @@ from tests.api.routes.test_products import (
     create_price_template,
     create_product,
 )
+from tests.api.routes.test_suppliers import create_random_supplier
 from tests.utils.user import authentication_token_from_email, create_random_user
 from tests.utils.utils import random_lower_string
 
 
-def _create_wallet_user(
-    client: TestClient, db: Session
-) -> tuple[dict[str, str], User]:
+def _create_wallet_user(client: TestClient, db: Session) -> tuple[dict[str, str], User]:
     """创建随机用户并返回其认证头和用户对象"""
     user = create_random_user(db)
     headers = authentication_token_from_email(client=client, email=user.email, db=db)
@@ -50,11 +54,11 @@ def _create_ready_product(
     superuser_token_headers: dict[str, str],
     **kwargs: Any,
 ) -> dict:
-    """创建可售商品（READY 状态）"""
+    """创建可售商品（APPROVED 状态）"""
     return create_product(
         client,
         superuser_token_headers,
-        status=3,
+        status=7,
         **kwargs,
     )
 
@@ -67,12 +71,13 @@ def _create_custom_inventory_product(
     max_quantity: int = 5,
     is_batch: bool = True,
     purchase_step: int = 1,
+    fulfillment_type: int = 2,
 ) -> dict:
     category = create_category(client, superuser_token_headers)
     data = {
         "name": random_lower_string(),
         "category_id": category["id"],
-        "status": 3,
+        "status": 7,
         "source_type": 2,
         "pricing": {"cost_price": "10.00", "fixed_price": "20.00"},
         "inventory": {
@@ -82,7 +87,11 @@ def _create_custom_inventory_product(
             "is_batch": is_batch,
             "purchase_step": purchase_step,
         },
-        "fulfillment": {"fulfillment_type": 2, "can_refund": True, "unit": "件"},
+        "fulfillment": {
+            "fulfillment_type": fulfillment_type,
+            "can_refund": True,
+            "unit": "件",
+        },
         "buy_params": [{"key": "account", "label": "账号", "is_required": True}],
     }
     response = client.post(
@@ -445,7 +454,85 @@ def test_create_order_rejects_repeat_purchase(
         json=_order_payload(product["id"]),
     )
     assert second.status_code == 400
-    assert second.json()["detail"] == "该商品每人限购一次"
+    assert second.json()["detail"] == "该商品相同参数订单未完成，禁止重复下单"
+
+
+def test_create_order_allows_same_product_different_params(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product = _create_ready_product(client, superuser_token_headers, price_mode="fixed")
+
+    first = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"], params={"account": "account-a"}),
+    )
+    assert first.status_code == 200
+    second = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"], params={"account": "account-b"}),
+    )
+    assert second.status_code == 200
+    assert second.json()["status"] == 1
+
+
+def test_create_order_rejects_repeat_same_params_different_quantity(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product = _create_ready_product(client, superuser_token_headers, price_mode="fixed")
+
+    first = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"], quantity=1),
+    )
+    assert first.status_code == 200
+    second = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"], quantity=2),
+    )
+    assert second.status_code == 400
+    assert second.json()["detail"] == "该商品相同参数订单未完成，禁止重复下单"
+
+
+def test_create_order_allows_reorder_after_cancel(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product = _create_ready_product(client, superuser_token_headers, price_mode="fixed")
+
+    first = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert first.status_code == 200
+    cancel = client.post(
+        f"{settings.API_V1_STR}/orders/me/{first.json()['id']}/cancel",
+        headers=headers,
+    )
+    assert cancel.status_code == 200
+    assert cancel.json()["status"] == 8
+
+    second = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert second.status_code == 200
 
 
 def test_cancel_order_refunds_and_restores_stock(
@@ -472,8 +559,9 @@ def test_cancel_order_refunds_and_restores_stock(
     )
     assert response.status_code == 200
     content = response.json()
-    assert content["status"] == 4
+    assert content["status"] == 8
     assert content["canceled_at"] is not None
+    assert content["refunded_at"] is not None
     assert _wallet_balance(client, headers) == Decimal("100.00")
     assert _product_stock(client, product["id"], superuser_token_headers) == 100
 
@@ -510,7 +598,7 @@ def test_fulfill_manual_order_and_refund(
     )
     assert fulfill.status_code == 200
     content = fulfill.json()
-    assert content["status"] == 2
+    assert content["status"] == 3
     assert content["processing_at"] is not None
 
     refund = client.post(
@@ -519,7 +607,7 @@ def test_fulfill_manual_order_and_refund(
     )
     assert refund.status_code == 200
     content = refund.json()
-    assert content["status"] == 5
+    assert content["status"] == 8
     assert content["refunded_at"] is not None
     assert _wallet_balance(client, headers) == Decimal("100.00")
     assert _product_stock(client, product["id"], superuser_token_headers) == 100
@@ -549,14 +637,14 @@ def test_refund_completed_order_keeps_stock_deducted(
         headers=superuser_token_headers,
     )
     assert fulfill.status_code == 200
-    assert fulfill.json()["status"] == 3
+    assert fulfill.json()["status"] == 6
 
     refund = client.post(
         f"{settings.API_V1_STR}/orders/{order['id']}/refund",
         headers=superuser_token_headers,
     )
     assert refund.status_code == 200
-    assert refund.json()["status"] == 5
+    assert refund.json()["status"] == 8
     assert _wallet_balance(client, headers) == Decimal("100.00")
     assert _product_stock(client, product["id"], superuser_token_headers) == 99
 
@@ -592,7 +680,7 @@ def test_refund_rejects_non_refundable_product(
     assert response.json()["detail"] == "订单包含不支持退款的商品"
 
 
-def test_cancel_order_after_fulfill_rejected(
+def test_cancel_order_after_manual_fulfill_refunds(
     client: TestClient,
     db: Session,
     superuser_token_headers: dict[str, str],
@@ -619,8 +707,336 @@ def test_cancel_order_after_fulfill_rejected(
         f"{settings.API_V1_STR}/orders/me/{order['id']}/cancel",
         headers=headers,
     )
-    assert response.status_code == 400
-    assert response.json()["detail"] == "当前状态不可取消"
+    assert response.status_code == 200
+    assert response.json()["status"] == 8
+    assert _wallet_balance(client, headers) == Decimal("100.00")
+    assert _product_stock(client, product["id"], superuser_token_headers) == 100
+
+
+def _create_api_product_with_supplier(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> tuple[dict, object]:
+    supplier = create_random_supplier(db)
+    product = _create_custom_inventory_product(
+        client,
+        superuser_token_headers,
+        fulfillment_type=3,
+    )
+    db.add(
+        ProductSupplier(
+            product_id=uuid.UUID(product["id"]),
+            supplier_id=supplier.id,
+            sku_id="SKU-API",
+        )
+    )
+    db.commit()
+    return product, supplier
+
+
+def test_fulfill_api_order_syncs_upstream_status(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product, _ = _create_api_product_with_supplier(client, db, superuser_token_headers)
+    monkeypatch.setattr(
+        YlsupClient,
+        "create_order",
+        lambda self, **kwargs: {"order_id": "10086"},
+    )
+    monkeypatch.setattr(
+        YlsupClient,
+        "query_order",
+        lambda self, order_ids: {"status": 3},
+    )
+
+    order = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert order.status_code == 200
+    assert order.json()["status"] == 1
+
+    fulfill = client.post(
+        f"{settings.API_V1_STR}/orders/{order.json()['id']}/fulfill",
+        headers=superuser_token_headers,
+    )
+    assert fulfill.status_code == 200
+    assert fulfill.json()["status"] == 3
+    assert fulfill.json()["items"][0]["supplier_order_id"] == "10086"
+
+    monkeypatch.setattr(
+        YlsupClient,
+        "query_order",
+        lambda self, order_ids: {"status": 6},
+    )
+    sync = client.post(
+        f"{settings.API_V1_STR}/orders/{order.json()['id']}/sync-status",
+        headers=superuser_token_headers,
+    )
+    assert sync.status_code == 200
+    assert sync.json()["status"] == 6
+    assert sync.json()["completed_at"] is not None
+
+
+def test_fulfill_api_order_failure_refunds(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product, _ = _create_api_product_with_supplier(client, db, superuser_token_headers)
+
+    def raise_upstream_error(_self: object, **kwargs: object) -> dict:
+        del kwargs
+        raise SupplierClientError("上游下单失败")
+
+    monkeypatch.setattr(YlsupClient, "create_order", raise_upstream_error)
+    order = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert order.status_code == 200
+
+    fulfill = client.post(
+        f"{settings.API_V1_STR}/orders/{order.json()['id']}/fulfill",
+        headers=superuser_token_headers,
+    )
+    assert fulfill.status_code == 502
+    assert fulfill.json()["detail"] == "供应商履约失败，订单已自动退款: 上游下单失败"
+    assert _wallet_balance(client, headers) == Decimal("100.00")
+    assert _product_stock(client, product["id"], superuser_token_headers) == 100
+
+    detail = client.get(
+        f"{settings.API_V1_STR}/orders/{order.json()['id']}",
+        headers=superuser_token_headers,
+    )
+    assert detail.json()["status"] == 8
+
+
+def _admin_order_payload(products: list[dict], quantities: list[int]) -> dict:
+    return {
+        "orders": [
+            {
+                "items": [
+                    {
+                        "product_id": product["id"],
+                        "quantity": quantity,
+                        "params": {"account": f"admin-account-{index}"},
+                    }
+                ],
+                "remark": f"管理员测试单-{index}",
+            }
+            for index, (product, quantity) in enumerate(
+                zip(products, quantities), start=1
+            )
+        ]
+    }
+
+
+def test_admin_create_order_success_skips_wallet_and_balance(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    superuser = db.exec(
+        select(User).where(User.email == settings.FIRST_SUPERUSER)
+    ).one()
+    product, _ = _create_api_product_with_supplier(
+        client, db, superuser_token_headers
+    )
+
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/admin",
+        headers=superuser_token_headers,
+        json=_admin_order_payload([product], [2]),
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["total"] == 1
+    assert content["success_count"] == 1
+    assert content["failure_count"] == 0
+
+    result = content["results"][0]
+    assert result["index"] == 1
+    assert result["success"] is True
+    assert result["detail"] is None
+    order = result["order"]
+    assert order["status"] == 1
+    assert order["paid_at"] is not None
+    assert order["user_id"] == str(superuser.id)
+    assert order["username"] == superuser.username
+    assert order["remark"] == "管理员测试单-1"
+    assert Decimal(order["total_amount"]) == Decimal("40.00")
+    assert order["items"][0]["params"] == {"account": "admin-account-1"}
+    assert _product_stock(client, product["id"], superuser_token_headers) == 98
+    assert "供应商" not in response.text
+
+
+def test_admin_create_order_rejects_repeat_purchase(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    product, _ = _create_api_product_with_supplier(
+        client, db, superuser_token_headers
+    )
+
+    first = client.post(
+        f"{settings.API_V1_STR}/orders/admin",
+        headers=superuser_token_headers,
+        json=_admin_order_payload([product], [1]),
+    )
+    assert first.status_code == 200
+    assert first.json()["success_count"] == 1
+
+    second = client.post(
+        f"{settings.API_V1_STR}/orders/admin",
+        headers=superuser_token_headers,
+        json=_admin_order_payload([product], [1]),
+    )
+    assert second.status_code == 200
+    content = second.json()
+    assert content["success_count"] == 0
+    assert content["failure_count"] == 1
+    result = content["results"][0]
+    assert result["success"] is False
+    assert result["order"] is None
+    assert result["detail"] == "该商品相同参数订单未完成，禁止重复下单"
+    assert _product_stock(client, product["id"], superuser_token_headers) == 99
+
+
+def test_admin_create_order_allows_same_product_different_params(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    product, _ = _create_api_product_with_supplier(
+        client, db, superuser_token_headers
+    )
+
+    first = client.post(
+        f"{settings.API_V1_STR}/orders/admin",
+        headers=superuser_token_headers,
+        json=_admin_order_payload([product], [1]),
+    )
+    assert first.status_code == 200
+    assert first.json()["success_count"] == 1
+
+    payload = _admin_order_payload([product], [1])
+    payload["orders"][0]["items"][0]["params"] = {"account": "admin-account-other"}
+    second = client.post(
+        f"{settings.API_V1_STR}/orders/admin",
+        headers=superuser_token_headers,
+        json=payload,
+    )
+    assert second.status_code == 200
+    assert second.json()["success_count"] == 1
+
+
+@pytest.mark.parametrize(
+    ("disable_field", "disable_value"),
+    [("is_active", False), ("status", "inactive")],
+)
+def test_admin_create_order_rejects_unavailable_supplier(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+    disable_field: str,
+    disable_value: object,
+) -> None:
+    supplier = create_random_supplier(db)
+    product = _create_custom_inventory_product(
+        client,
+        superuser_token_headers,
+        fulfillment_type=3,
+    )
+    db.add(
+        ProductSupplier(
+            product_id=uuid.UUID(product["id"]),
+            supplier_id=supplier.id,
+            sku_id="SKU-API",
+        )
+    )
+    setattr(supplier, disable_field, disable_value)
+    db.add(supplier)
+    db.commit()
+
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/admin",
+        headers=superuser_token_headers,
+        json=_admin_order_payload([product], [1]),
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["success_count"] == 0
+    assert content["failure_count"] == 1
+    result = content["results"][0]
+    assert result["success"] is False
+    assert result["order"] is None
+    assert result["detail"] == "商品暂不可下单，请稍后重试"
+    assert "供应商" not in response.text
+    assert _product_stock(client, product["id"], superuser_token_headers) == 100
+
+
+def test_admin_create_orders_partial_success(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    product_a, _ = _create_api_product_with_supplier(
+        client, db, superuser_token_headers
+    )
+    product_b, supplier_b = _create_api_product_with_supplier(
+        client, db, superuser_token_headers
+    )
+    supplier_b.is_active = False
+    db.add(supplier_b)
+    db.commit()
+
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/admin",
+        headers=superuser_token_headers,
+        json=_admin_order_payload([product_a, product_b, product_a], [1, 1, 1]),
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["total"] == 3
+    assert content["success_count"] == 2
+    assert content["failure_count"] == 1
+    results = content["results"]
+    assert [result["success"] for result in results] == [True, False, True]
+    assert results[0]["index"] == 1
+    assert results[1]["index"] == 2
+    assert results[2]["index"] == 3
+    assert results[0]["order"] is not None
+    assert results[1]["order"] is None
+    assert results[2]["order"] is not None
+    assert results[1]["detail"] == "商品暂不可下单，请稍后重试"
+    assert "供应商" not in response.text
+    assert _product_stock(client, product_a["id"], superuser_token_headers) == 98
+    assert _product_stock(client, product_b["id"], superuser_token_headers) == 100
+
+
+def test_admin_create_orders_requires_superuser(
+    client: TestClient,
+    normal_user_token_headers: dict[str, str],
+) -> None:
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/admin",
+        headers=normal_user_token_headers,
+        json={"orders": []},
+    )
+    assert response.status_code == 403
 
 
 def test_order_list_routes_permissions(
@@ -676,3 +1092,65 @@ def test_user_cannot_read_others_order(
         headers=headers_b,
     )
     assert response.status_code == 404
+
+
+def test_admin_order_list_filters_by_user_and_includes_username(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    headers_a, user_a = _create_wallet_user(client, db)
+    headers_b, user_b = _create_wallet_user(client, db)
+    _fund_wallet(client, headers_a, superuser_token_headers)
+    product = _create_ready_product(client, superuser_token_headers, price_mode="fixed")
+    order = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers_a,
+        json=_order_payload(product["id"]),
+    ).json()
+
+    response = client.get(
+        f"{settings.API_V1_STR}/orders/?user_id={user_a.id}",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["count"] == 1
+    assert content["data"][0]["id"] == order["id"]
+    assert content["data"][0]["username"] == user_a.username
+
+    response_b = client.get(
+        f"{settings.API_V1_STR}/orders/?user_id={user_b.id}",
+        headers=superuser_token_headers,
+    )
+    assert response_b.status_code == 200
+    assert response_b.json() == {"data": [], "count": 0}
+
+
+def test_admin_order_detail_includes_username(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    headers, user = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product = _create_ready_product(client, superuser_token_headers, price_mode="fixed")
+    order = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    ).json()
+
+    response = client.get(
+        f"{settings.API_V1_STR}/orders/{order['id']}",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["username"] == user.username
+
+    cancel = client.post(
+        f"{settings.API_V1_STR}/orders/{order['id']}/cancel",
+        headers=superuser_token_headers,
+    )
+    assert cancel.status_code == 200
+    assert cancel.json()["username"] == user.username

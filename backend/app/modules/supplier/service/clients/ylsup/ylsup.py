@@ -9,6 +9,13 @@ from app.modules.supplier.service.clients.base import (
     SupplierClientBase,
     SupplierClientError,
 )
+from app.modules.supplier.service.dto import (
+    UpstreamCategory,
+    UpstreamProductDetail,
+    UpstreamProductSummary,
+)
+
+from .adapter import yl_goods_adapter, yl_product_summary_adapter
 
 
 class YlsupClient(SupplierClientBase):
@@ -55,11 +62,13 @@ class YlsupClient(SupplierClientBase):
 
         return Decimal(str(account["balance"]))
 
-    def get_categories(self) -> list[dict[str, Any]]:
+
+
+    def get_categories(self) -> list[UpstreamCategory]:
         """获取商品分类"""
         payload = self.get("/openapi/customer/Goods/CategoryList").json()
         categories = self._data(payload)
-        result: list[dict[str, Any]] = []
+        result: list[UpstreamCategory] = []
 
         def collect(items: Any, parent_id: str | None = None) -> None:
             if not isinstance(items, list):
@@ -68,11 +77,11 @@ class YlsupClient(SupplierClientBase):
                 if not isinstance(item, dict) or "id" not in item or "name" not in item:
                     continue
                 result.append(
-                    {
-                        "id": str(item["id"]),
-                        "name": str(item["name"]),
-                        "parent_id": str(item.get("parent_id") or parent_id or "0"),
-                    }
+                    UpstreamCategory(
+                        id=str(item["id"]),
+                        name=str(item["name"]),
+                        parent_id=str(item.get("parent_id") or parent_id or "0"),
+                    )
                 )
                 collect(item.get("parent_infos"), parent_id=str(item["id"]))
 
@@ -86,7 +95,7 @@ class YlsupClient(SupplierClientBase):
         page_size: int = 20,
         keyword: str | None = None,
         category_id: str | None = None,
-    ) -> list[dict[str, Any]]:
+    ) -> list[UpstreamProductSummary]:
         """查询商品列表"""
         body: dict[str, Any] = {
             "page": page,
@@ -97,32 +106,41 @@ class YlsupClient(SupplierClientBase):
             body["goods_category_id"] = category_id
         payload = self.post("/openapi/customer/Goods/List", json=body).json()
         data = self._data(payload)
-        return data if isinstance(data, list) else []
+        if not isinstance(data, list):
+            return []
+        return [
+            yl_product_summary_adapter(item)
+            for item in data
+            if isinstance(item, dict)
+        ]
 
-    def query_product_detail(self, product_id: str) -> dict[str, Any]:
+    def query_product_detail(self, product_id: str) -> UpstreamProductDetail:
         """获取商品详情"""
         params = {"goods_id": product_id}
-        payload = self.post("/openapi/customer/Goods/Show", params=params).json()
+        payload = self.post("/openapi/customer/Goods/Show", json=params).json()
         data = self._data(payload)
-        return data if isinstance(data, dict) else {}
+        if not isinstance(data, dict):
+            raise SupplierClientError("上游商品详情返回格式错误: 期望 object")
+        return yl_goods_adapter(data)
 
     def create_order(
         self,
         *,
-        product_id: str,
+        sku_id: int|str,
         quantity: int,
         customer_order_id: str | None = None,
-        **kwargs: Any,
+        data: dict[str, str] = None,
     ) -> dict[str, Any]:
         """向上游下单"""
-        body = {
-            "goods_id": product_id,
-            "buy_number": quantity,
-            "buy_params": kwargs,
-        }
+        data = {
+                "goods_id": sku_id,
+                "buy_number": quantity,
+                "customer_order_id": customer_order_id,
+                "buy_params": data
+                }
         if customer_order_id:
-            body["customer_order_id"] = customer_order_id
-        payload = self.post("/openapi/customer/Goods/Buy", json=body).json()
+            data["customer_order_id"] = customer_order_id
+        payload = self.post("/openapi/customer/Goods/Buy", data=data).json()
         data = self._data(payload)
         return data if isinstance(data, dict) else {}
 

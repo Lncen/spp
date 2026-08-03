@@ -19,6 +19,9 @@ celery_app.conf.update(
     task_track_started=True,
     task_acks_late=True,
     worker_prefetch_multiplier=1,
+    beat_scheduler="sqlalchemy_celery_beat.schedulers:DatabaseScheduler",
+    beat_dburi=str(settings.SQLALCHEMY_DATABASE_URI),
+    beat_schema="celery_schema",
 )
 
 

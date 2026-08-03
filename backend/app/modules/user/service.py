@@ -10,8 +10,13 @@ from app.modules.user.schemas import UserCreate, UserUpdate
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
     """创建新用户"""
+    username = getattr(user_create, "username", None) or user_create.email
     db_obj = User.model_validate(
-        user_create, update={"hashed_password": get_password_hash(user_create.password)}
+        user_create,
+        update={
+            "hashed_password": get_password_hash(user_create.password),
+            "username": username,
+        },
     )
     session.add(db_obj)
     session.commit()
