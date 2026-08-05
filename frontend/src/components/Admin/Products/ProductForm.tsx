@@ -129,19 +129,23 @@ const ProductFormDialog = ({
   const { data: categories } = useQuery({
     queryKey: ["product-categories"],
     queryFn: () => ProductCategoriesService.readProductCategories(),
+    enabled: isOpen,
   })
   const { data: priceTemplates } = useQuery({
     queryKey: ["price-templates"],
     queryFn: () =>
       PriceTemplatesService.readPriceTemplates({ skip: 0, limit: 100 }),
+    enabled: isOpen,
   })
   const { data: suppliers } = useQuery({
     queryKey: ["suppliers"],
     queryFn: () => SuppliersService.readSuppliers({ skip: 0, limit: 100 }),
+    enabled: isOpen,
   })
   const { data: images } = useQuery({
     queryKey: ["images"],
     queryFn: () => ImagesService.readImages({ skip: 0, limit: 200 }),
+    enabled: isOpen,
   })
 
   const form = useForm<ProductFormValues>({
