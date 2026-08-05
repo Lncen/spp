@@ -562,7 +562,9 @@ const ProductFormDialog = ({
                       name="priceTemplateId"
                       render={({ field }) => (
                         <FormItem className="sm:col-span-2">
-                          <FormLabel>价格模板</FormLabel>
+                          <FormLabel>
+                            价格模板 <span className="text-destructive">*</span>
+                          </FormLabel>
                           <Select
                             value={stringOrEmpty(field.value)}
                             onValueChange={(value) =>
@@ -604,7 +606,7 @@ const ProductFormDialog = ({
                             <Input
                               type="number"
                               min={0}
-                              step="0.00000001"
+                              step="0.01"
                               {...field}
                             />
                           </FormControl>
@@ -627,7 +629,7 @@ const ProductFormDialog = ({
                               type="number"
                               min={0.01}
                               max={9.99}
-                              step="0.0001"
+                              step="0.01"
                               {...field}
                             />
                           </FormControl>
@@ -646,12 +648,7 @@ const ProductFormDialog = ({
                       <FormItem>
                         <FormLabel>成本价</FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            min={0}
-                            step="0.00000001"
-                            {...field}
-                          />
+                          <Input type="number" min={0} step="0.01" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -664,12 +661,7 @@ const ProductFormDialog = ({
                       <FormItem>
                         <FormLabel>固定损耗</FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            min={0}
-                            step="0.00000001"
-                            {...field}
-                          />
+                          <Input type="number" min={0} step="0.01" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

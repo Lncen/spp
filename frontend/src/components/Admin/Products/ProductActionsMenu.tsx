@@ -8,7 +8,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import AdminOrderDialog from "./AdminOrderDialog"
 import DeleteProduct from "./DeleteProduct"
 import EditProduct from "./EditProduct"
 
@@ -28,7 +27,6 @@ export const ProductActionsMenu = ({ product }: ProductActionsMenuProps) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <EditProduct product={product} onSuccess={() => setOpen(false)} />
-        <AdminOrderDialog product={product} />
         <DeleteProduct
           id={product.id}
           name={product.name}

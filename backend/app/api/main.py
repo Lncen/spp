@@ -34,7 +34,6 @@ from app.modules.product.product.models import (  # noqa: F401
     ProductSupplier,
 )
 from app.modules.product.product.router import product_router
-from app.modules.schedule.router import router as schedule_router
 from app.modules.supplier.models import Supplier  # noqa: F401
 from app.modules.supplier.router import router as supplier_router
 from app.modules.user.models import User  # noqa: F401
@@ -54,7 +53,6 @@ api_router.include_router(order_router)
 api_router.include_router(image_router)
 api_router.include_router(image_category_router)
 api_router.include_router(price_template_router)
-api_router.include_router(schedule_router)
 api_router.include_router(supplier_router)
 api_router.include_router(product_router)
 api_router.include_router(product_category_router)

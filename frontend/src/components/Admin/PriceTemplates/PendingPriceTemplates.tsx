@@ -13,7 +13,6 @@ const PendingPriceTemplates = () => (
     <TableHeader>
       <TableRow>
         <TableHead>模板名称</TableHead>
-        <TableHead>默认</TableHead>
         <TableHead>描述</TableHead>
         <TableHead>状态</TableHead>
         <TableHead>等级折扣</TableHead>
@@ -27,9 +26,6 @@ const PendingPriceTemplates = () => (
         <TableRow key={index}>
           <TableCell>
             <Skeleton className="h-4 w-32" />
-          </TableCell>
-          <TableCell>
-            <Skeleton className="h-4 w-12" />
           </TableCell>
           <TableCell>
             <Skeleton className="h-4 w-48" />

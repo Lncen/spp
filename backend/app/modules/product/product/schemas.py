@@ -101,8 +101,8 @@ class ProductPricingCreate(SQLModel):
             )
             if value is not None
         )
-        if filled_count > 1:
-            raise ValueError("固定价格、商品系数、价格模板三者最多只能设置一个")
+        if filled_count != 1:
+            raise ValueError("固定价格、商品系数、价格模板三者必须且只能设置一个")
         return self
 
 

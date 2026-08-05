@@ -12,10 +12,10 @@ export const PRODUCT_TYPE_OPTIONS = [
 export const PRODUCT_STATUS_OPTIONS = [
   { value: 1, label: "待审核" },
   { value: 2, label: "已拒绝" },
-  { value: 3, label: "待上架" },
-  { value: 5, label: "下架" },
-  { value: 6, label: "撤回" },
-  { value: 7, label: "上架" },
+  { value: 3, label: "可售" },
+  { value: 5, label: "已下架" },
+  { value: 6, label: "已撤回" },
+  { value: 7, label: "已通过" },
   { value: 8, label: "已售罄" },
 ] as const
 
@@ -23,7 +23,7 @@ export const SOURCE_TYPE_OPTIONS = [
   { value: 1, label: "供应商" },
   { value: 2, label: "本地" },
   { value: 3, label: "跨境" },
-  { value: 4, label: "用户生成内容 (C2C/二手)" },
+  { value: 4, label: "UGC" },
   { value: 5, label: "联合运营" },
   { value: 6, label: "API 接入" },
   { value: 7, label: "人工" },

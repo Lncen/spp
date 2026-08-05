@@ -34,7 +34,7 @@ class Order(BaseModelMixin, SQLModel, table=True):
         description="下单用户的 UUID",
     )
     status: OrderStatus = Field(
-        default=OrderStatus.PAID,
+        default=OrderStatus.CREATED,
         sa_type=Integer,
         index=True,
         title="订单状态",

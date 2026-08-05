@@ -134,11 +134,11 @@ def read_supplier_balance(
         raise HTTPException(status_code=502, detail=str(e)) from e
 
     # 上游余额写回数据库，余额列仅保留两位小数
-    balance = balance.quantize(Decimal("0.01"))
-    supplier.balance = balance
+    supplier.balance = balance.quantize(Decimal("0.01"))
     session.add(supplier)
     session.commit()
-    return BalancePublic(balance=balance)
+    session.refresh(supplier)
+    return BalancePublic(balance=supplier.balance)
 
 
 @router.get("/{id}/upstream-products", response_model=UpstreamProductsPublic)

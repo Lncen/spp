@@ -7,7 +7,6 @@ import { z } from "zod"
 
 import { PriceTemplatesService } from "@/client"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogClose,
@@ -45,7 +44,6 @@ const formSchema = z.object({
     .max(255, "模板描述不能超过 255 个字符")
     .optional()
     .or(z.literal("")),
-  is_default: z.boolean(),
   rules: z
     .array(
       z.object({
@@ -79,7 +77,6 @@ const AddPriceTemplate = () => {
     defaultValues: {
       name: "",
       description: "",
-      is_default: false,
       rules: RULE_LEVELS.map((level) => ({
         level,
         discount_rate: "1.5000",
@@ -93,7 +90,6 @@ const AddPriceTemplate = () => {
         requestBody: {
           name: data.name,
           description: data.description || null,
-          is_default: data.is_default,
           rules: RULE_LEVELS.map((level) => {
             const rule = data.rules.find((item) => item.level === level)
             return {
@@ -170,23 +166,6 @@ const AddPriceTemplate = () => {
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="is_default"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel>设为默认模板</FormLabel>
                     <FormMessage />
                   </FormItem>
                 )}

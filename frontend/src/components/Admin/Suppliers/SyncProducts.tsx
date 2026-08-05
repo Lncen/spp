@@ -189,7 +189,8 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
         id,
         requestBody: {
           product_ids: Array.from(selected),
-          category_id: localCategoryId === "" ? undefined : localCategoryId,
+          category_id:
+            localCategoryId === "" ? undefined : localCategoryId,
         },
       })
       for (let attempt = 0; attempt < 120; attempt += 1) {
@@ -276,9 +277,7 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="shrink-0 text-sm text-muted-foreground">
-            本地分类
-          </span>
+          <span className="shrink-0 text-sm text-muted-foreground">本地分类</span>
           <Select value={localCategoryId} onValueChange={setLocalCategoryId}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="不修改分类" />
@@ -350,11 +349,8 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
                     </span>
                   )}
                   <Badge
-                    variant="outline"
-                    className={cn(
-                      "shrink-0",
-                      product.synced && "border-green-500 text-green-700",
-                    )}
+                    variant={product.synced ? "secondary" : "outline"}
+                    className="shrink-0"
                   >
                     {product.synced ? "已同步" : "未同步"}
                   </Badge>

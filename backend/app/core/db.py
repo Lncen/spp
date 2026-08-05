@@ -3,9 +3,6 @@
 from app.core.config import settings
 from app.init_models_data.images import seed_image_categories
 from app.init_models_data.levels import seed_levels
-from app.init_models_data.price_templates import seed_price_templates
-from app.init_models_data.product_category import seed_product_category_templates
-from app.init_models_data.supplier import seed_supplier_templates
 from app.modules.user.models import User
 from app.modules.user.schemas import UserCreate
 from app.modules.user.service import create_user
@@ -24,13 +21,6 @@ def init_db(session: Session) -> None:
 
     # 播种默认图片分类（幂等，已有则跳过）
     seed_image_categories(session=session)
-
-    # 播种默认价格模板（幂等，已有则跳过）
-    seed_price_templates(session=session)
-
-    seed_supplier_templates(session=session)
-
-    # seed_product_category_templates(session=session)
 
     # Tables should be created with Alembic migrations
     # But if you don't want to use migrations, create

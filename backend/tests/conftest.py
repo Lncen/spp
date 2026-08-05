@@ -46,13 +46,6 @@ def db() -> Generator[Session]:
                     'ON "user" (can_order)'
                 )
             )
-            conn.execute(
-                text(
-                    'ALTER TABLE price_template '
-                    "ADD COLUMN IF NOT EXISTS is_default "
-                    "BOOLEAN NOT NULL DEFAULT FALSE"
-                )
-            )
         init_db(session)
         # 新模块表尚未生成迁移，测试环境单独建表；产品库由 Alembic 迁移建表
         SQLModel.metadata.create_all(
