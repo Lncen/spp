@@ -4,8 +4,10 @@ import uuid
 from decimal import Decimal
 
 from fastapi.testclient import TestClient
+from sqlmodel import Session, select
 
 from app.core.config import settings
+from app.modules.price_template.models import PriceTemplate
 from tests.utils.utils import random_lower_string
 
 
@@ -376,7 +378,6 @@ def test_create_product_rejects_multiple_price_rules(
         {"price_template_id": template["id"], "fixed_price": "20.00"},
         {"price_template_id": template["id"], "item_coefficient": "1.50"},
         {"fixed_price": "20.00", "item_coefficient": "1.50"},
-        {},
     ]
     for pricing in invalid_pricings:
         response = client.post(
@@ -391,6 +392,34 @@ def test_create_product_rejects_multiple_price_rules(
             },
         )
         assert response.status_code == 422
+
+
+def test_create_product_uses_default_template_when_not_selected(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    default_template = db.exec(
+        select(PriceTemplate).where(
+            PriceTemplate.is_default,
+            PriceTemplate.is_active,
+        )
+    ).one()
+    category = create_category(client, superuser_token_headers)
+    response = client.post(
+        f"{settings.API_V1_STR}/products/",
+        headers=superuser_token_headers,
+        json={
+            "name": random_lower_string(),
+            "category_id": category["id"],
+            "pricing": {},
+        },
+    )
+    assert response.status_code == 200
+    pricing = response.json()["pricing"]
+    assert pricing["price_template_id"] == str(default_template.id)
+    assert pricing["fixed_price"] is None
+    assert pricing["item_coefficient"] is None
+    assert pricing["rule_type"] == 3
+    assert pricing["config_mode"] == "category"
 
 
 def test_list_products_pagination_and_filters(

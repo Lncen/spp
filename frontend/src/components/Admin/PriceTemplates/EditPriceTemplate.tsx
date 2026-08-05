@@ -7,6 +7,7 @@ import { z } from "zod"
 
 import { type PriceTemplatePublic, PriceTemplatesService } from "@/client"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogClose,
@@ -52,6 +53,7 @@ const formSchema = z.object({
     .optional()
     .or(z.literal("")),
   is_active: z.string(),
+  is_default: z.boolean(),
   rules: z
     .array(
       z.object({
@@ -91,6 +93,7 @@ const EditPriceTemplate = ({ template, onSuccess }: EditPriceTemplateProps) => {
       name: template.name,
       description: template.description ?? "",
       is_active: template.is_active ? "true" : "false",
+      is_default: template.is_default,
       rules: RULE_LEVELS.map((level) => {
         const rule = template.rules.find((item) => item.level === level)
         return {
@@ -109,6 +112,7 @@ const EditPriceTemplate = ({ template, onSuccess }: EditPriceTemplateProps) => {
           name: data.name,
           description: data.description || null,
           is_active: data.is_active === "true",
+          is_default: data.is_default,
           rules: RULE_LEVELS.map((level) => {
             const rule = data.rules.find((item) => item.level === level)
             return {
@@ -212,6 +216,23 @@ const EditPriceTemplate = ({ template, onSuccess }: EditPriceTemplateProps) => {
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="is_default"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel>设为默认模板</FormLabel>
                     <FormMessage />
                   </FormItem>
                 )}

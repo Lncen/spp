@@ -26,7 +26,8 @@ def sync_upstream_products(
     updated: list[str] = []
     failed: list[dict[str, str]] = []
 
-    with Session(engine) as session:
+    # 任务内会反复读写 supplier，commit 后不主动过期对象，避免每商品重复 SELECT
+    with Session(engine, expire_on_commit=False) as session:
         supplier = session.get(Supplier, supplier_id)
         if supplier is None:
             return {

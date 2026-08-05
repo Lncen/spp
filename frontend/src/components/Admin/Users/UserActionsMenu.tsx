@@ -1,4 +1,5 @@
-import { EllipsisVertical } from "lucide-react"
+import { Link as RouterLink } from "@tanstack/react-router"
+import { EllipsisVertical, ReceiptText } from "lucide-react"
 import { useState } from "react"
 
 import type { UserPublic } from "@/client"
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import useAuth from "@/hooks/useAuth"
@@ -32,6 +34,12 @@ export const UserActionsMenu = ({ user }: UserActionsMenuProps) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
+          <RouterLink to="/orders" search={{ user_id: user.id }}>
+            <ReceiptText />
+            查看订单
+          </RouterLink>
+        </DropdownMenuItem>
         <EditUser user={user} onSuccess={() => setOpen(false)} />
         <DeleteUser id={user.id} onSuccess={() => setOpen(false)} />
       </DropdownMenuContent>

@@ -48,6 +48,7 @@ def test_create_price_template_fills_default_rules(
     assert response.status_code == 200
     content = response.json()
     assert content["name"] == data["name"]
+    assert content["is_default"] is False
     assert len(content["rules"]) == 10
     rules_by_level = {
         rule["level"]: rule["discount_rate"] for rule in content["rules"]
@@ -56,6 +57,36 @@ def test_create_price_template_fills_default_rules(
     assert Decimal(rules_by_level[5]) == Decimal("1.2")
     assert Decimal(rules_by_level[2]) == Decimal("1.5")
     assert Decimal(rules_by_level[10]) == Decimal("1.5")
+
+
+def test_default_price_template_is_unique_on_update(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    first = create_random_price_template(client, superuser_token_headers)
+    second = create_random_price_template(client, superuser_token_headers)
+
+    response = client.put(
+        f"{settings.API_V1_STR}/price-templates/{first['id']}",
+        headers=superuser_token_headers,
+        json={"is_default": True},
+    )
+    assert response.status_code == 200
+    assert response.json()["is_default"] is True
+
+    response = client.put(
+        f"{settings.API_V1_STR}/price-templates/{second['id']}",
+        headers=superuser_token_headers,
+        json={"is_default": True},
+    )
+    assert response.status_code == 200
+    assert response.json()["is_default"] is True
+
+    response = client.get(
+        f"{settings.API_V1_STR}/price-templates/{first['id']}",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["is_default"] is False
 
 
 def test_create_price_template_requires_superuser(

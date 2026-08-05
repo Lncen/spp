@@ -17,9 +17,11 @@ import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutSuppliersRouteImport } from './routes/_layout/suppliers'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutSchedulesRouteImport } from './routes/_layout/schedules'
 import { Route as LayoutProductsRouteImport } from './routes/_layout/products'
 import { Route as LayoutProductCategoriesRouteImport } from './routes/_layout/product-categories'
 import { Route as LayoutPriceTemplatesRouteImport } from './routes/_layout/price-templates'
+import { Route as LayoutOrdersRouteImport } from './routes/_layout/orders'
 import { Route as LayoutLevelsRouteImport } from './routes/_layout/levels'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutImagesRouteImport } from './routes/_layout/images'
@@ -65,6 +67,11 @@ const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutSchedulesRoute = LayoutSchedulesRouteImport.update({
+  id: '/schedules',
+  path: '/schedules',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutProductsRoute = LayoutProductsRouteImport.update({
   id: '/products',
   path: '/products',
@@ -78,6 +85,11 @@ const LayoutProductCategoriesRoute = LayoutProductCategoriesRouteImport.update({
 const LayoutPriceTemplatesRoute = LayoutPriceTemplatesRouteImport.update({
   id: '/price-templates',
   path: '/price-templates',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutOrdersRoute = LayoutOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutLevelsRoute = LayoutLevelsRouteImport.update({
@@ -117,9 +129,11 @@ export interface FileRoutesByFullPath {
   '/images': typeof LayoutImagesRoute
   '/items': typeof LayoutItemsRoute
   '/levels': typeof LayoutLevelsRoute
+  '/orders': typeof LayoutOrdersRoute
   '/price-templates': typeof LayoutPriceTemplatesRoute
   '/product-categories': typeof LayoutProductCategoriesRoute
   '/products': typeof LayoutProductsRoute
+  '/schedules': typeof LayoutSchedulesRoute
   '/settings': typeof LayoutSettingsRoute
   '/suppliers': typeof LayoutSuppliersRoute
 }
@@ -133,9 +147,11 @@ export interface FileRoutesByTo {
   '/images': typeof LayoutImagesRoute
   '/items': typeof LayoutItemsRoute
   '/levels': typeof LayoutLevelsRoute
+  '/orders': typeof LayoutOrdersRoute
   '/price-templates': typeof LayoutPriceTemplatesRoute
   '/product-categories': typeof LayoutProductCategoriesRoute
   '/products': typeof LayoutProductsRoute
+  '/schedules': typeof LayoutSchedulesRoute
   '/settings': typeof LayoutSettingsRoute
   '/suppliers': typeof LayoutSuppliersRoute
   '/': typeof LayoutIndexRoute
@@ -152,9 +168,11 @@ export interface FileRoutesById {
   '/_layout/images': typeof LayoutImagesRoute
   '/_layout/items': typeof LayoutItemsRoute
   '/_layout/levels': typeof LayoutLevelsRoute
+  '/_layout/orders': typeof LayoutOrdersRoute
   '/_layout/price-templates': typeof LayoutPriceTemplatesRoute
   '/_layout/product-categories': typeof LayoutProductCategoriesRoute
   '/_layout/products': typeof LayoutProductsRoute
+  '/_layout/schedules': typeof LayoutSchedulesRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/suppliers': typeof LayoutSuppliersRoute
   '/_layout/': typeof LayoutIndexRoute
@@ -172,9 +190,11 @@ export interface FileRouteTypes {
     | '/images'
     | '/items'
     | '/levels'
+    | '/orders'
     | '/price-templates'
     | '/product-categories'
     | '/products'
+    | '/schedules'
     | '/settings'
     | '/suppliers'
   fileRoutesByTo: FileRoutesByTo
@@ -188,9 +208,11 @@ export interface FileRouteTypes {
     | '/images'
     | '/items'
     | '/levels'
+    | '/orders'
     | '/price-templates'
     | '/product-categories'
     | '/products'
+    | '/schedules'
     | '/settings'
     | '/suppliers'
     | '/'
@@ -206,9 +228,11 @@ export interface FileRouteTypes {
     | '/_layout/images'
     | '/_layout/items'
     | '/_layout/levels'
+    | '/_layout/orders'
     | '/_layout/price-templates'
     | '/_layout/product-categories'
     | '/_layout/products'
+    | '/_layout/schedules'
     | '/_layout/settings'
     | '/_layout/suppliers'
     | '/_layout/'
@@ -280,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/schedules': {
+      id: '/_layout/schedules'
+      path: '/schedules'
+      fullPath: '/schedules'
+      preLoaderRoute: typeof LayoutSchedulesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/products': {
       id: '/_layout/products'
       path: '/products'
@@ -299,6 +330,13 @@ declare module '@tanstack/react-router' {
       path: '/price-templates'
       fullPath: '/price-templates'
       preLoaderRoute: typeof LayoutPriceTemplatesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/orders': {
+      id: '/_layout/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof LayoutOrdersRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/levels': {
@@ -345,9 +383,11 @@ interface LayoutRouteChildren {
   LayoutImagesRoute: typeof LayoutImagesRoute
   LayoutItemsRoute: typeof LayoutItemsRoute
   LayoutLevelsRoute: typeof LayoutLevelsRoute
+  LayoutOrdersRoute: typeof LayoutOrdersRoute
   LayoutPriceTemplatesRoute: typeof LayoutPriceTemplatesRoute
   LayoutProductCategoriesRoute: typeof LayoutProductCategoriesRoute
   LayoutProductsRoute: typeof LayoutProductsRoute
+  LayoutSchedulesRoute: typeof LayoutSchedulesRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutSuppliersRoute: typeof LayoutSuppliersRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
@@ -359,9 +399,11 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutImagesRoute: LayoutImagesRoute,
   LayoutItemsRoute: LayoutItemsRoute,
   LayoutLevelsRoute: LayoutLevelsRoute,
+  LayoutOrdersRoute: LayoutOrdersRoute,
   LayoutPriceTemplatesRoute: LayoutPriceTemplatesRoute,
   LayoutProductCategoriesRoute: LayoutProductCategoriesRoute,
   LayoutProductsRoute: LayoutProductsRoute,
+  LayoutSchedulesRoute: LayoutSchedulesRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutSuppliersRoute: LayoutSuppliersRoute,
   LayoutIndexRoute: LayoutIndexRoute,

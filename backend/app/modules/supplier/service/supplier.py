@@ -1,10 +1,9 @@
 """供应商模块：业务逻辑层"""
 
-import json
 import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 from typing import Any
 
 from sqlmodel import Session, select
@@ -29,6 +28,12 @@ from app.modules.product.product.models import (
 from app.modules.supplier.models import Supplier
 from app.modules.supplier.schemas import SupplierCreate
 from app.modules.supplier.service.clients.base import ClientMeta, SupplierClientBase
+from app.modules.supplier.service.dto import (
+    UpstreamBuyParam,
+    UpstreamCategory,
+    UpstreamProductDetail,
+    UpstreamProductSummary,
+)
 
 
 def create_supplier(*, session: Session, supplier_in: SupplierCreate) -> Supplier:
@@ -41,7 +46,9 @@ def create_supplier(*, session: Session, supplier_in: SupplierCreate) -> Supplie
 
 
 @contextmanager
-def supplier_client(*, session: Session, supplier_id) -> Iterator[SupplierClientBase]:
+def supplier_client(
+    *, session: Session, supplier_id: uuid.UUID | str
+) -> Iterator[SupplierClientBase]:
     """根据供应商ID获取客户端，作为上下文管理器使用，退出时自动关闭"""
     sup = session.get(Supplier, supplier_id)
     if not sup:
@@ -57,12 +64,12 @@ def supplier_client(*, session: Session, supplier_id) -> Iterator[SupplierClient
 def list_upstream_products(
     *,
     session: Session,
-    supplier_id,
+    supplier_id: uuid.UUID | str,
     category_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """获取上游商品列表，并标记是否已同步到本地"""
     with supplier_client(session=session, supplier_id=supplier_id) as client:
-        items = client.query_products_list(
+        items: list[UpstreamProductSummary] = client.query_products_list(
             page=1,
             page_size=100,
             category_id=category_id,
@@ -77,17 +84,12 @@ def list_upstream_products(
 
     result: list[dict[str, Any]] = []
     for item in items:
-        if not isinstance(item, dict) or "id" not in item:
-            continue
-        upstream_id = str(item["id"])
-        raw_price = item.get("price")
+        upstream_id = item.upstream_id
         result.append(
             {
                 "upstream_id": upstream_id,
-                "name": str(item.get("name") or ""),
-                "cost_price": (
-                    Decimal(str(raw_price)) if raw_price not in (None, "") else None
-                ),
+                "name": item.name,
+                "cost_price": item.cost_price,
                 "synced": upstream_id in local_by_sku,
                 "local_product_id": local_by_sku.get(upstream_id),
             }
@@ -98,88 +100,49 @@ def list_upstream_products(
 def list_upstream_categories(
     *,
     session: Session,
-    supplier_id,
+    supplier_id: uuid.UUID | str,
 ) -> list[dict[str, str]]:
     """获取上游商品分类列表"""
     with supplier_client(session=session, supplier_id=supplier_id) as client:
-        categories = client.get_categories()
+        categories: list[UpstreamCategory] = client.get_categories()
 
     return [
         {
-            "id": str(item["id"]),
-            "name": str(item["name"]),
-            "parent_id": str(item.get("parent_id") or "0"),
+            "id": item.id,
+            "name": item.name,
+            "parent_id": str(item.parent_id or "0"),
         }
         for item in categories
-        if isinstance(item, dict) and "id" in item and "name" in item
     ]
 
 
-def _parse_decimal(value: Any, field: str) -> Decimal:
-    """解析上游数字字段，失败时抛出带字段名的异常"""
-    try:
-        return Decimal(str(value))
-    except (InvalidOperation, ValueError, TypeError) as e:
-        raise ValueError(f"上游字段 {field} 无法解析为数字: {value!r}") from e
-
-
-def _parse_int(value: Any, default: int) -> int:
-    """解析上游整数字段，非法值回退默认值"""
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
-
-
-def _parse_type_config(value: Any) -> list[dict[str, Any]]:
-    """解析上游 type_config，字符串 JSON 解析失败时返回空列表"""
-    if isinstance(value, list):
-        return value
-    if isinstance(value, str):
-        try:
-            parsed = json.loads(value)
-        except json.JSONDecodeError:
-            return []
-        return parsed if isinstance(parsed, list) else []
-    return []
-
-
-def _build_buy_params(detail: dict[str, Any]) -> list[dict[str, Any]]:
-    """将上游 buy_params 转为本地 ProductBuyParam 字段字典"""
+def _build_buy_params(params: list[UpstreamBuyParam]) -> list[dict[str, Any]]:
+    """将上游购买参数契约转为本地 ProductBuyParam 字段字典"""
     result: list[dict[str, Any]] = []
     seen_keys: set[str] = set()
-    for param in detail.get("buy_params") or []:
-        if not isinstance(param, dict):
-            continue
-        key = str(param.get("key") or "").strip()
+    for param in params:
+        key = param.key
         if not key or key in seen_keys:
             continue
         seen_keys.add(key)
-        verify = param.get("verify")
-        verify = verify if isinstance(verify, dict) else {}
-        upstream_type = _parse_int(param.get("type"), 0)
         input_type = (
-            InputType.LINK_EXTRACT if upstream_type == 61 else InputType.TEXT
+            InputType.LINK_EXTRACT if param.input_type == 61 else InputType.TEXT
         )
         result.append(
             {
                 "key": key,
-                "label": str(param.get("name") or key),
-                "value": str(param.get("value") or ""),
-                "description": str(param.get("description") or ""),
+                "label": param.label,
+                "value": param.value,
+                "description": param.description,
                 "input_type": input_type,
-                "type_config": _parse_type_config(param.get("type_config")),
-                "default_value": str(param.get("value") or ""),
-                "use_default": bool(param.get("is_default")),
+                "type_config": param.type_config,
+                "default_value": param.default_value,
+                "use_default": param.use_default,
                 "is_required": True,
                 "is_hidden": False,
                 "is_edit": True,
-                "validate_min": max(
-                    _parse_int(verify.get("min"), 0), 0
-                ),
-                "validate_max": max(
-                    _parse_int(verify.get("max"), 0), 0
-                ),
+                "validate_min": param.validate_min,
+                "validate_max": param.validate_max,
             }
         )
     return result
@@ -189,17 +152,12 @@ def sync_upstream_product(
     *,
     session: Session,
     supplier: Supplier,
-    detail: dict[str, Any],
+    detail: UpstreamProductDetail,
     category_id: uuid.UUID | None = None,
 ) -> tuple[str, Any]:
     """同步单个上游商品到本地：匹配时只更新成本价，未匹配时创建完整商品"""
-    if "id" not in detail:
-        raise ValueError("上游商品详情缺少 id 字段")
-    if "price" not in detail:
-        raise ValueError("上游商品详情缺少 price 字段")
-
-    upstream_id = str(detail["id"])
-    cost_price = _parse_decimal(detail["price"], "price")
+    upstream_id = detail.upstream_id
+    cost_price = detail.cost_price
     if category_id is not None and session.get(ProductCategory, category_id) is None:
         raise ValueError("本地分类不存在")
     db_supplier = session.exec(
@@ -235,25 +193,24 @@ def sync_upstream_product(
             sync_category_product_count(session=session, category_id=category_id)
         return "updated", db_supplier.product_id
 
-    min_quantity = max(_parse_int(detail.get("buy_min_limit"), 1), 1)
-    max_quantity = max(_parse_int(detail.get("buy_max_limit"), 1_000_000), 1)
+    min_quantity = max(detail.min_quantity, 1)
+    max_quantity = max(detail.max_quantity, 1)
+    purchase_step = detail.purchase_step
     if max_quantity < min_quantity:
         max_quantity = min_quantity
-    stock = max(_parse_int(detail.get("stock"), -1), -1)
+    stock = max(detail.stock, -1)
     product_type = (
-        ProductType.CARD
-        if _parse_int(detail.get("is_card_code"), 0) == 1
-        else ProductType.NORMAL_PRODUCT
+        ProductType.CARD if detail.is_card_code else ProductType.NORMAL_PRODUCT
     )
-    buy_params = _build_buy_params(detail)
+    buy_params = _build_buy_params(detail.buy_params)
 
     product = Product(
-        name=str(detail.get("name") or f"上游商品 {upstream_id}"),
+        name=str(detail.name or f"上游商品 {upstream_id}"),
         category_id=category_id,
         image_id=None,
         source_type=SourceType.API_INTEGRATION,
         status=ProductStatus.PENDING_REVIEW,
-        is_closed=False,
+        is_closed=detail.is_closed,
         sort=0,
         type=product_type,
     )
@@ -281,8 +238,9 @@ def sync_upstream_product(
             product_id=product_id,
             min_quantity=min_quantity,
             max_quantity=max_quantity,
-            is_repeatable=_parse_int(detail.get("is_repeat"), 0) == 1,
-            is_batch=_parse_int(detail.get("is_batch"), 1) == 1,
+            purchase_step=purchase_step,
+            is_repeatable=detail.is_repeatable,
+            is_batch=detail.is_batch,
             stock=stock,
         )
     )
@@ -290,8 +248,9 @@ def sync_upstream_product(
         ProductFulfillment(
             product_id=product_id,
             fulfillment_type=RedeemType.AUTO_API,
-            description=str(detail.get("particulars") or ""),
-            unit=str(detail.get("unit") or "1"),
+            description=detail.description,
+            unit=detail.unit,
+            can_refund=detail.can_refund,
             params_template=buy_params,
         )
     )

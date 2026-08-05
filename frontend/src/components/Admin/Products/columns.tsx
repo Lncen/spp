@@ -14,7 +14,7 @@ function formatPrice(product: ProductPublic) {
   const pricing = product.pricing
   if (pricing?.fixed_price != null) {
     const precision = pricing.price_display_precision ?? 2
-    return `固定 ${Number(pricing.fixed_price).toFixed(precision)}`
+    return `${Number(pricing.fixed_price).toFixed(precision)}`
   }
   if (pricing?.item_coefficient != null) {
     return `系数 ${Number(pricing.item_coefficient).toFixed(2)}`

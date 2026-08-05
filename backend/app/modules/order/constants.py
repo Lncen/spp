@@ -6,17 +6,18 @@ from app.modules.product.constants import ProductStatus
 
 
 class OrderStatus(IntEnum):
-    """订单状态"""
+    """订单状态（与上游一致）"""
 
-    CREATED = 1
-    PROCESSING = 2
-    COMPLETED = 3
-    CANCELED = 4
-    REFUNDED = 5
-    FAILED = 6
+    PAID = 1  # 已付款
+    PENDING = 2  # 待处理
+    PROCESSING = 3  # 处理中
+    SUPPLEMENTING = 4  # 补单中
+    REFUNDING = 5  # 退单中
+    COMPLETED = 6  # 已完成
+    CANCELED = 7  # 已退单
+    REFUNDED = 8  # 已退款
+    EXCEPTION = 9  # 有异常
 
 
 # 可下单的商品状态
-SALABLE_PRODUCT_STATUSES = frozenset(
-    {ProductStatus.READY, ProductStatus.APPROVED}
-)
+SALABLE_PRODUCT_STATUSES = frozenset({ProductStatus.APPROVED})

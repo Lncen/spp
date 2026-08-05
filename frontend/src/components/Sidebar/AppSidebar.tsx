@@ -1,11 +1,13 @@
 import {
   Briefcase,
+  Clock,
   FolderTree,
   Home,
   Image,
   Medal,
   Package,
   Percent,
+  ReceiptText,
   Server,
   Tags,
   Users,
@@ -33,6 +35,8 @@ const baseItems: Item[] = [
   { icon: Package, title: "商品", path: "/products" },
   { icon: Percent, title: "价格模板", path: "/price-templates" },
   { icon: Server, title: "上游管理", path: "/suppliers" },
+  { icon: Clock, title: "计划任务", path: "/schedules" },
+  { icon: ReceiptText, title: "订单", path: "/orders" },
   { icon: Users, title: "用户", path: "/admin" },
 ]
 

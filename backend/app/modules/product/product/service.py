@@ -8,6 +8,7 @@ from sqlmodel import Session, col, delete, func, select
 
 from app.modules.image.models import Image
 from app.modules.price_template.models import PriceTemplate
+from app.modules.price_template.service import get_default_price_template
 from app.modules.product.category.models import ProductCategory
 from app.modules.product.category.service import sync_category_product_count
 from app.modules.product.constants import ProductStatus, ProductType, SourceType
@@ -56,10 +57,21 @@ def _validate_buy_params(*, params: list[Any]) -> None:
 
 def create_product(*, session: Session, product_in: ProductCreate) -> Product:
     """创建商品及其关联配置"""
+    price_template_id = product_in.pricing.price_template_id
+    if (
+        price_template_id is None
+        and product_in.pricing.fixed_price is None
+        and product_in.pricing.item_coefficient is None
+    ):
+        default_template = get_default_price_template(session=session)
+        if default_template is None:
+            raise HTTPException(status_code=400, detail="默认价格模板不存在或未启用")
+        price_template_id = default_template.id
+
     _validate_product_refs(
         session=session,
         category_id=product_in.category_id,
-        price_template_id=product_in.pricing.price_template_id,
+        price_template_id=price_template_id,
         supplier_id=(
             product_in.supplier.supplier_id if product_in.supplier else None
         ),
@@ -88,10 +100,12 @@ def create_product(*, session: Session, product_in: ProductCreate) -> Product:
                 **product_in.supplier.model_dump(),
             )
         )
+    pricing_data = product_in.pricing.model_dump()
+    pricing_data["price_template_id"] = price_template_id
     session.add(
         ProductPricing(
             product_id=product_id,
-            **product_in.pricing.model_dump(),
+            **pricing_data,
         )
     )
     session.add(

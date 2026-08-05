@@ -51,10 +51,16 @@ class PriceTemplateBase(SQLModel):
         title="模板名称",
         description="价格模板名称，全局唯一",
     )
+    is_default: bool = Field(default=False, title="是否默认")
     description: str | None = Field(
         default=None,
         max_length=255,
         title="模板描述",
+    )
+    is_default: bool = Field(
+        default=False,
+        title="是否默认模板",
+        description="创建商品未选择模板时默认使用的模板，仅允许一个为 True",
     )
 
 
@@ -90,6 +96,7 @@ class PriceTemplateUpdate(SQLModel):
         title="模板描述",
     )
     is_active: bool | None = Field(default=None, title="是否启用")
+    is_default: bool | None = Field(default=None, title="是否默认模板")
     rules: list[PriceTemplateRuleIn] | None = Field(
         default=None,
         title="等级折扣列表",
@@ -120,6 +127,7 @@ class PriceTemplatePublic(SQLModel):
     id: uuid.UUID
     name: str
     description: str | None
+    is_default: bool
     is_active: bool
     created_at: datetime | None
     updated_at: datetime | None

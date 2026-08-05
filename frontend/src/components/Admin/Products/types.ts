@@ -177,13 +177,6 @@ export const productFormSchema = z
     buyParams: z.array(buyParamSchema),
   })
   .superRefine((values, ctx) => {
-    if (values.priceRule === "template" && !values.priceTemplateId) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["priceTemplateId"],
-        message: "请选择价格模板",
-      })
-    }
     if (values.priceRule === "fixed") {
       const fixedPrice = parseDecimal(values.fixedPrice)
       if (fixedPrice === undefined || fixedPrice < 0) {

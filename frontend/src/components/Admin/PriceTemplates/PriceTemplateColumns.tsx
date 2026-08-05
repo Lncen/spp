@@ -12,6 +12,15 @@ export const priceTemplateColumns: ColumnDef<PriceTemplatePublic>[] = [
     cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
   },
   {
+    accessorKey: "is_default",
+    header: "默认",
+    cell: ({ row }) => (
+      <Badge variant={row.original.is_default ? "default" : "secondary"}>
+        {row.original.is_default ? "默认" : "普通"}
+      </Badge>
+    ),
+  },
+  {
     accessorKey: "description",
     header: "描述",
     cell: ({ row }) => (

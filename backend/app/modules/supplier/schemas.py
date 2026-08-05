@@ -16,8 +16,8 @@ class PlatformEnum(StrEnum):
 
 class SupplierBase(SQLModel):
     """供应商基础属性——不含 balance（balance 仅通过同步接口更新）"""
+    name: str = Field(max_length=255, title="供应商名称", description="供应商名称标识，全局唯一")
     platform: PlatformEnum = Field(title="平台", description="供应商平台标识")
-    name: str = Field(max_length=255, title="供应商名称", description="供应商名称标识")
     base_url: str = Field(max_length=512, title="API 基础地址", description="API 请求的基础 URL")
     app_key: str = Field(max_length=512, title="应用密钥 Key", description="API 认证密钥 Key")
     app_secret: str = Field(max_length=512, title="应用密钥 Secret", description="API 认证密钥 Secret，响应中脱敏")
