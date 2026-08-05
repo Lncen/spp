@@ -18,7 +18,7 @@ function formatDateTime(value?: string | null) {
 export const columns: ColumnDef<OrderListItem>[] = [
   {
     accessorKey: "product_name",
-    header: "名称",
+    header: "商品名称",
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground">
         {row.original.product_name}
@@ -33,7 +33,6 @@ export const columns: ColumnDef<OrderListItem>[] = [
         {Object.entries(row.original.params).length > 0 ? (
           Object.entries(row.original.params).map(([key, value]) => (
             <div key={key}>
-              <span className="font-medium text-foreground">{key}:</span>{" "}
               {String(value)}
             </div>
           ))

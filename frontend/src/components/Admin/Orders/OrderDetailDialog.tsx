@@ -234,8 +234,10 @@ export const OrderDetailDialog = ({
               </div>
               <section className="grid gap-x-6 sm:grid-cols-2">
                 <DetailRow label="用户">{order.username || "-"}</DetailRow>
-                <DetailRow label="商品">{order.product_name}</DetailRow>
-                <DetailRow label="数量">{order.quantity}</DetailRow>
+                <DetailRow label="商品名称">{order.product_name}</DetailRow>
+               <DetailRow label="供应商订单号">
+                  {order.supplier_order_id || "-"}
+                </DetailRow>
                 <DetailRow label="单价">
                   {formatAmount(order.unit_price)} {order.currency}
                 </DetailRow>
@@ -249,29 +251,29 @@ export const OrderDetailDialog = ({
                   {REDEEM_TYPE_LABELS[order.fulfillment_type] ??
                     order.fulfillment_type}
                 </DetailRow>
-                <DetailRow label="供应商订单号">
-                  {order.supplier_order_id || "-"}
+                <DetailRow label="数量">{order.quantity}</DetailRow>
+                <DetailRow label="退款时间">
+                  {formatDateTime(order.refunded_at)}
                 </DetailRow>
-                <DetailRow label="备注">{order.remark || "-"}</DetailRow>
                 <DetailRow label="下单时间">
                   {formatDateTime(order.created_at)}
-                </DetailRow>
-                <DetailRow label="支付时间">
-                  {formatDateTime(order.paid_at)}
                 </DetailRow>
                 <DetailRow label="处理时间">
                   {formatDateTime(order.processing_at)}
                 </DetailRow>
-                <DetailRow label="完成时间">
-                  {formatDateTime(order.completed_at)}
+                <DetailRow label="支付时间">
+                  {formatDateTime(order.paid_at)}
                 </DetailRow>
                 <DetailRow label="取消时间">
                   {formatDateTime(order.canceled_at)}
                 </DetailRow>
-                <DetailRow label="退款时间">
-                  {formatDateTime(order.refunded_at)}
+                <DetailRow label="完成时间">
+                  {formatDateTime(order.completed_at)}
                 </DetailRow>
+
+
               </section>
+                     <DetailRow label="备注">{order.remark || "-"}</DetailRow>
               <section className="space-y-1">
                 <h3 className="text-sm font-semibold">订单参数</h3>
                 <OrderParams params={order.params} />
