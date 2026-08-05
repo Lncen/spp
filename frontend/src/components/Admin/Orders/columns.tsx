@@ -1,7 +1,8 @@
 import type { ColumnDef } from "@tanstack/react-table"
 
-import type { OrderPublic } from "@/client"
+import type { OrderListItem } from "@/client"
 import { Badge } from "@/components/ui/badge"
+import OrderActionsMenu from "./OrderActionsMenu"
 import {
   ORDER_STATUS_BADGE_VARIANT,
   orderStatusLabel,
@@ -14,12 +15,32 @@ function formatDateTime(value?: string | null) {
   return date.toLocaleString("zh-CN", { hour12: false })
 }
 
-export const columns: ColumnDef<OrderPublic>[] = [
+export const columns: ColumnDef<OrderListItem>[] = [
   {
-    accessorKey: "order_no",
-    header: "订单号",
+    accessorKey: "product_name",
+    header: "名称",
     cell: ({ row }) => (
-      <span className="font-mono text-xs">{row.original.order_no}</span>
+      <span className="text-sm text-muted-foreground">
+        {row.original.product_name}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "params",
+    header: "订单参数",
+    cell: ({ row }) => (
+      <div className="max-w-56 space-y-0.5 break-all text-xs text-muted-foreground">
+        {Object.entries(row.original.params).length > 0 ? (
+          Object.entries(row.original.params).map(([key, value]) => (
+            <div key={key}>
+              <span className="font-medium text-foreground">{key}:</span>{" "}
+              {String(value)}
+            </div>
+          ))
+        ) : (
+          "-"
+        )}
+      </div>
     ),
   },
   {
@@ -47,16 +68,16 @@ export const columns: ColumnDef<OrderPublic>[] = [
     header: "金额",
     cell: ({ row }) => (
       <span className="font-mono text-sm">
-        {Number(row.original.total_amount).toFixed(2)} {row.original.currency}
+        {Number(row.original.total_amount).toFixed(2)}
       </span>
     ),
   },
   {
-    accessorKey: "items",
-    header: "商品数",
+    accessorKey: "quantity",
+    header: "数量",
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground">
-        {row.original.items?.length ?? "-"}
+        {row.original.quantity}
       </span>
     ),
   },
@@ -68,5 +89,10 @@ export const columns: ColumnDef<OrderPublic>[] = [
         {formatDateTime(row.original.created_at)}
       </span>
     ),
+  },
+  {
+    id: "actions",
+    header: "操作",
+    cell: ({ row }) => <OrderActionsMenu order={row.original} />,
   },
 ]

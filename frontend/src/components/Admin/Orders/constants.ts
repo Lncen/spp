@@ -10,6 +10,7 @@ export const ORDER_STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
   { value: 7, label: "已取消" },
   { value: 8, label: "已退款" },
   { value: 9, label: "有异常" },
+  { value: 10, label: "申请售后中" },
 ]
 
 export const ORDER_STATUS_BADGE_VARIANT: Record<
@@ -25,6 +26,7 @@ export const ORDER_STATUS_BADGE_VARIANT: Record<
   7: "secondary",
   8: "secondary",
   9: "destructive",
+  10: "outline",
 }
 
 export function orderStatusLabel(value: OrderStatus): string {

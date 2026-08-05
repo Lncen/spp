@@ -11,6 +11,7 @@ from sqlmodel import Field, SQLModel
 
 class PlatformEnum(StrEnum):
     """供应商平台枚举"""
+    SELF = "self" # 自营
     YLSUP = "ylsup"
 
 

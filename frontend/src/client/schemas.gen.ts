@@ -115,7 +115,7 @@ export const AdminOrdersPreviewPublicSchema = {
         }
     },
     type: 'object',
-    required: ['total', 'total_amount', 'items'],
+    required: ['total', 'total_amount'],
     title: 'AdminOrdersPreviewPublic',
     description: '管理员下单结算预览响应'
 } as const;
@@ -991,36 +991,6 @@ export const NewPasswordSchema = {
 
 export const OrderCreateSchema = {
     properties: {
-        items: {
-            items: {
-                '$ref': '#/components/schemas/OrderItemCreate'
-            },
-            type: 'array',
-            maxItems: 50,
-            minItems: 1,
-            title: '商品项'
-        },
-        remark: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 255
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: '备注'
-        }
-    },
-    type: 'object',
-    required: ['items'],
-    title: 'OrderCreate',
-    description: '创建订单请求'
-} as const;
-
-export const OrderItemCreateSchema = {
-    properties: {
         product_id: {
             type: 'string',
             format: 'uuid',
@@ -1043,32 +1013,52 @@ export const OrderItemCreateSchema = {
             ],
             title: '下单参数',
             description: '按商品购买参数 key 传值'
+        },
+        remark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '备注'
         }
     },
     type: 'object',
     required: ['product_id', 'quantity'],
-    title: 'OrderItemCreate',
-    description: '下单商品项请求'
+    title: 'OrderCreate',
+    description: '创建订单请求'
 } as const;
 
-export const OrderItemPublicSchema = {
+export const OrderListItemSchema = {
     properties: {
         id: {
             type: 'string',
             format: 'uuid',
             title: 'Id'
         },
-        product_id: {
+        username: {
             anyOf: [
                 {
-                    type: 'string',
-                    format: 'uuid'
+                    type: 'string'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'Product Id'
+            title: '下单用户',
+            description: '下单用户的用户名，管理员接口返回'
+        },
+        status: {
+            '$ref': '#/components/schemas/OrderStatus'
+        },
+        total_amount: {
+            type: 'string',
+            pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+            title: 'Total Amount'
         },
         product_name: {
             type: 'string',
@@ -1078,59 +1068,28 @@ export const OrderItemPublicSchema = {
             type: 'integer',
             title: 'Quantity'
         },
-        unit_price: {
-            type: 'string',
-            pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-            title: 'Unit Price'
-        },
-        subtotal: {
-            type: 'string',
-            pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-            title: 'Subtotal'
-        },
-        base_price: {
-            type: 'string',
-            pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-            title: 'Base Price'
-        },
-        cost_price: {
-            type: 'string',
-            pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-            title: 'Cost Price'
-        },
-        loss_price: {
-            type: 'string',
-            pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-            title: 'Loss Price'
-        },
         params: {
             additionalProperties: true,
             type: 'object',
             title: 'Params'
         },
-        fulfillment_type: {
-            '$ref': '#/components/schemas/RedeemType'
-        },
-        supplier_order_id: {
+        created_at: {
             anyOf: [
                 {
-                    type: 'string'
+                    type: 'string',
+                    format: 'date-time'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'Supplier Order Id'
-        },
-        can_refund: {
-            type: 'boolean',
-            title: 'Can Refund'
+            title: 'Created At'
         }
     },
     type: 'object',
-    required: ['id', 'product_id', 'product_name', 'quantity', 'unit_price', 'subtotal', 'base_price', 'cost_price', 'loss_price', 'params', 'fulfillment_type', 'can_refund'],
-    title: 'OrderItemPublic',
-    description: '订单商品项响应'
+    required: ['id', 'status', 'total_amount', 'product_name', 'quantity', 'params'],
+    title: 'OrderListItem',
+    description: '订单列表响应，仅返回列表所需字段'
 } as const;
 
 export const OrderPublicSchema = {
@@ -1280,32 +1239,129 @@ export const OrderPublicSchema = {
             ],
             title: 'Updated At'
         },
-        items: {
-            items: {
-                '$ref': '#/components/schemas/OrderItemPublic'
-            },
-            type: 'array',
-            title: 'Items'
+        product_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Product Id'
+        },
+        product_name: {
+            type: 'string',
+            title: 'Product Name'
+        },
+        quantity: {
+            type: 'integer',
+            title: 'Quantity'
+        },
+        unit_price: {
+            type: 'string',
+            pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+            title: 'Unit Price'
+        },
+        subtotal: {
+            type: 'string',
+            pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+            title: 'Subtotal'
+        },
+        base_price: {
+            type: 'string',
+            pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+            title: 'Base Price'
+        },
+        cost_price: {
+            type: 'string',
+            pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+            title: 'Cost Price'
+        },
+        loss_price: {
+            type: 'string',
+            pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+            title: 'Loss Price'
+        },
+        params: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Params'
+        },
+        fulfillment_type: {
+            '$ref': '#/components/schemas/RedeemType'
+        },
+        supplier_order_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supplier Order Id'
+        },
+        can_refund: {
+            type: 'boolean',
+            title: 'Can Refund'
         }
     },
     type: 'object',
-    required: ['id', 'order_no', 'user_id', 'status', 'total_amount', 'currency'],
+    required: ['id', 'order_no', 'user_id', 'status', 'total_amount', 'currency', 'product_id', 'product_name', 'quantity', 'unit_price', 'subtotal', 'base_price', 'cost_price', 'loss_price', 'params', 'fulfillment_type', 'can_refund'],
     title: 'OrderPublic',
     description: '订单响应'
 } as const;
 
+export const OrderRefundRequestSchema = {
+    properties: {
+        amount: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)'
+                }
+            ],
+            title: '退款金额',
+            description: '退款金额不能超过订单金额'
+        }
+    },
+    type: 'object',
+    required: ['amount'],
+    title: 'OrderRefundRequest',
+    description: '管理员手动退款请求'
+} as const;
+
 export const OrderStatusSchema = {
     type: 'integer',
-    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     title: 'OrderStatus',
     description: '订单状态（与上游一致）'
+} as const;
+
+export const OrderStatusUpdateRequestSchema = {
+    properties: {
+        status: {
+            '$ref': '#/components/schemas/OrderStatus',
+            title: '目标状态'
+        }
+    },
+    type: 'object',
+    required: ['status'],
+    title: 'OrderStatusUpdateRequest',
+    description: '管理员设置订单状态请求'
 } as const;
 
 export const OrdersPublicSchema = {
     properties: {
         data: {
             items: {
-                '$ref': '#/components/schemas/OrderPublic'
+                '$ref': '#/components/schemas/OrderListItem'
             },
             type: 'array',
             title: 'Data'
@@ -1323,7 +1379,7 @@ export const OrdersPublicSchema = {
 
 export const PlatformEnumSchema = {
     type: 'string',
-    enum: ['ylsup'],
+    enum: ['self', 'ylsup'],
     title: 'PlatformEnum',
     description: '供应商平台枚举'
 } as const;
@@ -1372,6 +1428,12 @@ export const PriceTemplateCreateSchema = {
             title: '模板名称',
             description: '价格模板名称，全局唯一'
         },
+        is_default: {
+            type: 'boolean',
+            title: '是否默认模板',
+            description: '创建商品未选择模板时默认使用的模板，仅允许一个为 True',
+            default: false
+        },
         description: {
             anyOf: [
                 {
@@ -1383,12 +1445,6 @@ export const PriceTemplateCreateSchema = {
                 }
             ],
             title: '模板描述'
-        },
-        is_default: {
-            type: 'boolean',
-            title: '是否默认模板',
-            description: '创建商品未选择模板时默认使用的模板，仅允许一个为 True',
-            default: false
         },
         rules: {
             items: {
@@ -3809,16 +3865,16 @@ export const SourceTypeSchema = {
 
 export const SupplierCreateSchema = {
     properties: {
-        platform: {
-            '$ref': '#/components/schemas/PlatformEnum',
-            title: '平台',
-            description: '供应商平台标识'
-        },
         name: {
             type: 'string',
             maxLength: 255,
             title: '供应商名称',
-            description: '供应商名称标识'
+            description: '供应商名称标识，全局唯一'
+        },
+        platform: {
+            '$ref': '#/components/schemas/PlatformEnum',
+            title: '平台',
+            description: '供应商平台标识'
         },
         base_url: {
             type: 'string',
@@ -3883,23 +3939,23 @@ export const SupplierCreateSchema = {
         }
     },
     type: 'object',
-    required: ['platform', 'name', 'base_url', 'app_key', 'app_secret'],
+    required: ['name', 'platform', 'base_url', 'app_key', 'app_secret'],
     title: 'SupplierCreate',
     description: '创建供应商请求'
 } as const;
 
 export const SupplierPublicSchema = {
     properties: {
-        platform: {
-            '$ref': '#/components/schemas/PlatformEnum',
-            title: '平台',
-            description: '供应商平台标识'
-        },
         name: {
             type: 'string',
             maxLength: 255,
             title: '供应商名称',
-            description: '供应商名称标识'
+            description: '供应商名称标识，全局唯一'
+        },
+        platform: {
+            '$ref': '#/components/schemas/PlatformEnum',
+            title: '平台',
+            description: '供应商平台标识'
         },
         base_url: {
             type: 'string',
@@ -4010,7 +4066,7 @@ export const SupplierPublicSchema = {
         }
     },
     type: 'object',
-    required: ['platform', 'name', 'base_url', 'app_key', 'app_secret', 'id'],
+    required: ['name', 'platform', 'base_url', 'app_key', 'app_secret', 'id'],
     title: 'SupplierPublic',
     description: '供应商公开响应'
 } as const;

@@ -10,7 +10,7 @@ from app.core.db import engine, init_db
 from app.main import app
 from app.modules.image.models import Image, ImageCategory
 from app.modules.item.models import Item
-from app.modules.order.models import Order, OrderItem
+from app.modules.order.models import Order, OrderParam
 from app.modules.price_template.models import PriceTemplate, PriceTemplateRule
 from app.modules.product.category.models import ProductCategory
 from app.modules.product.product.models import (
@@ -53,6 +53,63 @@ def db() -> Generator[Session]:
                     "BOOLEAN NOT NULL DEFAULT FALSE"
                 )
             )
+            for column_sql in (
+                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS product_id UUID",
+                (
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS product_name "
+                    "VARCHAR(255) NOT NULL DEFAULT ''"
+                ),
+                (
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS quantity "
+                    "INTEGER NOT NULL DEFAULT 1"
+                ),
+                (
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS unit_price "
+                    "NUMERIC(18,2) NOT NULL DEFAULT 0"
+                ),
+                (
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal "
+                    "NUMERIC(18,2) NOT NULL DEFAULT 0"
+                ),
+                (
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS base_price "
+                    "NUMERIC(18,8) NOT NULL DEFAULT 0"
+                ),
+                (
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS cost_price "
+                    "NUMERIC(18,8) NOT NULL DEFAULT 0"
+                ),
+                (
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS loss_price "
+                    "NUMERIC(18,8) NOT NULL DEFAULT 0"
+                ),
+                (
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS params "
+                    "JSON NOT NULL DEFAULT '{}'::json"
+                ),
+                (
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS fulfillment_type "
+                    "INTEGER NOT NULL DEFAULT 1"
+                ),
+                (
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS supplier_order_id "
+                    "VARCHAR(255)"
+                ),
+                (
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS can_refund "
+                    "BOOLEAN NOT NULL DEFAULT FALSE"
+                ),
+            ):
+                conn.execute(text(column_sql))
+            conn.execute(
+                text("CREATE INDEX IF NOT EXISTS ix_orders_product_id ON orders (product_id)")
+            )
+            conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_orders_supplier_order_id "
+                    "ON orders (supplier_order_id)"
+                )
+            )
         init_db(session)
         # 新模块表尚未生成迁移，测试环境单独建表；产品库由 Alembic 迁移建表
         SQLModel.metadata.create_all(
@@ -67,14 +124,14 @@ def db() -> Generator[Session]:
                 ProductInventory.__table__,
                 ProductFulfillment.__table__,
                 ProductBuyParam.__table__,
-                OrderItem.__table__,
                 Order.__table__,
+                OrderParam.__table__,
                 Wallet.__table__,
                 WalletTransaction.__table__,
             ],
         )
         yield session
-        statement = delete(OrderItem)
+        statement = delete(OrderParam)
         session.execute(statement)
         statement = delete(Order)
         session.execute(statement)

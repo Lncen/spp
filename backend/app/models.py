@@ -10,7 +10,7 @@ from sqlmodel import SQLModel
 from app.modules.image.models import Image, ImageCategory
 from app.modules.item.models import Item
 from app.modules.level.models import UserLevel
-from app.modules.order.models import Order, OrderItem
+from app.modules.order.models import Order, OrderParam
 from app.modules.price_template.models import PriceTemplate, PriceTemplateRule
 from app.modules.product.category.models import ProductCategory
 from app.modules.product.product.models import (
@@ -34,7 +34,7 @@ __all__ = [
     "ImageCategory",
     "Supplier",
     "Order",
-    "OrderItem",
+    "OrderParam",
     "PriceTemplate",
     "PriceTemplateRule",
     "ProductCategory",

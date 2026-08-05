@@ -119,7 +119,7 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
 
   const unitPrice = Number(product.pricing?.cost_price ?? 0)
   const pendingTotalAmount = pendingOrders.reduce(
-    (total, order) => total + unitPrice * Number(order.items[0]?.quantity ?? 0),
+    (total, order) => total + unitPrice * order.quantity,
     0,
   )
 
@@ -254,13 +254,9 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
       itemQuantity: number,
       orderParams: Record<string, string>,
     ): OrderCreate => ({
-      items: [
-        {
-          product_id: product.id,
-          quantity: itemQuantity,
-          params: orderParams,
-        },
-      ],
+      product_id: product.id,
+      quantity: itemQuantity,
+      params: orderParams,
       remark: remark.trim() || null,
     })
 
@@ -505,7 +501,7 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
                 <div className="max-h-56 space-y-2 overflow-y-auto [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
                   {result.results.map((item) => {
                     const submittedOrder = submittedOrders[item.index - 1]
-                    const params = submittedOrder?.items[0]?.params ?? {}
+                    const params = submittedOrder?.params ?? {}
                     return (
                       <div
                         key={item.index}
@@ -586,7 +582,7 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
             <div className="flex items-center justify-between gap-4">
               <span className="text-muted-foreground">总数</span>
               <span className="max-w-[65%] break-all text-right">
-                {pendingOrders.reduce((sum, order) => sum + (order.items[0]?.quantity ?? 0), 0)}
+                {pendingOrders.reduce((sum, order) => sum + order.quantity, 0)}
               </span>
             </div>
             <div className="flex items-center justify-between gap-4">

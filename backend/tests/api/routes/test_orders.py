@@ -109,7 +109,7 @@ def _order_payload(
     params: dict[str, Any] | None = None,
 ) -> dict:
     return {
-        "items": [
+        "orders": [
             {
                 "product_id": product_id,
                 "quantity": quantity,
@@ -117,6 +117,20 @@ def _order_payload(
             }
         ]
     }
+
+
+def _first_order_result(response: Any) -> dict:
+    """从批量下单响应中提取第一张成功订单"""
+    result = response.json()["results"][0]
+    assert result["success"] is True
+    return result["order"]
+
+
+def _first_order_failure(response: Any) -> dict:
+    """从批量下单响应中提取第一张失败订单结果"""
+    result = response.json()["results"][0]
+    assert result["success"] is False
+    return result
 
 
 def _wallet_balance(client: TestClient, headers: dict[str, str]) -> Decimal:
@@ -165,12 +179,12 @@ def test_create_order_fixed_price(
         json=_order_payload(product["id"]),
     )
     assert response.status_code == 200
-    content = response.json()
-    assert content["status"] == 1
-    assert Decimal(content["total_amount"]) == Decimal("20.00")
-    assert content["items"][0]["product_id"] == product["id"]
-    assert Decimal(content["items"][0]["unit_price"]) == Decimal("20.00")
-    assert Decimal(content["items"][0]["subtotal"]) == Decimal("20.00")
+    order = _first_order_result(response)
+    assert order["status"] == 1
+    assert Decimal(order["total_amount"]) == Decimal("20.00")
+    assert order["product_id"] == product["id"]
+    assert Decimal(order["unit_price"]) == Decimal("20.00")
+    assert Decimal(order["subtotal"]) == Decimal("20.00")
 
     assert _wallet_balance(client, headers) == Decimal("80.00")
     assert _product_stock(client, product["id"], superuser_token_headers) == 99
@@ -179,7 +193,7 @@ def test_create_order_fixed_price(
     consume = next(item for item in transactions if item["tx_type"] == "consume")
     assert Decimal(consume["amount"]) == Decimal("-20.00")
     assert consume["ref_type"] == "order"
-    assert consume["ref_id"] == content["id"]
+    assert consume["ref_id"] == order["id"]
 
 
 def test_create_order_coefficient_price_includes_loss(
@@ -202,13 +216,13 @@ def test_create_order_coefficient_price_includes_loss(
         json=_order_payload(product["id"]),
     )
     assert response.status_code == 200
-    item = response.json()["items"][0]
-    assert Decimal(item["unit_price"]) == Decimal("18.00")
-    assert Decimal(item["subtotal"]) == Decimal("18.00")
-    assert Decimal(item["base_price"]) == Decimal("12.00")
-    assert Decimal(item["cost_price"]) == Decimal("10.00")
-    assert Decimal(item["loss_price"]) == Decimal("2.00")
-    assert Decimal(response.json()["total_amount"]) == Decimal("18.00")
+    order = _first_order_result(response)
+    assert Decimal(order["unit_price"]) == Decimal("18.00")
+    assert Decimal(order["subtotal"]) == Decimal("18.00")
+    assert Decimal(order["base_price"]) == Decimal("12.00")
+    assert Decimal(order["cost_price"]) == Decimal("10.00")
+    assert Decimal(order["loss_price"]) == Decimal("2.00")
+    assert Decimal(order["total_amount"]) == Decimal("18.00")
 
 
 def test_create_order_template_price_with_user_level(
@@ -236,8 +250,9 @@ def test_create_order_template_price_with_user_level(
         json=_order_payload(product["id"]),
     )
     assert response.status_code == 200
-    assert Decimal(response.json()["total_amount"]) == Decimal("9.00")
-    assert Decimal(response.json()["items"][0]["unit_price"]) == Decimal("9.00")
+    order = _first_order_result(response)
+    assert Decimal(order["total_amount"]) == Decimal("9.00")
+    assert Decimal(order["unit_price"]) == Decimal("9.00")
 
 
 def test_create_order_rejects_disabled_can_order(
@@ -262,8 +277,8 @@ def test_create_order_rejects_disabled_can_order(
         headers=headers,
         json=_order_payload(product["id"]),
     )
-    assert response.status_code == 400
-    assert response.json()["detail"] == "暂无下单权限"
+    assert response.status_code == 200
+    assert _first_order_failure(response)["detail"] == "暂无下单权限"
 
 
 def test_create_order_requires_wallet(
@@ -279,8 +294,8 @@ def test_create_order_requires_wallet(
         headers=headers,
         json=_order_payload(product["id"]),
     )
-    assert response.status_code == 400
-    assert response.json()["detail"] == "钱包不存在"
+    assert response.status_code == 200
+    assert _first_order_failure(response)["detail"] == "钱包不存在"
 
 
 def test_create_order_rejects_disabled_wallet(
@@ -301,8 +316,8 @@ def test_create_order_rejects_disabled_wallet(
         headers=headers,
         json=_order_payload(product["id"]),
     )
-    assert response.status_code == 400
-    assert response.json()["detail"] == "钱包已禁用"
+    assert response.status_code == 200
+    assert _first_order_failure(response)["detail"] == "钱包已禁用"
 
 
 def test_create_order_rejects_insufficient_balance(
@@ -319,8 +334,8 @@ def test_create_order_rejects_insufficient_balance(
         headers=headers,
         json=_order_payload(product["id"]),
     )
-    assert response.status_code == 400
-    assert response.json()["detail"] == "余额不足"
+    assert response.status_code == 200
+    assert _first_order_failure(response)["detail"] == "余额不足"
     assert _wallet_balance(client, headers) == Decimal("5.00")
     assert _product_stock(client, product["id"], superuser_token_headers) == 100
     assert _order_transactions(client, headers) == []
@@ -345,8 +360,8 @@ def test_create_order_rejects_closed_product(
         headers=headers,
         json=_order_payload(product["id"]),
     )
-    assert response.status_code == 400
-    assert response.json()["detail"] == "商品已关闭下单"
+    assert response.status_code == 200
+    assert _first_order_failure(response)["detail"] == "商品已关闭下单"
 
 
 def test_create_order_rejects_unsellable_status(
@@ -368,8 +383,8 @@ def test_create_order_rejects_unsellable_status(
         headers=headers,
         json=_order_payload(product["id"]),
     )
-    assert response.status_code == 400
-    assert response.json()["detail"] == "商品当前不可购买"
+    assert response.status_code == 200
+    assert _first_order_failure(response)["detail"] == "商品当前不可购买"
 
 
 def test_create_order_rejects_quantity_rule_violations(
@@ -397,8 +412,8 @@ def test_create_order_rejects_quantity_rule_violations(
             headers=headers,
             json=_order_payload(product["id"], quantity=quantity),
         )
-        assert response.status_code == 400
-        assert response.json()["detail"] == detail
+        assert response.status_code == 200
+        assert _first_order_failure(response)["detail"] == detail
 
     batch_product = _create_custom_inventory_product(
         client,
@@ -410,8 +425,8 @@ def test_create_order_rejects_quantity_rule_violations(
         headers=headers,
         json=_order_payload(batch_product["id"], quantity=2),
     )
-    assert response.status_code == 400
-    assert response.json()["detail"] == "该商品不支持批量购买"
+    assert response.status_code == 200
+    assert _first_order_failure(response)["detail"] == "该商品不支持批量购买"
 
 
 def test_create_order_requires_buy_param(
@@ -426,10 +441,10 @@ def test_create_order_requires_buy_param(
     response = client.post(
         f"{settings.API_V1_STR}/orders/",
         headers=headers,
-        json={"items": [{"product_id": product["id"], "quantity": 1}]},
+        json={"orders": [{"product_id": product["id"], "quantity": 1}]},
     )
-    assert response.status_code == 400
-    assert response.json()["detail"] == "缺少必填下单参数: 账号"
+    assert response.status_code == 200
+    assert _first_order_failure(response)["detail"] == "缺少必填下单参数: 账号"
 
 
 def test_create_order_rejects_repeat_purchase(
@@ -453,8 +468,8 @@ def test_create_order_rejects_repeat_purchase(
         headers=headers,
         json=_order_payload(product["id"]),
     )
-    assert second.status_code == 400
-    assert second.json()["detail"] == "该商品相同参数订单未完成，禁止重复下单"
+    assert second.status_code == 200
+    assert _first_order_failure(second)["detail"] == "该商品相同参数订单未完成，禁止重复下单"
 
 
 def test_create_order_allows_same_product_different_params(
@@ -478,7 +493,7 @@ def test_create_order_allows_same_product_different_params(
         json=_order_payload(product["id"], params={"account": "account-b"}),
     )
     assert second.status_code == 200
-    assert second.json()["status"] == 1
+    assert _first_order_result(second)["status"] == 1
 
 
 def test_create_order_rejects_repeat_same_params_different_quantity(
@@ -501,11 +516,11 @@ def test_create_order_rejects_repeat_same_params_different_quantity(
         headers=headers,
         json=_order_payload(product["id"], quantity=2),
     )
-    assert second.status_code == 400
-    assert second.json()["detail"] == "该商品相同参数订单未完成，禁止重复下单"
+    assert second.status_code == 200
+    assert _first_order_failure(second)["detail"] == "该商品相同参数订单未完成，禁止重复下单"
 
 
-def test_create_order_allows_reorder_after_cancel(
+def test_create_order_rejects_reorder_while_after_sale_pending(
     client: TestClient,
     db: Session,
     superuser_token_headers: dict[str, str],
@@ -521,11 +536,11 @@ def test_create_order_allows_reorder_after_cancel(
     )
     assert first.status_code == 200
     cancel = client.post(
-        f"{settings.API_V1_STR}/orders/me/{first.json()['id']}/cancel",
+        f"{settings.API_V1_STR}/orders/me/{_first_order_result(first)['id']}/cancel",
         headers=headers,
     )
     assert cancel.status_code == 200
-    assert cancel.json()["status"] == 8
+    assert cancel.json()["status"] == 10
 
     second = client.post(
         f"{settings.API_V1_STR}/orders/",
@@ -533,9 +548,15 @@ def test_create_order_allows_reorder_after_cancel(
         json=_order_payload(product["id"]),
     )
     assert second.status_code == 200
+    content = second.json()
+    assert content["success_count"] == 0
+    assert content["failure_count"] == 1
+    result = content["results"][0]
+    assert result["success"] is False
+    assert result["detail"] == "该商品相同参数订单未完成，禁止重复下单"
 
 
-def test_cancel_order_refunds_and_restores_stock(
+def test_cancel_order_marks_after_sale_without_refund(
     client: TestClient,
     db: Session,
     superuser_token_headers: dict[str, str],
@@ -549,7 +570,7 @@ def test_cancel_order_refunds_and_restores_stock(
         json=_order_payload(product["id"]),
     )
     assert order_response.status_code == 200
-    order_id = order_response.json()["id"]
+    order_id = _first_order_result(order_response)["id"]
     assert _wallet_balance(client, headers) == Decimal("80.00")
     assert _product_stock(client, product["id"], superuser_token_headers) == 99
 
@@ -559,18 +580,14 @@ def test_cancel_order_refunds_and_restores_stock(
     )
     assert response.status_code == 200
     content = response.json()
-    assert content["status"] == 8
+    assert content["status"] == 10
     assert content["canceled_at"] is not None
-    assert content["refunded_at"] is not None
-    assert _wallet_balance(client, headers) == Decimal("100.00")
-    assert _product_stock(client, product["id"], superuser_token_headers) == 100
+    assert content["refunded_at"] is None
+    assert _wallet_balance(client, headers) == Decimal("80.00")
+    assert _product_stock(client, product["id"], superuser_token_headers) == 99
 
     transactions = _order_transactions(client, headers)
-    assert {item["tx_type"] for item in transactions} == {"consume", "refund"}
-    refund = next(item for item in transactions if item["tx_type"] == "refund")
-    assert Decimal(refund["amount"]) == Decimal("20.00")
-    assert refund["ref_type"] == "order"
-    assert refund["ref_id"] == order_id
+    assert {item["tx_type"] for item in transactions} == {"consume"}
 
 
 def test_fulfill_manual_order_and_refund(
@@ -586,11 +603,13 @@ def test_fulfill_manual_order_and_refund(
         price_mode="fixed",
         fulfillment_type=2,
     )
-    order = client.post(
+    order_response = client.post(
         f"{settings.API_V1_STR}/orders/",
         headers=headers,
         json=_order_payload(product["id"]),
-    ).json()
+    )
+    assert order_response.status_code == 200
+    order = _first_order_result(order_response)
 
     fulfill = client.post(
         f"{settings.API_V1_STR}/orders/{order['id']}/fulfill",
@@ -604,6 +623,7 @@ def test_fulfill_manual_order_and_refund(
     refund = client.post(
         f"{settings.API_V1_STR}/orders/{order['id']}/refund",
         headers=superuser_token_headers,
+        json={"amount": "20.00"},
     )
     assert refund.status_code == 200
     content = refund.json()
@@ -611,6 +631,48 @@ def test_fulfill_manual_order_and_refund(
     assert content["refunded_at"] is not None
     assert _wallet_balance(client, headers) == Decimal("100.00")
     assert _product_stock(client, product["id"], superuser_token_headers) == 100
+
+
+def test_admin_refund_rejects_amount_above_total(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product = _create_ready_product(
+        client,
+        superuser_token_headers,
+        price_mode="fixed",
+        fulfillment_type=2,
+    )
+    order_response = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert order_response.status_code == 200
+    order = _first_order_result(order_response)
+    client.post(
+        f"{settings.API_V1_STR}/orders/{order['id']}/fulfill",
+        headers=superuser_token_headers,
+    )
+
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/{order['id']}/refund",
+        headers=superuser_token_headers,
+        json={"amount": "20.01"},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "退款金额不能超过订单金额"
+    assert _wallet_balance(client, headers) == Decimal("80.00")
+    assert _product_stock(client, product["id"], superuser_token_headers) == 99
+
+    detail = client.get(
+        f"{settings.API_V1_STR}/orders/{order['id']}",
+        headers=superuser_token_headers,
+    )
+    assert detail.json()["status"] == 3
 
 
 def test_refund_completed_order_keeps_stock_deducted(
@@ -626,11 +688,13 @@ def test_refund_completed_order_keeps_stock_deducted(
         price_mode="fixed",
         fulfillment_type=1,
     )
-    order = client.post(
+    order_response = client.post(
         f"{settings.API_V1_STR}/orders/",
         headers=headers,
         json=_order_payload(product["id"]),
-    ).json()
+    )
+    assert order_response.status_code == 200
+    order = _first_order_result(order_response)
 
     fulfill = client.post(
         f"{settings.API_V1_STR}/orders/{order['id']}/fulfill",
@@ -642,6 +706,7 @@ def test_refund_completed_order_keeps_stock_deducted(
     refund = client.post(
         f"{settings.API_V1_STR}/orders/{order['id']}/refund",
         headers=superuser_token_headers,
+        json={"amount": "20.00"},
     )
     assert refund.status_code == 200
     assert refund.json()["status"] == 8
@@ -649,7 +714,7 @@ def test_refund_completed_order_keeps_stock_deducted(
     assert _product_stock(client, product["id"], superuser_token_headers) == 99
 
 
-def test_refund_rejects_non_refundable_product(
+def test_admin_refund_ignores_can_refund(
     client: TestClient,
     db: Session,
     superuser_token_headers: dict[str, str],
@@ -662,11 +727,13 @@ def test_refund_rejects_non_refundable_product(
         price_mode="fixed",
         can_refund=False,
     )
-    order = client.post(
+    order_response = client.post(
         f"{settings.API_V1_STR}/orders/",
         headers=headers,
         json=_order_payload(product["id"]),
-    ).json()
+    )
+    assert order_response.status_code == 200
+    order = _first_order_result(order_response)
     client.post(
         f"{settings.API_V1_STR}/orders/{order['id']}/fulfill",
         headers=superuser_token_headers,
@@ -675,12 +742,75 @@ def test_refund_rejects_non_refundable_product(
     response = client.post(
         f"{settings.API_V1_STR}/orders/{order['id']}/refund",
         headers=superuser_token_headers,
+        json={"amount": "20.00"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == 8
+    assert _wallet_balance(client, headers) == Decimal("100.00")
+    assert _product_stock(client, product["id"], superuser_token_headers) == 100
+
+
+def test_user_cancel_rejects_non_refundable_product(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product = _create_ready_product(
+        client,
+        superuser_token_headers,
+        price_mode="fixed",
+        can_refund=False,
+    )
+    order_response = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert order_response.status_code == 200
+    order = _first_order_result(order_response)
+
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/me/{order['id']}/cancel",
+        headers=headers,
     )
     assert response.status_code == 400
     assert response.json()["detail"] == "订单包含不支持退款的商品"
+    assert _wallet_balance(client, headers) == Decimal("80.00")
+    assert _product_stock(client, product["id"], superuser_token_headers) == 99
 
 
-def test_cancel_order_after_manual_fulfill_refunds(
+def test_admin_cancel_ignores_can_refund(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product = _create_ready_product(
+        client,
+        superuser_token_headers,
+        price_mode="fixed",
+        can_refund=False,
+    )
+    order_response = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert order_response.status_code == 200
+    order = _first_order_result(order_response)
+
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/{order['id']}/cancel",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == 10
+
+
+def test_admin_update_order_status(
     client: TestClient,
     db: Session,
     superuser_token_headers: dict[str, str],
@@ -693,11 +823,61 @@ def test_cancel_order_after_manual_fulfill_refunds(
         price_mode="fixed",
         fulfillment_type=2,
     )
-    order = client.post(
+    order_response = client.post(
         f"{settings.API_V1_STR}/orders/",
         headers=headers,
         json=_order_payload(product["id"]),
-    ).json()
+    )
+    assert order_response.status_code == 200
+    order = _first_order_result(order_response)
+
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/{order['id']}/status",
+        headers=superuser_token_headers,
+        json={"status": 3},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == 3
+    assert response.json()["processing_at"] is not None
+
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/{order['id']}/status",
+        headers=superuser_token_headers,
+        json={"status": 9},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == 9
+
+    for disallowed in (8, 10):
+        response = client.post(
+            f"{settings.API_V1_STR}/orders/{order['id']}/status",
+            headers=superuser_token_headers,
+            json={"status": disallowed},
+        )
+        assert response.status_code == 400
+        assert response.json()["detail"] == "当前状态不允许手动设置"
+
+
+def test_cancel_order_after_manual_fulfill_marks_after_sale(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product = _create_ready_product(
+        client,
+        superuser_token_headers,
+        price_mode="fixed",
+        fulfillment_type=2,
+    )
+    order_response = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert order_response.status_code == 200
+    order = _first_order_result(order_response)
     client.post(
         f"{settings.API_V1_STR}/orders/{order['id']}/fulfill",
         headers=superuser_token_headers,
@@ -708,7 +888,46 @@ def test_cancel_order_after_manual_fulfill_refunds(
         headers=headers,
     )
     assert response.status_code == 200
-    assert response.json()["status"] == 8
+    assert response.json()["status"] == 10
+    assert response.json()["refunded_at"] is None
+    assert _wallet_balance(client, headers) == Decimal("80.00")
+    assert _product_stock(client, product["id"], superuser_token_headers) == 99
+
+
+def test_admin_refund_after_sale_restores_stock(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product = _create_ready_product(
+        client,
+        superuser_token_headers,
+        price_mode="fixed",
+        fulfillment_type=2,
+    )
+    order_response = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert order_response.status_code == 200
+    order = _first_order_result(order_response)
+    cancel = client.post(
+        f"{settings.API_V1_STR}/orders/me/{order['id']}/cancel",
+        headers=headers,
+    )
+    assert cancel.status_code == 200
+    assert cancel.json()["status"] == 10
+
+    refund = client.post(
+        f"{settings.API_V1_STR}/orders/{order['id']}/refund",
+        headers=superuser_token_headers,
+        json={"amount": "20.00"},
+    )
+    assert refund.status_code == 200
+    assert refund.json()["status"] == 8
     assert _wallet_balance(client, headers) == Decimal("100.00")
     assert _product_stock(client, product["id"], superuser_token_headers) == 100
 
@@ -761,15 +980,15 @@ def test_fulfill_api_order_syncs_upstream_status(
         json=_order_payload(product["id"]),
     )
     assert order.status_code == 200
-    assert order.json()["status"] == 1
+    assert _first_order_result(order)["status"] == 1
 
     fulfill = client.post(
-        f"{settings.API_V1_STR}/orders/{order.json()['id']}/fulfill",
+        f"{settings.API_V1_STR}/orders/{_first_order_result(order)['id']}/fulfill",
         headers=superuser_token_headers,
     )
     assert fulfill.status_code == 200
     assert fulfill.json()["status"] == 3
-    assert fulfill.json()["items"][0]["supplier_order_id"] == "10086"
+    assert fulfill.json()["supplier_order_id"] == "10086"
 
     monkeypatch.setattr(
         YlsupClient,
@@ -777,7 +996,7 @@ def test_fulfill_api_order_syncs_upstream_status(
         lambda self, order_ids: {"status": 6},
     )
     sync = client.post(
-        f"{settings.API_V1_STR}/orders/{order.json()['id']}/sync-status",
+        f"{settings.API_V1_STR}/orders/{_first_order_result(order)['id']}/sync-status",
         headers=superuser_token_headers,
     )
     assert sync.status_code == 200
@@ -785,7 +1004,7 @@ def test_fulfill_api_order_syncs_upstream_status(
     assert sync.json()["completed_at"] is not None
 
 
-def test_fulfill_api_order_failure_refunds(
+def test_fulfill_api_order_failure_marks_refunding(
     client: TestClient,
     db: Session,
     superuser_token_headers: dict[str, str],
@@ -808,32 +1027,28 @@ def test_fulfill_api_order_failure_refunds(
     assert order.status_code == 200
 
     fulfill = client.post(
-        f"{settings.API_V1_STR}/orders/{order.json()['id']}/fulfill",
+        f"{settings.API_V1_STR}/orders/{_first_order_result(order)['id']}/fulfill",
         headers=superuser_token_headers,
     )
     assert fulfill.status_code == 502
-    assert fulfill.json()["detail"] == "供应商履约失败，订单已自动退款: 上游下单失败"
-    assert _wallet_balance(client, headers) == Decimal("100.00")
+    assert fulfill.json()["detail"] == "供应商履约失败，订单已转入退款处理: 上游下单失败"
+    assert _wallet_balance(client, headers) == Decimal("80.00")
     assert _product_stock(client, product["id"], superuser_token_headers) == 100
 
     detail = client.get(
-        f"{settings.API_V1_STR}/orders/{order.json()['id']}",
+        f"{settings.API_V1_STR}/orders/{_first_order_result(order)['id']}",
         headers=superuser_token_headers,
     )
-    assert detail.json()["status"] == 8
+    assert detail.json()["status"] == 5
 
 
 def _admin_order_payload(products: list[dict], quantities: list[int]) -> dict:
     return {
         "orders": [
             {
-                "items": [
-                    {
-                        "product_id": product["id"],
-                        "quantity": quantity,
-                        "params": {"account": f"admin-account-{index}"},
-                    }
-                ],
+                "product_id": product["id"],
+                "quantity": quantity,
+                "params": {"account": f"admin-account-{index}"},
                 "remark": f"管理员测试单-{index}",
             }
             for index, (product, quantity) in enumerate(
@@ -877,7 +1092,9 @@ def test_admin_create_order_success_skips_wallet_and_balance(
     assert order["username"] == superuser.username
     assert order["remark"] == "管理员测试单-1"
     assert Decimal(order["total_amount"]) == Decimal("40.00")
-    assert order["items"][0]["params"] == {"account": "admin-account-1"}
+    assert order["product_id"] == product["id"]
+    assert order["quantity"] == 2
+    assert order["params"] == {"account": "admin-account-1"}
     assert _product_stock(client, product["id"], superuser_token_headers) == 98
     assert "供应商" not in response.text
 
@@ -933,7 +1150,7 @@ def test_admin_create_order_allows_same_product_different_params(
     assert first.json()["success_count"] == 1
 
     payload = _admin_order_payload([product], [1])
-    payload["orders"][0]["items"][0]["params"] = {"account": "admin-account-other"}
+    payload["orders"][0]["params"] = {"account": "admin-account-other"}
     second = client.post(
         f"{settings.API_V1_STR}/orders/admin",
         headers=superuser_token_headers,
@@ -1080,11 +1297,13 @@ def test_user_cannot_read_others_order(
     headers_a, _ = _create_wallet_user(client, db)
     _fund_wallet(client, headers_a, superuser_token_headers)
     product = _create_ready_product(client, superuser_token_headers, price_mode="fixed")
-    order = client.post(
+    order_response = client.post(
         f"{settings.API_V1_STR}/orders/",
         headers=headers_a,
         json=_order_payload(product["id"]),
-    ).json()
+    )
+    assert order_response.status_code == 200
+    order = _first_order_result(order_response)
 
     headers_b, _ = _create_wallet_user(client, db)
     response = client.get(
@@ -1103,11 +1322,13 @@ def test_admin_order_list_filters_by_user_and_includes_username(
     headers_b, user_b = _create_wallet_user(client, db)
     _fund_wallet(client, headers_a, superuser_token_headers)
     product = _create_ready_product(client, superuser_token_headers, price_mode="fixed")
-    order = client.post(
+    order_response = client.post(
         f"{settings.API_V1_STR}/orders/",
         headers=headers_a,
         json=_order_payload(product["id"]),
-    ).json()
+    )
+    assert order_response.status_code == 200
+    order = _first_order_result(order_response)
 
     response = client.get(
         f"{settings.API_V1_STR}/orders/?user_id={user_a.id}",
@@ -1116,8 +1337,19 @@ def test_admin_order_list_filters_by_user_and_includes_username(
     assert response.status_code == 200
     content = response.json()
     assert content["count"] == 1
-    assert content["data"][0]["id"] == order["id"]
+    item = content["data"][0]
+    assert item["params"] == order["params"]
     assert content["data"][0]["username"] == user_a.username
+    assert item.keys() == {
+        "id",
+        "username",
+        "status",
+        "total_amount",
+        "product_name",
+        "quantity",
+        "params",
+        "created_at",
+    }
 
     response_b = client.get(
         f"{settings.API_V1_STR}/orders/?user_id={user_b.id}",
@@ -1125,6 +1357,84 @@ def test_admin_order_list_filters_by_user_and_includes_username(
     )
     assert response_b.status_code == 200
     assert response_b.json() == {"data": [], "count": 0}
+
+
+def test_admin_order_list_filters_by_param_value(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product = _create_ready_product(client, superuser_token_headers, price_mode="fixed")
+
+    value_a = f"param-query-{uuid.uuid4().hex}"
+    value_b = f"param-query-{uuid.uuid4().hex}"
+    first = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"], params={"account": value_a}),
+    )
+    assert first.status_code == 200
+    second = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"], params={"account": value_b}),
+    )
+    assert second.status_code == 200
+
+    response = client.get(
+        f"{settings.API_V1_STR}/orders/?param_value={value_a}",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["count"] == 1
+    assert content["data"][0]["params"] == {"account": value_a}
+
+    response_b = client.get(
+        f"{settings.API_V1_STR}/orders/?param_value={value_b}",
+        headers=superuser_token_headers,
+    )
+    assert response_b.status_code == 200
+    content_b = response_b.json()
+    assert content_b["count"] == 1
+    assert content_b["data"][0]["params"] == {"account": value_b}
+
+
+def test_admin_create_order_syncs_order_params_for_query(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    product, _ = _create_api_product_with_supplier(
+        client, db, superuser_token_headers
+    )
+    value = f"admin-param-{uuid.uuid4().hex}"
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/admin",
+        headers=superuser_token_headers,
+        json={
+            "orders": [
+                {
+                    "product_id": product["id"],
+                    "quantity": 1,
+                    "params": {"account": value},
+                }
+            ]
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["success_count"] == 1
+
+    query = client.get(
+        f"{settings.API_V1_STR}/orders/?param_value={value}",
+        headers=superuser_token_headers,
+    )
+    assert query.status_code == 200
+    content = query.json()
+    assert content["count"] >= 1
+    assert all(item["params"].get("account") == value for item in content["data"])
 
 
 def test_admin_order_detail_includes_username(
@@ -1135,18 +1445,24 @@ def test_admin_order_detail_includes_username(
     headers, user = _create_wallet_user(client, db)
     _fund_wallet(client, headers, superuser_token_headers)
     product = _create_ready_product(client, superuser_token_headers, price_mode="fixed")
-    order = client.post(
+    order_response = client.post(
         f"{settings.API_V1_STR}/orders/",
         headers=headers,
         json=_order_payload(product["id"]),
-    ).json()
+    )
+    assert order_response.status_code == 200
+    order = _first_order_result(order_response)
 
     response = client.get(
         f"{settings.API_V1_STR}/orders/{order['id']}",
         headers=superuser_token_headers,
     )
     assert response.status_code == 200
-    assert response.json()["username"] == user.username
+    detail = response.json()
+    assert detail["username"] == user.username
+    assert detail["id"] == order["id"]
+    assert detail["unit_price"] == order["unit_price"]
+    assert detail["currency"] == order["currency"]
 
     cancel = client.post(
         f"{settings.API_V1_STR}/orders/{order['id']}/cancel",

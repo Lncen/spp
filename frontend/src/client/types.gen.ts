@@ -39,6 +39,15 @@ export type AdminOrdersCreate = {
 };
 
 /**
+ * 管理员下单结算预览响应
+ */
+export type AdminOrdersPreviewPublic = {
+    total: number;
+    total_amount: string;
+    items?: Array<AdminOrderPreviewItem>;
+};
+
+/**
  * 管理员批量下单响应
  */
 export type AdminOrdersPublic = {
@@ -46,15 +55,6 @@ export type AdminOrdersPublic = {
     success_count: number;
     failure_count: number;
     results: Array<AdminOrderResult>;
-};
-
-/**
- * 管理员下单结算预览响应
- */
-export type AdminOrdersPreviewPublic = {
-    total: number;
-    total_amount: string;
-    items: Array<AdminOrderPreviewItem>;
 };
 
 /**
@@ -309,14 +309,6 @@ export type NewPassword = {
  * 创建订单请求
  */
 export type OrderCreate = {
-    items: Array<OrderItemCreate>;
-    remark?: (string | null);
-};
-
-/**
- * 下单商品项请求
- */
-export type OrderItemCreate = {
     product_id: string;
     quantity: number;
     /**
@@ -325,27 +317,26 @@ export type OrderItemCreate = {
     params?: ({
     [key: string]: unknown;
 } | null);
+    remark?: (string | null);
 };
 
 /**
- * 订单商品项响应
+ * 订单列表响应，仅返回列表所需字段
  */
-export type OrderItemPublic = {
+export type OrderListItem = {
     id: string;
-    product_id: (string | null);
+    /**
+     * 下单用户的用户名，管理员接口返回
+     */
+    username?: (string | null);
+    status: OrderStatus;
+    total_amount: string;
     product_name: string;
     quantity: number;
-    unit_price: string;
-    subtotal: string;
-    base_price: string;
-    cost_price: string;
-    loss_price: string;
     params: {
         [key: string]: unknown;
     };
-    fulfillment_type: RedeemType;
-    supplier_order_id?: (string | null);
-    can_refund: boolean;
+    created_at?: (string | null);
 };
 
 /**
@@ -371,26 +362,56 @@ export type OrderPublic = {
     failed_at?: (string | null);
     created_at?: (string | null);
     updated_at?: (string | null);
-    items?: Array<OrderItemPublic>;
+    product_id: (string | null);
+    product_name: string;
+    quantity: number;
+    unit_price: string;
+    subtotal: string;
+    base_price: string;
+    cost_price: string;
+    loss_price: string;
+    params: {
+        [key: string]: unknown;
+    };
+    fulfillment_type: RedeemType;
+    supplier_order_id?: (string | null);
+    can_refund: boolean;
+};
+
+/**
+ * 管理员手动退款请求
+ */
+export type OrderRefundRequest = {
+    /**
+     * 退款金额不能超过订单金额
+     */
+    amount: (number | string);
 };
 
 /**
  * 订单列表响应
  */
 export type OrdersPublic = {
-    data: Array<OrderPublic>;
+    data: Array<OrderListItem>;
     count: number;
 };
 
 /**
  * 订单状态（与上游一致）
  */
-export type OrderStatus = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+export type OrderStatus = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+
+/**
+ * 管理员设置订单状态请求
+ */
+export type OrderStatusUpdateRequest = {
+    status: OrderStatus;
+};
 
 /**
  * 供应商平台枚举
  */
-export type PlatformEnum = 'ylsup';
+export type PlatformEnum = 'self' | 'ylsup';
 
 /**
  * 平台选项——供前端下拉菜单使用
@@ -421,11 +442,11 @@ export type PriceTemplateCreate = {
      * 价格模板名称，全局唯一
      */
     name: string;
-    description?: (string | null);
     /**
      * 创建商品未选择模板时默认使用的模板，仅允许一个为 True
      */
     is_default?: boolean;
+    description?: (string | null);
     /**
      * 1-10 等级折扣，未设置等级的折扣按 15 折（1.5000）
      */
@@ -1031,13 +1052,13 @@ export type SourceType = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
  */
 export type SupplierCreate = {
     /**
+     * 供应商名称标识，全局唯一
+     */
+    name: string;
+    /**
      * 供应商平台标识
      */
     platform: PlatformEnum;
-    /**
-     * 供应商名称标识
-     */
-    name: string;
     /**
      * API 请求的基础 URL
      */
@@ -1077,13 +1098,13 @@ export type SupplierCreate = {
  */
 export type SupplierPublic = {
     /**
+     * 供应商名称标识，全局唯一
+     */
+    name: string;
+    /**
      * 供应商平台标识
      */
     platform: PlatformEnum;
-    /**
-     * 供应商名称标识
-     */
-    name: string;
     /**
      * API 请求的基础 URL
      */
@@ -1539,14 +1560,15 @@ export type LoginRecoverPasswordHtmlContentData = {
 
 export type LoginRecoverPasswordHtmlContentResponse = (string);
 
-export type OrdersCreateUserOrderData = {
-    requestBody: OrderCreate;
+export type OrdersCreateUserOrdersData = {
+    requestBody: AdminOrdersCreate;
 };
 
-export type OrdersCreateUserOrderResponse = (OrderPublic);
+export type OrdersCreateUserOrdersResponse = (AdminOrdersPublic);
 
 export type OrdersReadOrdersData = {
     limit?: number;
+    paramValue?: (string | null);
     skip?: number;
     status?: (OrderStatus | null);
     userId?: (string | null);
@@ -1605,9 +1627,17 @@ export type OrdersCancelOrderApiResponse = (OrderPublic);
 
 export type OrdersRefundOrderApiData = {
     orderId: string;
+    requestBody: OrderRefundRequest;
 };
 
 export type OrdersRefundOrderApiResponse = (OrderPublic);
+
+export type OrdersUpdateOrderStatusApiData = {
+    orderId: string;
+    requestBody: OrderStatusUpdateRequest;
+};
+
+export type OrdersUpdateOrderStatusApiResponse = (OrderPublic);
 
 export type OrdersSyncOrderStatusApiData = {
     orderId: string;

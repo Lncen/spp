@@ -14,7 +14,7 @@ from app.modules.item.models import Item  # noqa: F401
 from app.modules.item.router import router as item_router
 from app.modules.level.models import UserLevel  # noqa: F401
 from app.modules.level.router import router as level_router
-from app.modules.order.models import Order, OrderItem  # noqa: F401
+from app.modules.order.models import Order  # noqa: F401
 from app.modules.order.router import router as order_router
 from app.modules.price_template.models import (  # noqa: F401
     PriceTemplate,

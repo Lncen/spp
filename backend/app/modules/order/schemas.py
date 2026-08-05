@@ -11,8 +11,8 @@ from app.modules.order.constants import OrderStatus
 from app.modules.product.constants import RedeemType
 
 
-class OrderItemCreate(SQLModel):
-    """下单商品项请求"""
+class OrderCreate(SQLModel):
+    """创建订单请求"""
 
     product_id: uuid.UUID
     quantity: int = Field(ge=1)
@@ -21,39 +21,11 @@ class OrderItemCreate(SQLModel):
         title="下单参数",
         description="按商品购买参数 key 传值",
     )
-
-
-class OrderCreate(SQLModel):
-    """创建订单请求"""
-
-    items: list[OrderItemCreate] = Field(
-        min_length=1,
-        max_length=50,
-        title="商品项",
-    )
     remark: str | None = Field(
         default=None,
         max_length=255,
         title="备注",
     )
-
-
-class OrderItemPublic(SQLModel):
-    """订单商品项响应"""
-
-    id: uuid.UUID
-    product_id: uuid.UUID | None
-    product_name: str
-    quantity: int
-    unit_price: Decimal
-    subtotal: Decimal
-    base_price: Decimal
-    cost_price: Decimal
-    loss_price: Decimal
-    params: dict[str, Any]
-    fulfillment_type: RedeemType
-    supplier_order_id: str | None = None
-    can_refund: bool
 
 
 class OrderPublic(SQLModel):
@@ -79,14 +51,60 @@ class OrderPublic(SQLModel):
     failed_at: datetime | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
-    items: list[OrderItemPublic] = Field(default_factory=list)
+    product_id: uuid.UUID | None
+    product_name: str
+    quantity: int
+    unit_price: Decimal
+    subtotal: Decimal
+    base_price: Decimal
+    cost_price: Decimal
+    loss_price: Decimal
+    params: dict[str, Any]
+    fulfillment_type: RedeemType
+    supplier_order_id: str | None = None
+    can_refund: bool
+
+
+class OrderListItem(SQLModel):
+    """订单列表响应，仅返回列表所需字段"""
+
+    id: uuid.UUID
+    username: str | None = Field(
+        default=None,
+        title="下单用户",
+        description="下单用户的用户名，管理员接口返回",
+    )
+    status: OrderStatus
+    total_amount: Decimal
+    product_name: str
+    quantity: int
+    params: dict[str, Any]
+    created_at: datetime | None = None
 
 
 class OrdersPublic(SQLModel):
     """订单列表响应"""
 
-    data: list[OrderPublic]
+    data: list[OrderListItem]
     count: int
+
+
+class OrderRefundRequest(SQLModel):
+    """管理员手动退款请求"""
+
+    amount: Decimal = Field(
+        gt=0,
+        max_digits=18,
+        decimal_places=2,
+        title="退款金额",
+        description="退款金额不能超过订单金额",
+    )
+
+
+class OrderStatusUpdateRequest(SQLModel):
+    """管理员设置订单状态请求"""
+
+    status: OrderStatus = Field(title="目标状态")
 
 
 class AdminOrdersCreate(SQLModel):

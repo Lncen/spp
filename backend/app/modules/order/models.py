@@ -5,16 +5,43 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import JSON, Integer
-from sqlmodel import Field, Relationship, SQLModel
+from sqlalchemy import JSON, Integer, Text, UniqueConstraint
+from sqlmodel import Field, SQLModel
 
 from app.core.mixin.models import BaseModelMixin
 from app.modules.order.constants import OrderStatus
 from app.modules.product.constants import RedeemType
 
 
+class OrderParam(BaseModelMixin, SQLModel, table=True):
+    """订单参数子表：展开 order.params，按参数值反查订单"""
+
+    __tablename__ = "order_params"
+    __table_args__ = (
+        UniqueConstraint("order_id", "key", name="uq_order_params_order_key"),
+    )
+
+    order_id: uuid.UUID = Field(
+        foreign_key="orders.id",
+        nullable=False,
+        ondelete="CASCADE",
+        index=True,
+        title="订单 ID",
+    )
+    key: str = Field(
+        max_length=255,
+        title="参数 key",
+    )
+    value: str = Field(
+        sa_type=Text,
+        index=True,
+        title="参数 value",
+        description="参数值统一转为字符串存储，便于按值精确查询",
+    )
+
+
 class Order(BaseModelMixin, SQLModel, table=True):
-    """订单数据库模型"""
+    """订单数据库模型（商品信息平铺）"""
 
     __tablename__ = "orders"
 
@@ -42,12 +69,12 @@ class Order(BaseModelMixin, SQLModel, table=True):
     total_amount: Decimal = Field(
         default=Decimal("0.00"),
         max_digits=18,
-        decimal_places=2,
+        decimal_places=8,
         title="订单金额",
         description="订单实付金额，下单时从钱包扣除",
     )
     currency: str = Field(
-        default="CNY",
+        default="",
         max_length=3,
         title="币种",
     )
@@ -82,24 +109,6 @@ class Order(BaseModelMixin, SQLModel, table=True):
         title="失败时间",
     )
 
-    items: list[OrderItem] = Relationship(
-        back_populates="order",
-        cascade_delete=True,
-    )
-
-
-class OrderItem(BaseModelMixin, SQLModel, table=True):
-    """订单商品项数据库模型"""
-
-    __tablename__ = "order_items"
-
-    order_id: uuid.UUID = Field(
-        foreign_key="orders.id",
-        nullable=False,
-        ondelete="CASCADE",
-        index=True,
-        title="订单 ID",
-    )
     product_id: uuid.UUID | None = Field(
         default=None,
         foreign_key="product.id",
@@ -119,12 +128,12 @@ class OrderItem(BaseModelMixin, SQLModel, table=True):
     )
     unit_price: Decimal = Field(
         max_digits=18,
-        decimal_places=2,
+        decimal_places=8,
         title="成交单价",
     )
     subtotal: Decimal = Field(
         max_digits=18,
-        decimal_places=2,
+        decimal_places=8,
         title="小计金额",
     )
     base_price: Decimal = Field(
@@ -167,5 +176,3 @@ class OrderItem(BaseModelMixin, SQLModel, table=True):
         title="是否允许退款",
         description="下单时的商品退款规则快照",
     )
-
-    order: Order = Relationship(back_populates="items")

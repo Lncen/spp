@@ -12,12 +12,13 @@ const PendingOrders = () => (
   <Table>
     <TableHeader>
       <TableRow>
-        <TableHead>订单号</TableHead>
+        <TableHead>订单参数</TableHead>
         <TableHead>用户</TableHead>
         <TableHead>状态</TableHead>
         <TableHead>金额</TableHead>
         <TableHead>商品数</TableHead>
         <TableHead>创建时间</TableHead>
+        <TableHead className="text-right">操作</TableHead>
       </TableRow>
     </TableHeader>
     <TableBody>
@@ -40,6 +41,9 @@ const PendingOrders = () => (
           </TableCell>
           <TableCell>
             <Skeleton className="h-4 w-36" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="ml-auto h-8 w-8" />
           </TableCell>
         </TableRow>
       ))}

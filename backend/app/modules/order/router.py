@@ -15,38 +15,44 @@ from app.modules.order.schemas import (
     AdminOrdersCreate,
     AdminOrdersPreviewPublic,
     AdminOrdersPublic,
-    OrderCreate,
     OrderPublic,
+    OrderRefundRequest,
+    OrderStatusUpdateRequest,
     OrdersPublic,
 )
 from app.modules.order.service import (
-    cancel_order,
     create_admin_orders,
-    create_order,
+    create_orders,
+    preview_admin_orders,
+)
+from app.modules.order.service.fulfillment import (
+    cancel_order,
     fulfill_order,
+    refund_order,
+    sync_order_status,
+    update_order_status,
+)
+from app.modules.order.service.query import (
     get_order,
     get_user_order,
     list_orders,
     list_user_orders,
-    preview_admin_orders,
-    refund_order,
-    sync_order_status,
+    to_order_list_item,
     to_order_public,
 )
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
 
-@router.post("/", response_model=OrderPublic)
-def create_user_order(
+@router.post("/", response_model=AdminOrdersPublic)
+def create_user_orders(
     *,
     session: SessionDep,
     current_user: CurrentUser,
-    body: OrderCreate,
+    body: AdminOrdersCreate,
 ) -> Any:
-    """创建订单（下单即扣款）"""
-    db_order = create_order(session=session, user=current_user, order_in=body)
-    return to_order_public(session=session, orders=[db_order])[0]
+    """批量创建订单（下单即扣款），逐单独立返回创建状态"""
+    return create_orders(session=session, user=current_user, body=body)
 
 
 @router.get("/me", response_model=OrdersPublic)
@@ -65,7 +71,7 @@ def read_user_orders(
         limit=limit,
     )
     return OrdersPublic(
-        data=to_order_public(session=session, orders=orders),
+        data=to_order_list_item(session=session, orders=orders),
         count=count,
     )
 
@@ -141,6 +147,7 @@ def cancel_user_order(
         session=session,
         db_order=db_order,
         operator_id=current_user.id,
+        enforce_refundable=True,
     )
     return to_order_public(session=session, orders=[db_order])[0]
 
@@ -156,6 +163,7 @@ def read_orders(
     limit: int = 100,
     status: OrderStatus | None = None,
     user_id: uuid.UUID | None = None,
+    param_value: str | None = None,
 ) -> Any:
     """查看全部订单，可按用户和状态过滤（仅超级管理员可用）"""
     orders, count = list_orders(
@@ -164,9 +172,10 @@ def read_orders(
         limit=limit,
         status=status,
         user_id=user_id,
+        param_value=param_value,
     )
     return OrdersPublic(
-        data=to_order_public(session=session, orders=orders),
+        data=to_order_list_item(session=session, orders=orders),
         count=count,
     )
 
@@ -234,13 +243,36 @@ def refund_order_api(
     session: SessionDep,
     current_user: CurrentUser,
     order_id: uuid.UUID,
+    body: OrderRefundRequest,
 ) -> Any:
-    """整单退款（仅超级管理员可用）"""
+    """管理员手动退款，按指定金额入账（仅超级管理员可用）"""
     db_order = get_order(session=session, order_id=order_id)
     db_order = refund_order(
         session=session,
         db_order=db_order,
         operator_id=current_user.id,
+        amount=body.amount,
+    )
+    return to_order_public(session=session, orders=[db_order])[0]
+
+
+@router.post(
+    "/{order_id}/status",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=OrderPublic,
+)
+def update_order_status_api(
+    *,
+    session: SessionDep,
+    order_id: uuid.UUID,
+    body: OrderStatusUpdateRequest,
+) -> Any:
+    """管理员手动设置订单状态（仅超级管理员可用）"""
+    db_order = get_order(session=session, order_id=order_id)
+    db_order = update_order_status(
+        session=session,
+        db_order=db_order,
+        status=body.status,
     )
     return to_order_public(session=session, orders=[db_order])[0]
 

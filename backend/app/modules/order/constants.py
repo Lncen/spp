@@ -17,6 +17,7 @@ class OrderStatus(IntEnum):
     CANCELED = 7  # 已退单
     REFUNDED = 8  # 已退款
     EXCEPTION = 9  # 有异常
+    APPLYING_AFTER_SALE = 10  # 申请售后中
 
 
 # 可下单的商品状态
