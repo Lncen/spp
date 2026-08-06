@@ -853,7 +853,7 @@ const ProductFormDialog = ({
                             onCheckedChange={field.onChange}
                           />
                         </FormControl>
-                        <FormLabel>允许退款</FormLabel>
+                        <FormLabel>允许向供应商申请退单</FormLabel>
                         <FormMessage />
                       </FormItem>
                     )}

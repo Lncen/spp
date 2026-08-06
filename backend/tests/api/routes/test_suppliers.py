@@ -251,7 +251,15 @@ def test_ylsup_client_parses_upstream_payloads(
                 {"code": 0, "data": {"id": 838, "price": 0.01296}}
             )
         if path.endswith("/Order/Show"):
-            return FakeResponse({"code": 0, "data": {"id": 3}})
+            return FakeResponse(
+                {
+                    "code": 0,
+                    "data": [
+                        {"id": 3, "status": 5},
+                        {"id": 4, "status": 6},
+                    ],
+                }
+            )
         if path.endswith("/Order/StatusHandle"):
             return FakeResponse({"code": 0, "data": {"id": 202539}})
         return FakeResponse({"code": 0, "data": {"order_id": "10086"}})
@@ -275,7 +283,9 @@ def test_ylsup_client_parses_upstream_payloads(
             quantity=1,
             Parameter_1="11",
         ) == {"order_id": "10086"}
-        assert client.query_order([3, 4]) == {"id": 3}
+        orders = client.query_order([3, 4])
+        assert [order.upstream_id for order in orders] == ["3", "4"]
+        assert [order.status for order in orders] == [5, 6]
         assert client.cancel_order("202539") == {"id": 202539}
     finally:
         client.close()
@@ -534,7 +544,7 @@ def test_read_upstream_products_sync_status(
         result = {"status": "success", "created": ["1"], "updated": [], "failed": []}
 
     monkeypatch.setattr(
-        "app.modules.supplier.router.AsyncResult",
+        "app.modules.schedule.service.AsyncResult",
         lambda task_id, app: FakeResult(),
     )
     response = client.get(
@@ -560,7 +570,7 @@ def test_read_upstream_products_sync_status_pending(
         state = "STARTED"
 
     monkeypatch.setattr(
-        "app.modules.supplier.router.AsyncResult",
+        "app.modules.schedule.service.AsyncResult",
         lambda task_id, app: FakeResult(),
     )
     response = client.get(

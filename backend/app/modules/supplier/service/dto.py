@@ -57,7 +57,27 @@ class UpstreamProductDetail(SQLModel):
 
 class UpstreamCategory(SQLModel):
     """上游商品分类"""
-
     id: str
     name: str
     parent_id: str | None = None
+
+
+class UpstreamOrder(SQLModel):
+    """上游订单（已按平台语义归一化）"""
+
+    upstream_id: str
+    status: int = 0
+    goods_id: int = 0
+    amount: Decimal = Decimal("0")
+    selling_price: Decimal = Decimal("0")
+    refund_amount: Decimal = Decimal("0")
+    buy_number: int = 0
+    current_num: int = 0
+    start_num: int = 0
+    user_id: int = 0
+    create_time: int = 0
+    update_time: int = 0
+    remark: str = ""
+    buy_params: list[dict[str, Any]] = Field(default_factory=list)
+    card_code_ids: list[int] = Field(default_factory=list)
+    status_changes: list[dict[str, Any]] = Field(default_factory=list)

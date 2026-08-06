@@ -1259,6 +1259,14 @@ export const OrderPublicSchema = {
             type: 'integer',
             title: 'Quantity'
         },
+        start_quantity: {
+            type: 'integer',
+            title: 'Start Quantity'
+        },
+        current_quantity: {
+            type: 'integer',
+            title: 'Current Quantity'
+        },
         unit_price: {
             type: 'string',
             pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
@@ -1303,13 +1311,36 @@ export const OrderPublicSchema = {
             ],
             title: 'Supplier Order Id'
         },
+        supplier_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supplier Id'
+        },
+        sku_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Sku Id'
+        },
         can_refund: {
             type: 'boolean',
             title: 'Can Refund'
         }
     },
     type: 'object',
-    required: ['id', 'order_no', 'user_id', 'status', 'total_amount', 'currency', 'product_id', 'product_name', 'quantity', 'unit_price', 'subtotal', 'base_price', 'cost_price', 'loss_price', 'params', 'fulfillment_type', 'can_refund'],
+    required: ['id', 'order_no', 'user_id', 'status', 'total_amount', 'currency', 'product_id', 'product_name', 'quantity', 'start_quantity', 'current_quantity', 'unit_price', 'subtotal', 'base_price', 'cost_price', 'loss_price', 'params', 'fulfillment_type', 'can_refund'],
     title: 'OrderPublic',
     description: '订单响应'
 } as const;
@@ -3720,6 +3751,120 @@ export const SchedulePublicSchema = {
     description: '计划任务公开响应'
 } as const;
 
+export const ScheduleRunPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        task_id: {
+            type: 'string',
+            title: 'Task Id'
+        },
+        task_name: {
+            type: 'string',
+            title: 'Task Name'
+        },
+        schedule_id: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Schedule Id'
+        },
+        schedule_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Schedule Name'
+        },
+        error_type: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error Type'
+        },
+        error_message: {
+            type: 'string',
+            title: 'Error Message'
+        },
+        traceback: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Traceback'
+        },
+        finished_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Finished At'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'task_id', 'task_name', 'error_message'],
+    title: 'ScheduleRunPublic',
+    description: '计划任务失败执行记录响应'
+} as const;
+
+export const ScheduleRunsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ScheduleRunPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ScheduleRunsPublic',
+    description: '失败执行记录列表响应'
+} as const;
+
 export const ScheduleTypeSchema = {
     type: 'string',
     enum: ['crontab', 'interval'],
@@ -4307,7 +4452,7 @@ export const TaskStatusPublicSchema = {
     type: 'object',
     required: ['status'],
     title: 'TaskStatusPublic',
-    description: '同步任务状态响应'
+    description: 'Celery 任务状态响应'
 } as const;
 
 export const TokenSchema = {

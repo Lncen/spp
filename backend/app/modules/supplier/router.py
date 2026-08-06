@@ -1,16 +1,16 @@
 """供应商模块：路由层"""
-# ruff: noqa: ARG001  # current_user 仅用于 FastAPI 权限依赖
 import uuid
 from decimal import Decimal
-from typing import Annotated, Any
+from typing import Any
 
-from celery.result import AsyncResult
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import col, func, select
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import SessionDep, get_current_active_superuser
 from app.common.models import Message
 from app.core.celery_app import celery_app
+from app.modules.schedule.schemas import TaskStatusPublic
+from app.modules.schedule.service import get_task_status
 from app.modules.supplier.models import Supplier
 from app.modules.supplier.schemas import (
     BalancePublic,
@@ -21,7 +21,6 @@ from app.modules.supplier.schemas import (
     SupplierPublic,
     SuppliersPublic,
     SupplierUpdate,
-    TaskStatusPublic,
     UpstreamCategoriesPublic,
     UpstreamProductsPublic,
     UpstreamProductSyncPublic,
@@ -36,18 +35,8 @@ from app.modules.supplier.service import (
     supplier_client,
 )
 from app.modules.supplier.service.clients.base import SupplierClientError
-from app.modules.user.models import User
 
 router = APIRouter(prefix="/suppliers", tags=["suppliers"])
-
-
-def require_superuser(current_user: CurrentUser) -> User:
-    """校验当前用户为超管"""
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="权限不足")
-    return current_user
-
-SuperuserDep = Annotated[User, Depends(require_superuser)]
 
 
 def _mask_secret(secret: str) -> str:
@@ -69,10 +58,13 @@ def _suppliers_to_public(suppliers: list[Supplier]) -> list[SupplierPublic]:
     return [_supplier_to_public(s) for s in suppliers]
 
 
-@router.get("/", response_model=SuppliersPublic)
+@router.get(
+    "/",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=SuppliersPublic,
+)
 def read_suppliers(
     session: SessionDep,
-    current_user: SuperuserDep,
     skip: int = 0,
     limit: int = 100,
 ) -> Any:
@@ -92,10 +84,12 @@ def read_suppliers(
     )
 
 
-@router.get("/platform-options", response_model=PlatformOptionsPublic)
-def get_platform_options(
-    current_user: SuperuserDep,
-) -> Any:
+@router.get(
+    "/platform-options",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=PlatformOptionsPublic,
+)
+def get_platform_options() -> Any:
     """获取平台枚举选项列表（超管权限，前端下拉菜单使用）"""
     options = [
         PlatformOption(value=m.value, label=m.name)
@@ -104,10 +98,13 @@ def get_platform_options(
     return PlatformOptionsPublic(data=options)
 
 
-@router.get("/{id}", response_model=SupplierPublic)
+@router.get(
+    "/{id}",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=SupplierPublic,
+)
 def read_supplier(
     session: SessionDep,
-    current_user: SuperuserDep,
     id: uuid.UUID = ...,
 ) -> Any:
     """根据 ID 获取供应商详情（超管权限）"""
@@ -117,10 +114,13 @@ def read_supplier(
     return _supplier_to_public(supplier)
 
 
-@router.get("/{id}/balance", response_model=BalancePublic)
+@router.get(
+    "/{id}/balance",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=BalancePublic,
+)
 def read_supplier_balance(
     session: SessionDep,
-    current_user: SuperuserDep,
     id: uuid.UUID,
 ) -> Any:
     """获取供应商上游实时余额（超管权限）"""
@@ -141,10 +141,13 @@ def read_supplier_balance(
     return BalancePublic(balance=balance)
 
 
-@router.get("/{id}/upstream-products", response_model=UpstreamProductsPublic)
+@router.get(
+    "/{id}/upstream-products",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=UpstreamProductsPublic,
+)
 def read_upstream_products(
     session: SessionDep,
-    current_user: SuperuserDep,
     id: uuid.UUID,
     category_id: str | None = None,
 ) -> Any:
@@ -163,10 +166,13 @@ def read_upstream_products(
     return UpstreamProductsPublic(data=items, count=len(items))
 
 
-@router.get("/{id}/upstream-categories", response_model=UpstreamCategoriesPublic)
+@router.get(
+    "/{id}/upstream-categories",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=UpstreamCategoriesPublic,
+)
 def read_upstream_categories(
     session: SessionDep,
-    current_user: SuperuserDep,
     id: uuid.UUID,
 ) -> Any:
     """获取上游商品分类列表（超管权限）"""
@@ -182,11 +188,11 @@ def read_upstream_categories(
 
 @router.post(
     "/{id}/upstream-products/sync",
+    dependencies=[Depends(get_current_active_superuser)],
     response_model=UpstreamProductSyncPublic,
 )
 def create_upstream_products_sync(
     session: SessionDep,
-    current_user: SuperuserDep,
     id: uuid.UUID,
     sync_in: UpstreamProductSyncRequest,
 ) -> Any:
@@ -211,11 +217,11 @@ def create_upstream_products_sync(
 
 @router.get(
     "/{id}/upstream-products/sync/{task_id}",
+    dependencies=[Depends(get_current_active_superuser)],
     response_model=TaskStatusPublic,
 )
 def read_upstream_products_sync_status(
     session: SessionDep,
-    current_user: SuperuserDep,
     id: uuid.UUID,
     task_id: str,
 ) -> Any:
@@ -223,24 +229,17 @@ def read_upstream_products_sync_status(
     supplier = session.get(Supplier, id)
     if not supplier:
         raise HTTPException(status_code=404, detail="供应商不存在")
-
-    result = AsyncResult(task_id, app=celery_app)
-    if result.state in {"PENDING", "STARTED", "RETRY"}:
-        return TaskStatusPublic(status=result.state, success=None)
-    if result.state == "SUCCESS":
-        return TaskStatusPublic(
-            status=result.state,
-            success=True,
-            result=result.result,
-        )
-    return TaskStatusPublic(status=result.state, success=False)
+    return get_task_status(task_id)
 
 
-@router.post("/", response_model=SupplierPublic)
+@router.post(
+    "/",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=SupplierPublic,
+)
 def create_supplier(
     *,
     session: SessionDep,
-    current_user: SuperuserDep,
     supplier_in: SupplierCreate,
 ) -> Any:
     """创建供应商（超管权限）"""
@@ -248,11 +247,14 @@ def create_supplier(
     return _supplier_to_public(supplier)
 
 
-@router.put("/{id}", response_model=SupplierPublic)
+@router.put(
+    "/{id}",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=SupplierPublic,
+)
 def update_supplier(
     *,
     session: SessionDep,
-    current_user: SuperuserDep,
     id: uuid.UUID,
     supplier_in: SupplierUpdate,
 ) -> Any:
@@ -272,10 +274,13 @@ def update_supplier(
     return _supplier_to_public(supplier)
 
 
-@router.delete("/{id}", response_model=Message)
+@router.delete(
+    "/{id}",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=Message,
+)
 def delete_supplier(
     session: SessionDep,
-    current_user: SuperuserDep,
     id: uuid.UUID = ...,
 ) -> Message:
     """删除供应商（超管权限）"""

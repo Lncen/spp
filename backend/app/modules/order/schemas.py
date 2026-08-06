@@ -54,6 +54,8 @@ class OrderPublic(SQLModel):
     product_id: uuid.UUID | None
     product_name: str
     quantity: int
+    start_quantity: int
+    current_quantity: int
     unit_price: Decimal
     subtotal: Decimal
     base_price: Decimal
@@ -62,6 +64,8 @@ class OrderPublic(SQLModel):
     params: dict[str, Any]
     fulfillment_type: RedeemType
     supplier_order_id: str | None = None
+    supplier_id: uuid.UUID | None = None
+    sku_id: str | None = None
     can_refund: bool
 
 

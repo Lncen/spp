@@ -11,11 +11,12 @@ from app.modules.supplier.service.clients.base import (
 )
 from app.modules.supplier.service.dto import (
     UpstreamCategory,
+    UpstreamOrder,
     UpstreamProductDetail,
     UpstreamProductSummary,
 )
 
-from .adapter import yl_goods_adapter, yl_product_summary_adapter
+from .adapter import yl_goods_adapter, yl_order_adapter, yl_product_summary_adapter
 
 
 class YlsupClient(SupplierClientBase):
@@ -144,11 +145,17 @@ class YlsupClient(SupplierClientBase):
         data = self._data(payload)
         return data if isinstance(data, dict) else {}
 
-    def query_order(self, order_ids: list[int]) -> dict[str, Any]:
-        """查询订单"""
+    def query_order(self, order_ids: list[int]) -> list[UpstreamOrder]:
+        """查询订单（归一化为 UpstreamOrder 列表，可能包含多个订单）"""
         payload = self.post("/openapi/customer/Order/Show", json={"ids": order_ids}).json()
         data = self._data(payload)
-        return data if isinstance(data, dict) else {}
+        if isinstance(data, dict):
+            items = [data]
+        elif isinstance(data, list):
+            items = [item for item in data if isinstance(item, dict)]
+        else:
+            items = []
+        return [yl_order_adapter(item) for item in items]
 
     def cancel_order(self, order_id: str) -> dict[str, Any]:
         """申请退单（status=5 仅申请，不一定退单完成）"""

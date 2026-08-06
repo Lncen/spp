@@ -3,6 +3,7 @@ import { CheckCircle2, ListChecks, ShoppingCart, XCircle } from "lucide-react"
 import { useState } from "react"
 
 import type {
+  AdminOrdersPreviewPublic,
   AdminOrdersPublic,
   OrderCreate,
   ProductBuyParamPublic,
@@ -93,6 +94,7 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
   const [submittedOrders, setSubmittedOrders] = useState<OrderCreate[]>([])
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [pendingOrders, setPendingOrders] = useState<OrderCreate[]>([])
+  const [preview, setPreview] = useState<AdminOrdersPreviewPublic | null>(null)
 
   const visibleParams = buyParams.filter(
     (param) => !param.is_hidden && !param.use_default,
@@ -114,14 +116,11 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
     setSubmittedOrders([])
     setConfirmOpen(false)
     setPendingOrders([])
+    setPreview(null)
     setIsOpen(true)
   }
 
-  const unitPrice = Number(product.pricing?.cost_price ?? 0)
-  const pendingTotalAmount = pendingOrders.reduce(
-    (total, order) => total + unitPrice * order.quantity,
-    0,
-  )
+  const previewUnitPrice = preview?.items?.[0]?.unit_price ?? ""
 
   const resolveParamValue = (param: ProductBuyParamPublic) => {
     const edited = paramValues[param.key]
@@ -294,6 +293,16 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
     onError: handleError.bind(showErrorToast),
   })
 
+  const previewMutation = useMutation({
+    mutationFn: (orders: OrderCreate[]) =>
+      OrdersService.previewAdminOrdersApi({ requestBody: { orders } }),
+    onSuccess: (data) => {
+      setPreview(data)
+      setConfirmOpen(true)
+    },
+    onError: handleError.bind(showErrorToast),
+  })
+
   const onSubmit = () => {
     const validationMessage = validateForm()
     if (validationMessage) {
@@ -303,7 +312,7 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
     setErrorMessage("")
     const orders = buildOrders()
     setPendingOrders(orders)
-    setConfirmOpen(true)
+    previewMutation.mutate(orders)
   }
 
   const confirmSubmit = () => {
@@ -330,7 +339,7 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
               {product.name}：订单记录在当前管理员名下
             </DialogDescription>
             <DialogDescription>
-              单价：{product.pricing?.cost_price}
+              成本价：{product.pricing?.cost_price}
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[70vh] space-y-5 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
@@ -556,7 +565,10 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
                     取消
                   </Button>
                 </DialogClose>
-                <LoadingButton onClick={onSubmit} loading={mutation.isPending}>
+                <LoadingButton
+                  onClick={onSubmit}
+                  loading={mutation.isPending || previewMutation.isPending}
+                >
                   <ListChecks />
                   提交下单
                 </LoadingButton>
@@ -569,9 +581,7 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>确认结算金额</DialogTitle>
-            <DialogDescription>
-              {product.name}
-            </DialogDescription>
+            <DialogDescription>{product.name}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 text-sm">
             <div className="flex items-center justify-between gap-4">
@@ -587,11 +597,11 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
             </div>
             <div className="flex items-center justify-between gap-4">
               <span className="text-muted-foreground">单价</span>
-              <span>{formatAmount(unitPrice)}</span>
+              <span>{formatAmount(previewUnitPrice || 0)}</span>
             </div>
             <div className="flex items-center justify-between gap-4 border-t pt-3 font-medium">
               <span>结算金额</span>
-              <span>{formatAmount(pendingTotalAmount)}</span>
+              <span>{formatAmount(preview?.total_amount ?? 0)}</span>
             </div>
           </div>
           <DialogFooter>

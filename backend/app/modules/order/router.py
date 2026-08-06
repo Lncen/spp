@@ -147,7 +147,6 @@ def cancel_user_order(
         session=session,
         db_order=db_order,
         operator_id=current_user.id,
-        enforce_refundable=True,
     )
     return to_order_public(session=session, orders=[db_order])[0]
 

@@ -365,6 +365,8 @@ export type OrderPublic = {
     product_id: (string | null);
     product_name: string;
     quantity: number;
+    start_quantity: number;
+    current_quantity: number;
     unit_price: string;
     subtotal: string;
     base_price: string;
@@ -375,6 +377,8 @@ export type OrderPublic = {
     };
     fulfillment_type: RedeemType;
     supplier_order_id?: (string | null);
+    supplier_id?: (string | null);
+    sku_id?: (string | null);
     can_refund: boolean;
 };
 
@@ -1013,6 +1017,30 @@ export type SchedulePublic = {
 };
 
 /**
+ * 计划任务失败执行记录响应
+ */
+export type ScheduleRunPublic = {
+    id: string;
+    task_id: string;
+    task_name: string;
+    schedule_id?: (number | null);
+    schedule_name?: (string | null);
+    error_type?: (string | null);
+    error_message: string;
+    traceback?: (string | null);
+    finished_at?: (string | null);
+    created_at?: (string | null);
+};
+
+/**
+ * 失败执行记录列表响应
+ */
+export type ScheduleRunsPublic = {
+    data: Array<ScheduleRunPublic>;
+    count: number;
+};
+
+/**
  * 计划任务列表响应
  */
 export type SchedulesPublic = {
@@ -1186,7 +1214,7 @@ export type TaskOptionsPublic = {
 };
 
 /**
- * 同步任务状态响应
+ * Celery 任务状态响应
  */
 export type TaskStatusPublic = {
     status: string;
@@ -1793,6 +1821,20 @@ export type SchedulesRunScheduleData = {
 };
 
 export type SchedulesRunScheduleResponse = (RunTaskPublic);
+
+export type SchedulesReadFailedRunsData = {
+    limit?: number;
+    skip?: number;
+    taskName?: (string | null);
+};
+
+export type SchedulesReadFailedRunsResponse = (ScheduleRunsPublic);
+
+export type SchedulesReadTaskStatusData = {
+    taskId: string;
+};
+
+export type SchedulesReadTaskStatusResponse = (TaskStatusPublic);
 
 export type SuppliersReadSuppliersData = {
     limit?: number;

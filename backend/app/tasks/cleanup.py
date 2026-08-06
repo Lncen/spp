@@ -4,10 +4,14 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from celery import shared_task
+from sqlalchemy import delete
 from sqlmodel import Session
 
 from app.core.config import settings
 from app.core.db import engine
+from app.modules.schedule.models import ScheduleRun
+
+SCHEDULE_RUN_RETENTION_DAYS = 30
 
 
 @shared_task(ignore_result=False)
@@ -42,6 +46,28 @@ def cleanup_expired_data() -> dict:
                     f.unlink(missing_ok=True)
                     stats["orphan_files_deleted"] += 1
 
+    except Exception as e:
+        stats["errors"].append(str(e))
+
+    return stats
+
+
+@shared_task(ignore_result=False)
+def cleanup_schedule_runs(retention_days: int = 30) -> dict:
+    """清理超过保留期的计划任务失败执行记录"""
+    stats = {"schedule_runs_deleted": 0, "errors": []}
+
+    # 使用传入的参数计算截止时间
+    cutoff = datetime.now(UTC) - timedelta(days=retention_days)
+
+    try:
+        with Session(engine) as session:
+            # 使用 exec() 代替 execute()
+            result = session.exec(
+                delete(ScheduleRun).where(ScheduleRun.created_at < cutoff)
+            )
+            stats["schedule_runs_deleted"] = result.rowcount or 0
+            session.commit()
     except Exception as e:
         stats["errors"].append(str(e))
 

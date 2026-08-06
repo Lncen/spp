@@ -21,6 +21,7 @@ from app.modules.product.product.models import (
     ProductPricing,
     ProductSupplier,
 )
+from app.modules.schedule.models import ScheduleRun
 from app.modules.supplier.models import Supplier
 from app.modules.user.models import User
 from app.modules.wallet.models import Wallet, WalletTransaction
@@ -64,6 +65,14 @@ def db() -> Generator[Session]:
                     "INTEGER NOT NULL DEFAULT 1"
                 ),
                 (
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS start_quantity "
+                    "INTEGER NOT NULL DEFAULT 0"
+                ),
+                (
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS current_quantity "
+                    "INTEGER NOT NULL DEFAULT 0"
+                ),
+                (
                     "ALTER TABLE orders ADD COLUMN IF NOT EXISTS unit_price "
                     "NUMERIC(18,2) NOT NULL DEFAULT 0"
                 ),
@@ -96,6 +105,13 @@ def db() -> Generator[Session]:
                     "VARCHAR(255)"
                 ),
                 (
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS supplier_id UUID"
+                ),
+                (
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS sku_id "
+                    "VARCHAR(255)"
+                ),
+                (
                     "ALTER TABLE orders ADD COLUMN IF NOT EXISTS can_refund "
                     "BOOLEAN NOT NULL DEFAULT FALSE"
                 ),
@@ -108,6 +124,18 @@ def db() -> Generator[Session]:
                 text(
                     "CREATE INDEX IF NOT EXISTS ix_orders_supplier_order_id "
                     "ON orders (supplier_order_id)"
+                )
+            )
+            conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_orders_supplier_id "
+                    "ON orders (supplier_id)"
+                )
+            )
+            conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_orders_sku_id "
+                    "ON orders (sku_id)"
                 )
             )
         init_db(session)
@@ -126,6 +154,7 @@ def db() -> Generator[Session]:
                 ProductBuyParam.__table__,
                 Order.__table__,
                 OrderParam.__table__,
+                ScheduleRun.__table__,
                 Wallet.__table__,
                 WalletTransaction.__table__,
             ],
@@ -162,6 +191,8 @@ def db() -> Generator[Session]:
         statement = delete(PriceTemplateRule)
         session.execute(statement)
         statement = delete(PriceTemplate)
+        session.execute(statement)
+        statement = delete(ScheduleRun)
         session.execute(statement)
         statement = delete(Supplier)
         session.execute(statement)

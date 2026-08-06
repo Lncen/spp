@@ -1,5 +1,6 @@
 """计划任务模块：API 请求与响应模型"""
 
+import uuid
 from datetime import datetime
 from enum import StrEnum
 from typing import Any
@@ -143,3 +144,33 @@ class RunTaskPublic(SQLModel):
     """立即执行任务响应"""
 
     task_id: str = Field(title="Celery 任务 ID")
+
+
+class TaskStatusPublic(SQLModel):
+    """Celery 任务状态响应"""
+
+    status: str = Field(title="任务状态")
+    success: bool | None = Field(default=None, title="是否成功")
+    result: dict[str, Any] | None = Field(default=None, title="任务结果")
+
+
+class ScheduleRunPublic(SQLModel):
+    """计划任务失败执行记录响应"""
+
+    id: uuid.UUID
+    task_id: str
+    task_name: str
+    schedule_id: int | None = None
+    schedule_name: str | None = None
+    error_type: str | None = None
+    error_message: str
+    traceback: str | None = None
+    finished_at: datetime | None = None
+    created_at: datetime | None = None
+
+
+class ScheduleRunsPublic(SQLModel):
+    """失败执行记录列表响应"""
+
+    data: list[ScheduleRunPublic]
+    count: int

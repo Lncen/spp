@@ -9,6 +9,7 @@ from sqlmodel import Session
 from app.modules.supplier.models import Supplier
 from app.modules.supplier.service.dto import (
     UpstreamCategory,
+    UpstreamOrder,
     UpstreamProductDetail,
     UpstreamProductSummary,
 )
@@ -209,7 +210,7 @@ class SupplierClientBase(BaseHttpClient, metaclass=ClientMeta):
     ) -> dict[str, Any]: ...
 
     @abstractmethod
-    def query_order(self, order_ids: list[int]) -> dict[str, Any]: ...
+    def query_order(self, order_ids: list[int]) -> list[UpstreamOrder]: ...
 
     @abstractmethod
     def cancel_order(self, order_id: str) -> dict[str, Any]: ...

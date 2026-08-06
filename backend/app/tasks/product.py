@@ -9,7 +9,7 @@ from app.modules.item.models import Item
 
 @shared_task(ignore_result=False)
 def sync_product_status() -> dict:
-    """同步所有商品的状态
+    """同步商品的状态
 
     执行逻辑（按需修改）：
     1. 检查过期商品，标记为下架

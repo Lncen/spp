@@ -11,6 +11,10 @@ from sqlmodel import Session, select
 
 from app.modules.order.constants import OrderStatus
 from app.modules.order.models import Order
+from app.modules.order.service.status_sync import (
+    _query_api_orders_status,
+    sync_orders_status,
+)
 from app.modules.order.service.validation import _restore_stock
 from app.modules.product.constants import RedeemType
 from app.modules.product.product.models import ProductSupplier
@@ -53,17 +57,16 @@ def cancel_order(
     session: Session,
     db_order: Order,
     operator_id: uuid.UUID | None = None,
-    enforce_refundable: bool = False,
 ) -> Order:
-    """取消订单申请：状态置售后申请中，不退款不回补库存"""
+    """申请退单：状态置申请售后中，后续由 celery 向上游申请退单"""
     if db_order.status not in (
         OrderStatus.PAID,
         OrderStatus.PENDING,
         OrderStatus.PROCESSING,
     ):
-        raise HTTPException(status_code=400, detail="当前状态不可取消")
-    if enforce_refundable and not db_order.can_refund:
-        raise HTTPException(status_code=400, detail="订单包含不支持退款的商品")
+        raise HTTPException(status_code=400, detail="当前状态不可申请退单")
+    if not db_order.can_refund:
+        raise HTTPException(status_code=400, detail="该订单不支持向供应商申请退单")
     now = datetime.now(UTC)
     db_order.status = OrderStatus.APPLYING_AFTER_SALE
     db_order.canceled_at = now
@@ -80,14 +83,9 @@ def refund_order(
     amount: Decimal,
     operator_id: uuid.UUID | None = None,
 ) -> Order:
-    """管理员手动退款：按指定金额入账，处理中或售后申请订单回补库存"""
-    if db_order.status not in (
-        OrderStatus.PROCESSING,
-        OrderStatus.REFUNDING,
-        OrderStatus.COMPLETED,
-        OrderStatus.APPLYING_AFTER_SALE,
-    ):
-        raise HTTPException(status_code=400, detail="当前状态不可退款")
+    """管理员手动退款：仅已完成订单可用，金额由管理员核对且不能超过订单金额"""
+    if db_order.status != OrderStatus.COMPLETED:
+        raise HTTPException(status_code=400, detail="仅已完成订单可手动退款")
     if amount > db_order.total_amount:
         raise HTTPException(status_code=400, detail="退款金额不能超过订单金额")
     _refund_order(
@@ -96,15 +94,6 @@ def refund_order(
         amount=amount,
         operator_id=operator_id,
     )
-    if db_order.status in (
-        OrderStatus.PROCESSING,
-        OrderStatus.APPLYING_AFTER_SALE,
-    ):
-        _restore_stock(
-            session=session,
-            product_id=db_order.product_id,
-            quantity=db_order.quantity,
-        )
     db_order.status = OrderStatus.REFUNDED
     db_order.refunded_at = datetime.now(UTC)
     session.add(db_order)
@@ -120,27 +109,6 @@ def _extract_supplier_order_id(result: dict[str, Any]) -> str | None:
         value = payload.get(key)
         if value is not None:
             return str(value)
-    return None
-
-
-def _extract_upstream_status(result: dict[str, Any]) -> int | None:
-    """从上游订单查询结果中提取状态数字"""
-    data = (
-        result.get("data") if isinstance(result.get("data"), (dict, list)) else result
-    )
-    if isinstance(data, list):
-        if not data:
-            return None
-        data = data[0] if isinstance(data[0], dict) else {}
-    if not isinstance(data, dict):
-        return None
-    for key in ("status", "order_status", "state"):
-        value = data.get(key)
-        if value is not None:
-            try:
-                return int(value)
-            except (TypeError, ValueError):
-                return None
     return None
 
 
@@ -162,22 +130,28 @@ def _merge_upstream_statuses(statuses: list[OrderStatus]) -> OrderStatus:
 
 def _fulfill_api_item(*, session: Session, db_order: Order) -> None:
     """调用供应商 API 下单，写入供应商订单号"""
-    supplier_sku = session.exec(
-        select(ProductSupplier).where(ProductSupplier.product_id == db_order.product_id)
-    ).first()
-    if (
-        supplier_sku is None
-        or supplier_sku.supplier_id is None
-        or not supplier_sku.sku_id
-    ):
-        raise SupplierClientError("商品未配置供应商或 SKU")
-    supplier = session.get(Supplier, supplier_sku.supplier_id)
+    supplier_id, sku_id = db_order.supplier_id, db_order.sku_id
+    if supplier_id is None or not sku_id:
+        # 旧订单未落货源快照时回退查询商品当前货源
+        supplier_sku = session.exec(
+            select(ProductSupplier).where(
+                ProductSupplier.product_id == db_order.product_id
+            )
+        ).first()
+        if (
+            supplier_sku is None
+            or supplier_sku.supplier_id is None
+            or not supplier_sku.sku_id
+        ):
+            raise SupplierClientError("商品未配置供应商或 SKU")
+        supplier_id, sku_id = supplier_sku.supplier_id, supplier_sku.sku_id
+    supplier = session.get(Supplier, supplier_id)
     if not supplier:
         raise SupplierClientError("供应商不存在")
     client = SupplierClientBase.get_client(supplier)
     try:
         result = client.create_order(
-            product_id=supplier_sku.sku_id,
+            product_id=sku_id,
             quantity=db_order.quantity,
             **db_order.params,
         )
@@ -185,34 +159,6 @@ def _fulfill_api_item(*, session: Session, db_order: Order) -> None:
         session.add(db_order)
     finally:
         client.close()
-
-
-def _query_api_item_status(*, session: Session, db_order: Order) -> OrderStatus:
-    """查询上游订单状态并映射为本地订单状态"""
-    supplier_sku = session.exec(
-        select(ProductSupplier).where(ProductSupplier.product_id == db_order.product_id)
-    ).first()
-    if supplier_sku is None or supplier_sku.supplier_id is None:
-        raise SupplierClientError("商品未配置供应商")
-    supplier = session.get(Supplier, supplier_sku.supplier_id)
-    if not supplier:
-        raise SupplierClientError("供应商不存在")
-    client = SupplierClientBase.get_client(supplier)
-    try:
-        result = client.query_order([int(db_order.supplier_order_id)])
-    finally:
-        client.close()
-    raw_status = _extract_upstream_status(result)
-    if raw_status is None:
-        raise SupplierClientError(
-            f"上游订单 {db_order.supplier_order_id} 缺少状态字段"
-        )
-    try:
-        return OrderStatus(raw_status)
-    except ValueError as exc:
-        raise SupplierClientError(
-            f"上游订单 {db_order.supplier_order_id} 返回未知状态 {raw_status}"
-        ) from exc
 
 
 def fulfill_order(
@@ -255,7 +201,9 @@ def fulfill_order(
         db_order.completed_at = now
     else:
         try:
-            status = _query_api_item_status(session=session, db_order=db_order)
+            status = _query_api_orders_status(
+                session=session, db_orders=[db_order]
+            )[db_order.id]
             db_order.status = status
             if status == OrderStatus.COMPLETED:
                 db_order.completed_at = now
@@ -269,7 +217,7 @@ def fulfill_order(
 
 
 def sync_order_status(*, session: Session, db_order: Order) -> Order:
-    """查询上游订单状态并刷新本地状态快照"""
+    """查询上游订单状态并刷新本地状态快照（终态订单跳过）"""
     if db_order.fulfillment_type != RedeemType.AUTO_API:
         raise HTTPException(status_code=400, detail="订单不包含 API 履约商品")
     if not db_order.supplier_order_id:
@@ -278,22 +226,10 @@ def sync_order_status(*, session: Session, db_order: Order) -> Order:
             detail=f"商品 {db_order.product_name} 缺少供应商订单号",
         )
     try:
-        status = _query_api_item_status(session=session, db_order=db_order)
+        updated = sync_orders_status(session=session, db_orders=[db_order])
     except SupplierClientError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
-
-    db_order.status = status
-    now = datetime.now(UTC)
-    if status == OrderStatus.COMPLETED:
-        db_order.completed_at = now
-    elif status == OrderStatus.CANCELED:
-        db_order.canceled_at = now
-    elif status == OrderStatus.REFUNDED:
-        db_order.refunded_at = now
-    session.add(db_order)
-    session.commit()
-    session.refresh(db_order)
-    return db_order
+    return updated[0] if updated else db_order
 
 
 def update_order_status(

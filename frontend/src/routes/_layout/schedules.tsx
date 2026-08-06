@@ -7,6 +7,7 @@ import { SchedulesService, UsersService } from "@/client"
 import Pending from "@/components/Admin/Pending/PendingItems"
 import AddSchedule from "@/components/Admin/Schedules/AddSchedule"
 import { columns } from "@/components/Admin/Schedules/columns"
+import FailedRuns from "@/components/Admin/Schedules/FailedRuns"
 import { DataTable } from "@/components/Common/DataTable"
 
 function getSchedulesQueryOptions() {
@@ -65,7 +66,10 @@ function Schedules() {
             管理 Celery beat 定时任务、调度规则与立即执行。
           </p>
         </div>
-        <AddSchedule />
+        <div className="flex items-center gap-2">
+          <FailedRuns />
+          <AddSchedule />
+        </div>
       </div>
       <SchedulesTable />
     </div>

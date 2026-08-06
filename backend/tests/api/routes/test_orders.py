@@ -10,9 +10,15 @@ from sqlmodel import Session, select
 
 from app.core.config import settings
 from app.modules.level.models import UserLevel
+from app.modules.order.models import Order
+from app.modules.order.service.status_sync import (
+    apply_refund_applications,
+    sync_orders_status,
+)
 from app.modules.product.product.models import ProductSupplier
 from app.modules.supplier.service.clients.base import SupplierClientError
 from app.modules.supplier.service.clients.ylsup import YlsupClient
+from app.modules.supplier.service.dto import UpstreamOrder
 from app.modules.user.models import User
 from app.modules.wallet.models import Wallet
 from tests.api.routes.test_products import (
@@ -185,6 +191,9 @@ def test_create_order_fixed_price(
     assert order["product_id"] == product["id"]
     assert Decimal(order["unit_price"]) == Decimal("20.00")
     assert Decimal(order["subtotal"]) == Decimal("20.00")
+    # 创建订单时开始数量与当前数量等于订单数量
+    assert order["start_quantity"] == order["quantity"] == 1
+    assert order["current_quantity"] == order["quantity"] == 1
 
     assert _wallet_balance(client, headers) == Decimal("80.00")
     assert _product_stock(client, product["id"], superuser_token_headers) == 99
@@ -620,6 +629,14 @@ def test_fulfill_manual_order_and_refund(
     assert content["status"] == 3
     assert content["processing_at"] is not None
 
+    # 手动退款仅已完成订单可用，先置为已完成
+    status_response = client.post(
+        f"{settings.API_V1_STR}/orders/{order['id']}/status",
+        headers=superuser_token_headers,
+        json={"status": 6},
+    )
+    assert status_response.status_code == 200
+
     refund = client.post(
         f"{settings.API_V1_STR}/orders/{order['id']}/refund",
         headers=superuser_token_headers,
@@ -630,7 +647,8 @@ def test_fulfill_manual_order_and_refund(
     assert content["status"] == 8
     assert content["refunded_at"] is not None
     assert _wallet_balance(client, headers) == Decimal("100.00")
-    assert _product_stock(client, product["id"], superuser_token_headers) == 100
+    # 已完成订单手动退款不回补库存
+    assert _product_stock(client, product["id"], superuser_token_headers) == 99
 
 
 def test_admin_refund_rejects_amount_above_total(
@@ -657,6 +675,13 @@ def test_admin_refund_rejects_amount_above_total(
         f"{settings.API_V1_STR}/orders/{order['id']}/fulfill",
         headers=superuser_token_headers,
     )
+    # 手动退款仅已完成订单可用，先置为已完成
+    status_response = client.post(
+        f"{settings.API_V1_STR}/orders/{order['id']}/status",
+        headers=superuser_token_headers,
+        json={"status": 6},
+    )
+    assert status_response.status_code == 200
 
     response = client.post(
         f"{settings.API_V1_STR}/orders/{order['id']}/refund",
@@ -672,7 +697,7 @@ def test_admin_refund_rejects_amount_above_total(
         f"{settings.API_V1_STR}/orders/{order['id']}",
         headers=superuser_token_headers,
     )
-    assert detail.json()["status"] == 3
+    assert detail.json()["status"] == 6
 
 
 def test_refund_completed_order_keeps_stock_deducted(
@@ -738,6 +763,13 @@ def test_admin_refund_ignores_can_refund(
         f"{settings.API_V1_STR}/orders/{order['id']}/fulfill",
         headers=superuser_token_headers,
     )
+    # 手动退款仅已完成订单可用，先置为已完成
+    status_response = client.post(
+        f"{settings.API_V1_STR}/orders/{order['id']}/status",
+        headers=superuser_token_headers,
+        json={"status": 6},
+    )
+    assert status_response.status_code == 200
 
     response = client.post(
         f"{settings.API_V1_STR}/orders/{order['id']}/refund",
@@ -747,7 +779,8 @@ def test_admin_refund_ignores_can_refund(
     assert response.status_code == 200
     assert response.json()["status"] == 8
     assert _wallet_balance(client, headers) == Decimal("100.00")
-    assert _product_stock(client, product["id"], superuser_token_headers) == 100
+    # 已完成订单手动退款不回补库存
+    assert _product_stock(client, product["id"], superuser_token_headers) == 99
 
 
 def test_user_cancel_rejects_non_refundable_product(
@@ -776,12 +809,12 @@ def test_user_cancel_rejects_non_refundable_product(
         headers=headers,
     )
     assert response.status_code == 400
-    assert response.json()["detail"] == "订单包含不支持退款的商品"
+    assert response.json()["detail"] == "该订单不支持向供应商申请退单"
     assert _wallet_balance(client, headers) == Decimal("80.00")
     assert _product_stock(client, product["id"], superuser_token_headers) == 99
 
 
-def test_admin_cancel_ignores_can_refund(
+def test_admin_cancel_rejects_non_refundable_product(
     client: TestClient,
     db: Session,
     superuser_token_headers: dict[str, str],
@@ -806,8 +839,8 @@ def test_admin_cancel_ignores_can_refund(
         f"{settings.API_V1_STR}/orders/{order['id']}/cancel",
         headers=superuser_token_headers,
     )
-    assert response.status_code == 200
-    assert response.json()["status"] == 10
+    assert response.status_code == 400
+    assert response.json()["detail"] == "该订单不支持向供应商申请退单"
 
 
 def test_admin_update_order_status(
@@ -894,41 +927,133 @@ def test_cancel_order_after_manual_fulfill_marks_after_sale(
     assert _product_stock(client, product["id"], superuser_token_headers) == 99
 
 
-def test_admin_refund_after_sale_restores_stock(
+def test_api_refund_application_auto_refunds_on_upstream_refunded(
     client: TestClient,
     db: Session,
     superuser_token_headers: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     headers, _ = _create_wallet_user(client, db)
     _fund_wallet(client, headers, superuser_token_headers)
-    product = _create_ready_product(
-        client,
-        superuser_token_headers,
-        price_mode="fixed",
-        fulfillment_type=2,
+    product, _ = _create_api_product_with_supplier(
+        client, db, superuser_token_headers
     )
+    monkeypatch.setattr(
+        YlsupClient,
+        "create_order",
+        lambda self, **kwargs: {"order_id": "10086"},
+    )
+    monkeypatch.setattr(
+        YlsupClient,
+        "query_order",
+        lambda self, order_ids: {"status": 3},
+    )
+    monkeypatch.setattr(
+        YlsupClient,
+        "cancel_order",
+        lambda self, order_id: {"id": order_id},
+    )
+
     order_response = client.post(
         f"{settings.API_V1_STR}/orders/",
         headers=headers,
-        json=_order_payload(product["id"]),
+        json=_order_payload(product["id"], quantity=2),
     )
     assert order_response.status_code == 200
-    order = _first_order_result(order_response)
+    order_id = _first_order_result(order_response)["id"]
+    assert _wallet_balance(client, headers) == Decimal("60.00")
+
+    fulfill = client.post(
+        f"{settings.API_V1_STR}/orders/{order_id}/fulfill",
+        headers=superuser_token_headers,
+    )
+    assert fulfill.status_code == 200
+
     cancel = client.post(
-        f"{settings.API_V1_STR}/orders/me/{order['id']}/cancel",
+        f"{settings.API_V1_STR}/orders/me/{order_id}/cancel",
         headers=headers,
     )
     assert cancel.status_code == 200
     assert cancel.json()["status"] == 10
 
-    refund = client.post(
-        f"{settings.API_V1_STR}/orders/{order['id']}/refund",
-        headers=superuser_token_headers,
-        json={"amount": "20.00"},
+    # celery 步骤：调用上游退单申请，成功后状态转为退单中
+    db_order = db.get(Order, uuid.UUID(order_id))
+    apply_refund_applications(session=db, db_orders=[db_order])
+    assert db_order.status == 5
+
+    # 上游退单完成，自动按公式退款入账
+    monkeypatch.setattr(
+        YlsupClient,
+        "query_order",
+        lambda self, order_ids: {"status": 8},
     )
-    assert refund.status_code == 200
-    assert refund.json()["status"] == 8
+    sync = client.post(
+        f"{settings.API_V1_STR}/orders/{order_id}/sync-status",
+        headers=superuser_token_headers,
+    )
+    assert sync.status_code == 200
+    content = sync.json()
+    assert content["status"] == 8
+    assert content["refunded_at"] is not None
+    assert content["start_quantity"] == 2
+    assert content["current_quantity"] == 2
     assert _wallet_balance(client, headers) == Decimal("100.00")
+    assert _product_stock(client, product["id"], superuser_token_headers) == 100
+
+
+def test_sync_updates_quantities_and_refund_by_formula(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product, _ = _create_api_product_with_supplier(
+        client, db, superuser_token_headers
+    )
+    monkeypatch.setattr(
+        YlsupClient,
+        "create_order",
+        lambda self, **kwargs: {"order_id": "10086"},
+    )
+    monkeypatch.setattr(
+        YlsupClient,
+        "query_order",
+        lambda self, order_ids: {"status": 3},
+    )
+
+    order_response = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"], quantity=2),
+    )
+    assert order_response.status_code == 200
+    order_id = _first_order_result(order_response)["id"]
+    fulfill = client.post(
+        f"{settings.API_V1_STR}/orders/{order_id}/fulfill",
+        headers=superuser_token_headers,
+    )
+    assert fulfill.status_code == 200
+
+    db_order = db.get(Order, uuid.UUID(order_id))
+    upstream = UpstreamOrder(
+        upstream_id="10086",
+        status=8,
+        start_num=2,
+        current_num=3,
+    )
+    monkeypatch.setattr(
+        YlsupClient,
+        "query_order",
+        lambda self, order_ids: [upstream],
+    )
+    updated = sync_orders_status(session=db, db_orders=[db_order])
+    assert updated[0].status == 8
+    assert updated[0].start_quantity == 2
+    assert updated[0].current_quantity == 3
+    # 退款 = (2 - (3 - 2)) × 20 = 20，余额 60 + 20 = 80
+    assert _wallet_balance(client, headers) == Decimal("80.00")
     assert _product_stock(client, product["id"], superuser_token_headers) == 100
 
 
@@ -962,7 +1087,9 @@ def test_fulfill_api_order_syncs_upstream_status(
 ) -> None:
     headers, _ = _create_wallet_user(client, db)
     _fund_wallet(client, headers, superuser_token_headers)
-    product, _ = _create_api_product_with_supplier(client, db, superuser_token_headers)
+    product, supplier = _create_api_product_with_supplier(
+        client, db, superuser_token_headers
+    )
     monkeypatch.setattr(
         YlsupClient,
         "create_order",
@@ -989,6 +1116,8 @@ def test_fulfill_api_order_syncs_upstream_status(
     assert fulfill.status_code == 200
     assert fulfill.json()["status"] == 3
     assert fulfill.json()["supplier_order_id"] == "10086"
+    assert fulfill.json()["supplier_id"] == str(supplier.id)
+    assert fulfill.json()["sku_id"] == "SKU-API"
 
     monkeypatch.setattr(
         YlsupClient,

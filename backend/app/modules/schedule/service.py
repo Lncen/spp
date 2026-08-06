@@ -3,8 +3,9 @@
 import json
 from typing import Any
 
+from celery.result import AsyncResult
 from kombu.utils.json import dumps
-from sqlalchemy import delete, select
+from sqlalchemy import delete
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy_celery_beat.models import (
@@ -12,8 +13,10 @@ from sqlalchemy_celery_beat.models import (
     IntervalSchedule,
     PeriodicTask,
 )
+from sqlmodel import func, select
 
 from app.core.celery_app import celery_app, discover_tasks
+from app.modules.schedule.models import ScheduleRun
 from app.modules.schedule.schemas import (
     CrontabScheduleIn,
     IntervalScheduleIn,
@@ -22,10 +25,13 @@ from app.modules.schedule.schemas import (
     ScheduleType,
     ScheduleUpdate,
     TaskOption,
+    TaskStatusPublic,
 )
 
 TASK_LABELS: dict[str, str] = {
     "app.tasks.cleanup.cleanup_expired_data": "清理过期数据",
+    "app.tasks.cleanup.cleanup_schedule_runs": "清理失败celery执行记录",
+    "app.tasks.order.sync_order_status_periodic": "同步订单状态",
     "app.tasks.product.sync_product_status": "同步商品状态",
     "app.tasks.supplier.sync_upstream_products": "同步供应商商品",
 }
@@ -276,3 +282,36 @@ def run_schedule_now(task: PeriodicTask) -> str:
     kwargs = json.loads(task.kwargs or "{}")
     result = celery_app.send_task(task.task, args=args, kwargs=kwargs)
     return result.id
+
+
+def get_task_status(task_id: str) -> TaskStatusPublic:
+    """查询 Celery 任务执行状态（结果来自 Redis result backend）"""
+    result = AsyncResult(task_id, app=celery_app)
+    if result.state in {"PENDING", "STARTED", "RETRY"}:
+        return TaskStatusPublic(status=result.state, success=None)
+    if result.state == "SUCCESS":
+        return TaskStatusPublic(
+            status=result.state,
+            success=True,
+            result=result.result,
+        )
+    return TaskStatusPublic(status=result.state, success=False)
+
+
+def list_failed_runs(
+    session: Session,
+    skip: int = 0,
+    limit: int = 100,
+    task_name: str | None = None,
+) -> tuple[list[ScheduleRun], int]:
+    """分页查询失败执行记录（按失败时间倒序）。"""
+    statement = select(ScheduleRun).order_by(ScheduleRun.created_at.desc())
+    count_statement = select(func.count()).select_from(ScheduleRun)
+    if task_name:
+        statement = statement.where(ScheduleRun.task_name == task_name)
+        count_statement = count_statement.where(
+            ScheduleRun.task_name == task_name
+        )
+    runs = session.exec(statement.offset(skip).limit(limit)).all()
+    count = session.exec(count_statement).one()
+    return runs, count

@@ -89,20 +89,23 @@ def _validate_quantity(*, inventory: ProductInventory, quantity: int) -> None:
         )
 
 
-def _validate_supplier_available(*, session: Session, product: Product) -> None:
-    """校验商品供应商可用；自营商品跳过，失败原因不向客户端暴露供应商信息"""
+def _validate_supplier_available(
+    *, session: Session, product: Product
+) -> ProductSupplier | None:
+    """校验商品供应商可用；自营商品跳过，返回货源记录供订单快照"""
     supplier_sku = session.exec(
         select(ProductSupplier).where(ProductSupplier.product_id == product.id)
     ).first()
     if supplier_sku is None or supplier_sku.supplier_id is None:
-        return
+        return supplier_sku
     supplier = session.get(Supplier, supplier_sku.supplier_id)
     if supplier is None:
-        return
+        return supplier_sku
     if supplier.platform == PlatformEnum.SELF:
-        return
+        return supplier_sku
     if not supplier.is_active or supplier.status != "active":
         raise HTTPException(status_code=400, detail="商品暂不可下单，请稍后重试")
+    return supplier_sku
 
 
 def _validate_and_build_params(
@@ -227,6 +230,15 @@ def _restore_stock(
     session.add(inventory)
 
 
+def _calc_refund_amount(*, db_order: Order) -> Decimal:
+    """退单退款金额 = (订单数量 - (当前数量 - 开始数量)) × 成交单价，限制在 [0, 订单金额]"""
+    unfinished = db_order.quantity - (
+        db_order.current_quantity - db_order.start_quantity
+    )
+    amount = Decimal(max(unfinished, 0)) * db_order.unit_price
+    return min(amount, db_order.total_amount)
+
+
 def _build_order_data(
     *,
     session: Session,
@@ -249,7 +261,7 @@ def _build_order_data(
         inventory=inventory,
         fulfillment=fulfillment,
     )
-    _validate_supplier_available(session=session, product=product)
+    supplier_sku = _validate_supplier_available(session=session, product=product)
     _validate_quantity(inventory=inventory, quantity=order_in.quantity)
 
     buy_params = session.exec(
@@ -276,6 +288,8 @@ def _build_order_data(
         "inventory": inventory,
         "pricing": pricing,
         "fulfillment": fulfillment,
+        "supplier_id": supplier_sku.supplier_id if supplier_sku else None,
+        "sku_id": supplier_sku.sku_id if supplier_sku else None,
         "quantity": order_in.quantity,
         "unit_price": unit_price,
         "subtotal": subtotal,
@@ -303,6 +317,8 @@ def _build_order(
         product_id=product.id,
         product_name=product.name,
         quantity=data["quantity"],
+        start_quantity=data["quantity"],
+        current_quantity=data["quantity"],
         unit_price=data["unit_price"],
         subtotal=data["subtotal"],
         base_price=pricing.cost_price + pricing.loss_price,
@@ -311,5 +327,7 @@ def _build_order(
         params=data["params"],
         fulfillment_type=data["fulfillment"].fulfillment_type,
         can_refund=data["fulfillment"].can_refund,
+        supplier_id=data["supplier_id"],
+        sku_id=data["sku_id"],
         paid_at=datetime.now(UTC),
     )

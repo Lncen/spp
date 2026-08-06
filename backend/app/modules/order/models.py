@@ -126,6 +126,18 @@ class Order(BaseModelMixin, SQLModel, table=True):
         ge=1,
         title="购买数量",
     )
+    start_quantity: int = Field(
+        default=0,
+        ge=0,
+        title="开始数量",
+        description="订单开始时的数量，状态同步时按上游 start_num 更新",
+    )
+    current_quantity: int = Field(
+        default=0,
+        ge=0,
+        title="当前数量",
+        description="订单当前数量，状态同步时按上游 current_num 更新",
+    )
     unit_price: Decimal = Field(
         max_digits=18,
         decimal_places=8,
@@ -165,6 +177,22 @@ class Order(BaseModelMixin, SQLModel, table=True):
         sa_type=Integer,
         title="履约方式快照",
     )
+    supplier_id: uuid.UUID | None = Field(
+        default=None,
+        foreign_key="supplier.id",
+        nullable=True,
+        ondelete="SET NULL",
+        index=True,
+        title="供应商 ID",
+        description="下单时商品货源快照，供应商删除后置空",
+    )
+    sku_id: str | None = Field(
+        default=None,
+        max_length=255,
+        index=True,
+        title="供应商 SKU",
+        description="下单时商品货源 SKU 快照",
+    )
     supplier_order_id: str | None = Field(
         default=None,
         max_length=255,
@@ -173,6 +201,6 @@ class Order(BaseModelMixin, SQLModel, table=True):
     )
     can_refund: bool = Field(
         default=False,
-        title="是否允许退款",
+        title="是否允许申请退单",
         description="下单时的商品退款规则快照",
     )

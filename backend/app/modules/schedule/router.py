@@ -1,13 +1,12 @@
 """计划任务模块：路由层"""
-# ruff: noqa: ARG001  # current_user 仅用于 FastAPI 权限依赖
-from typing import Annotated, Any
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy_celery_beat.models import PeriodicTask
 from sqlmodel import func, select
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import SessionDep, get_current_active_superuser
 from app.common.models import Message
 from app.modules.schedule.schemas import (
     RunTaskPublic,
@@ -34,19 +33,8 @@ from app.modules.schedule.service import (
 from app.modules.schedule.service import (
     update_schedule as update_schedule_service,
 )
-from app.modules.user.models import User
 
 router = APIRouter(prefix="/schedules", tags=["schedules"])
-
-
-def require_superuser(current_user: CurrentUser) -> User:
-    """校验当前用户为超级管理员"""
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="权限不足")
-    return current_user
-
-
-SuperuserDep = Annotated[User, Depends(require_superuser)]
 
 
 def _get_task_or_404(session: Session, task_id: int) -> PeriodicTask:
@@ -57,10 +45,13 @@ def _get_task_or_404(session: Session, task_id: int) -> PeriodicTask:
     return task
 
 
-@router.get("/", response_model=SchedulesPublic)
+@router.get(
+    "/",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=SchedulesPublic,
+)
 def read_schedules(
     session: SessionDep,
-    current_user: SuperuserDep,
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=1000),
 ) -> Any:
@@ -75,29 +66,37 @@ def read_schedules(
     )
 
 
-@router.get("/task-options", response_model=TaskOptionsPublic)
-def read_task_options(
-    current_user: SuperuserDep,
-) -> Any:
+@router.get(
+    "/task-options",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=TaskOptionsPublic,
+)
+def read_task_options() -> Any:
     """获取可配置的 Celery 任务列表（超管权限，前端下拉使用）"""
     return TaskOptionsPublic(data=list_task_options())
 
 
-@router.get("/{id}", response_model=SchedulePublic)
+@router.get(
+    "/{id}",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=SchedulePublic,
+)
 def read_schedule(
     session: SessionDep,
-    current_user: SuperuserDep,
     id: int,
 ) -> Any:
     """根据 ID 获取计划任务（超管权限）"""
     return _schedule_to_public(_get_task_or_404(session, id))
 
 
-@router.post("/", response_model=SchedulePublic)
+@router.post(
+    "/",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=SchedulePublic,
+)
 def create_schedule(
     *,
     session: SessionDep,
-    current_user: SuperuserDep,
     schedule_in: ScheduleCreate,
 ) -> Any:
     """创建计划任务（超管权限）"""
@@ -108,11 +107,14 @@ def create_schedule(
     return _schedule_to_public(task)
 
 
-@router.put("/{id}", response_model=SchedulePublic)
+@router.put(
+    "/{id}",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=SchedulePublic,
+)
 def update_schedule(
     *,
     session: SessionDep,
-    current_user: SuperuserDep,
     id: int,
     schedule_in: ScheduleUpdate,
 ) -> Any:
@@ -129,10 +131,13 @@ def update_schedule(
     return _schedule_to_public(task)
 
 
-@router.post("/{id}/toggle", response_model=SchedulePublic)
+@router.post(
+    "/{id}/toggle",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=SchedulePublic,
+)
 def toggle_schedule(
     session: SessionDep,
-    current_user: SuperuserDep,
     id: int,
 ) -> Any:
     """启用或停用计划任务（超管权限）"""
@@ -142,10 +147,13 @@ def toggle_schedule(
     )
 
 
-@router.post("/{id}/run", response_model=RunTaskPublic)
+@router.post(
+    "/{id}/run",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=RunTaskPublic,
+)
 def run_schedule(
     session: SessionDep,
-    current_user: SuperuserDep,
     id: int,
 ) -> Any:
     """立即执行一次计划任务（超管权限，不影响原计划）"""
@@ -153,10 +161,13 @@ def run_schedule(
     return RunTaskPublic(task_id=run_schedule_now(task))
 
 
-@router.delete("/{id}", response_model=Message)
+@router.delete(
+    "/{id}",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=Message,
+)
 def delete_schedule(
     session: SessionDep,
-    current_user: SuperuserDep,
     id: int,
 ) -> Message:
     """删除计划任务（超管权限）"""

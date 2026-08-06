@@ -3,7 +3,6 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
-from typing import Any
 
 from pydantic import field_validator
 from sqlmodel import Field, SQLModel
@@ -144,10 +143,3 @@ class UpstreamProductSyncRequest(SQLModel):
 class UpstreamProductSyncPublic(SQLModel):
     """创建同步任务响应"""
     task_id: str = Field(title="Celery 任务 ID")
-
-
-class TaskStatusPublic(SQLModel):
-    """同步任务状态响应"""
-    status: str = Field(title="任务状态")
-    success: bool | None = Field(default=None, title="是否成功")
-    result: dict[str, Any] | None = Field(default=None, title="任务结果")
