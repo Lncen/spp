@@ -31,7 +31,7 @@ from app.modules.schedule.schemas import (
 TASK_LABELS: dict[str, str] = {
     "app.tasks.cleanup.cleanup_expired_data": "清理过期数据",
     "app.tasks.cleanup.cleanup_schedule_runs": "清理失败celery执行记录",
-    "app.tasks.order.fulfill_paid_orders_periodic": "向上游下单已付款订单",
+    "app.tasks.order.fulfill_paid_orders_periodic": "向上游发起已付款订单",
     "app.tasks.order.sync_order_status_periodic": "同步订单状态",
     "app.tasks.product.sync_product_status": "同步商品状态",
     "app.tasks.supplier.sync_upstream_products": "同步供应商商品",

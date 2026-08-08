@@ -23,9 +23,9 @@ class Wallet(BaseModelMixin, SQLModel, table=True):
     balance: Decimal = Field(
         default=Decimal("0.00"),
         max_digits=18,
-        decimal_places=2,
+        decimal_places=7,
         title="余额",
-        description="钱包当前可用余额，单位为元，精确到分",
+        description="钱包当前可用余额，单位为元，精确到小数点后 7 位",
     )
     currency: str = Field(
         default="CNY",
@@ -53,13 +53,13 @@ class WalletTransaction(BaseModelMixin, SQLModel, table=True):
     )
     amount: Decimal = Field(
         max_digits=18,
-        decimal_places=2,
+        decimal_places=7,
         title="变动金额",
         description="有符号金额，入账为正，扣款为负",
     )
     balance_after: Decimal = Field(
         max_digits=18,
-        decimal_places=2,
+        decimal_places=7,
         title="变动后余额",
         description="本次变动后的钱包余额",
     )

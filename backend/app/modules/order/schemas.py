@@ -100,7 +100,7 @@ class OrderRefundRequest(SQLModel):
     amount: Decimal = Field(
         gt=0,
         max_digits=18,
-        decimal_places=2,
+        decimal_places=7,
         title="退款金额",
         description="退款金额不能超过订单金额",
     )

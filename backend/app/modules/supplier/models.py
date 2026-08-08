@@ -21,7 +21,7 @@ class Supplier(BaseModelMixin, SupplierBase, table=True):
     balance: Decimal | None = Field(
         default=None,
         max_digits=12,
-        decimal_places=2,
+        decimal_places=7,
         title="余额",
         description="供应商账户余额，通过 API 同步更新，不可手动修改",
     )

@@ -57,13 +57,13 @@ function formatDateTime(value?: string | null): string {
 }
 
 function formatAmount(value: string | number): string {
-  return Number(value).toFixed(2)
+  return Number(value).toFixed(7)
 }
 
 function refundAmountError(amount: string, totalAmount: string): string | null {
   const trimmed = amount.trim()
-  if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) {
-    return "退款金额必须大于 0，最多保留两位小数"
+  if (!/^\d+(\.\d{1,7})?$/.test(trimmed)) {
+    return "退款金额必须大于 0，最多保留 7 位小数"
   }
   if (Number(trimmed) > Number(totalAmount)) {
     return "退款金额不能超过订单金额"

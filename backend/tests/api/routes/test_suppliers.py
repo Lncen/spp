@@ -102,9 +102,9 @@ def test_read_supplier_balance(
         headers=superuser_token_headers,
     )
     assert response.status_code == 200
-    assert Decimal(response.json()["balance"]) == Decimal("64.32")
+    assert Decimal(response.json()["balance"]) == Decimal("64.3194636")
     db.refresh(supplier)
-    assert supplier.balance == Decimal("64.32")
+    assert supplier.balance == Decimal("64.3194636")
 
 
 def test_successful_access_updates_connection_status(

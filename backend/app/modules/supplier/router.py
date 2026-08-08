@@ -133,8 +133,8 @@ def read_supplier_balance(
     except SupplierClientError as e:
         raise HTTPException(status_code=502, detail=str(e)) from e
 
-    # 上游余额写回数据库，余额列仅保留两位小数
-    balance = balance.quantize(Decimal("0.01"))
+    # 上游余额写回数据库，余额列保留 7 位小数
+    balance = balance.quantize(Decimal("0.0000001"))
     supplier.balance = balance
     session.add(supplier)
     session.commit()

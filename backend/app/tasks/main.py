@@ -5,12 +5,12 @@ from celery.schedules import crontab
 
 init_tasks = {
     # 自的同步上游商品数据
-    "同步上游商品状态数据": {
+    "同步上游商品": {
         "task": "app.tasks.supplier.sync_upstream_products",
         "schedule": timedelta(hours=1),
     },
     # 已付款订单向上游下单 —— 每 1 分钟执行一次
-    "向上游发起已付款订单": {
+    "向上游下单": {
         "task": "app.tasks.order.fulfill_paid_orders_periodic",
         "schedule": timedelta(minutes=6),
     },
@@ -19,7 +19,7 @@ init_tasks = {
         "task": "app.tasks.order.sync_order_status_periodic",
         "schedule": timedelta(minutes=16),
     },
-    "同步商品状态": {
+    "同步本地商品状态": {
         "task": "app.tasks.product.sync_product_status",
         "schedule": timedelta(minutes=30),
     },

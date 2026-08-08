@@ -12,7 +12,7 @@ class WalletAdjust(SQLModel):
 
     amount: Decimal = Field(
         max_digits=18,
-        decimal_places=2,
+        decimal_places=7,
         title="调账金额",
         description="正数入账，负数扣款，不能为 0",
     )
