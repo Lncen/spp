@@ -108,6 +108,12 @@ class Order(BaseModelMixin, SQLModel, table=True):
         default=None,
         title="失败时间",
     )
+    fulfill_failed_count: int = Field(
+        default=0,
+        nullable=False,
+        title="履约失败次数",
+        description="向上游履约失败累计次数，达到阈值标记异常并通知管理员",
+    )
 
     product_id: uuid.UUID | None = Field(
         default=None,

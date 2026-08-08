@@ -43,3 +43,9 @@ def get_user_by_email(*, session: Session, email: str) -> User | None:
     """根据邮箱获取用户"""
     statement = select(User).where(User.email == email)
     return session.exec(statement).first()
+
+
+def get_user_by_username(*, session: Session, username: str) -> User | None:
+    """根据用户名获取用户"""
+    statement = select(User).where(User.username == username)
+    return session.exec(statement).first()

@@ -9,13 +9,14 @@ from typing import Any
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
+from app.core.config import settings
 from app.modules.order.constants import OrderStatus
 from app.modules.order.models import Order
+from app.modules.order.service.notification import notify_order_exception
 from app.modules.order.service.status_sync import (
     _query_api_orders_status,
     sync_orders_status,
 )
-from app.modules.order.service.validation import _restore_stock
 from app.modules.product.constants import RedeemType
 from app.modules.product.product.models import ProductSupplier
 from app.modules.supplier.models import Supplier
@@ -56,7 +57,7 @@ def cancel_order(
     *,
     session: Session,
     db_order: Order,
-    operator_id: uuid.UUID | None = None,
+    operator_id: uuid.UUID | None = None,  # noqa: ARG001
 ) -> Order:
     """申请退单：状态置申请售后中，后续由 celery 向上游申请退单"""
     if db_order.status not in (
@@ -150,12 +151,16 @@ def _fulfill_api_item(*, session: Session, db_order: Order) -> None:
         raise SupplierClientError("供应商不存在")
     client = SupplierClientBase.get_client(supplier)
     try:
+        upstream_params = dict(db_order.params or {})
+        upstream_params.pop("customer_order_id", None)
         result = client.create_order(
             product_id=sku_id,
             quantity=db_order.quantity,
-            **db_order.params,
+            customer_order_id=db_order.order_no,
+            **upstream_params,
         )
         db_order.supplier_order_id = _extract_supplier_order_id(result)
+        db_order.status = OrderStatus.PENDING
         session.add(db_order)
     finally:
         client.close()
@@ -165,34 +170,45 @@ def fulfill_order(
     *,
     session: Session,
     db_order: Order,
-    operator_id: uuid.UUID | None = None,
+    operator_id: uuid.UUID | None = None,  # noqa: ARG001
+    fail_limit: int | None = None,
 ) -> Order:
-    """履约订单：自动完成、标记处理中或调用供应商 API 并同步上游状态"""
+    """履约订单：自动完成、标记处理中或调用供应商 API 并同步上游状态
+
+    供应商履约失败不取消订单：失败次数累计，达到阈值标记异常并通知管理员。
+    """
     if db_order.status != OrderStatus.PAID:
         raise HTTPException(status_code=400, detail="当前状态不可履约")
 
     now = datetime.now(UTC)
     db_order.processing_at = now
     is_api = db_order.fulfillment_type == RedeemType.AUTO_API
+    if fail_limit is None:
+        fail_limit = settings.ORDER_FULFILL_FAIL_LIMIT
 
     try:
         if is_api:
             _fulfill_api_item(session=session, db_order=db_order)
     except SupplierClientError as exc:
-        _restore_stock(
-            session=session,
-            product_id=db_order.product_id,
-            quantity=db_order.quantity,
-        )
-        db_order.status = OrderStatus.REFUNDING
-        db_order.failed_at = now
+        db_order.fulfill_failed_count = (db_order.fulfill_failed_count or 0) + 1
+        if db_order.fulfill_failed_count >= fail_limit:
+            db_order.status = OrderStatus.EXCEPTION
+            db_order.failed_at = now
+            note = f"履约连续失败 {db_order.fulfill_failed_count} 次，已标记异常"
+            db_order.remark = (
+                f"{db_order.remark}；{note}"[:255] if db_order.remark else note
+            )
         session.add(db_order)
         session.commit()
         session.refresh(db_order)
+        if db_order.status == OrderStatus.EXCEPTION:
+            notify_order_exception(db_order=db_order)
         raise HTTPException(
             status_code=502,
-            detail=f"供应商履约失败，订单已转入退款处理: {exc}",
+            detail=f"供应商履约失败: {exc}",
         ) from exc
+
+    db_order.fulfill_failed_count = 0  # 上游下单成功，清零失败计数
 
     if db_order.fulfillment_type == RedeemType.MANUAL:
         db_order.status = OrderStatus.PROCESSING
@@ -238,15 +254,18 @@ def update_order_status(
     db_order: Order,
     status: OrderStatus,
 ) -> Order:
-    """管理员手动设置订单状态，仅允许处理中/退单中/已完成/有异常"""
+    """管理员手动设置订单状态，异常订单可恢复为已付款"""
     allowed_statuses = (
         OrderStatus.PROCESSING,
         OrderStatus.REFUNDING,
         OrderStatus.COMPLETED,
         OrderStatus.EXCEPTION,
+        OrderStatus.PAID,
     )
     if status not in allowed_statuses:
         raise HTTPException(status_code=400, detail="当前状态不允许手动设置")
+    if status == OrderStatus.PAID and db_order.status != OrderStatus.EXCEPTION:
+        raise HTTPException(status_code=400, detail="仅异常订单可恢复为已付款")
     now = datetime.now(UTC)
     db_order.status = status
     if status == OrderStatus.PROCESSING:

@@ -127,21 +127,27 @@ class YlsupClient(SupplierClientBase):
     def create_order(
         self,
         *,
-        sku_id: int|str,
+        product_id: str,
         quantity: int,
-        customer_order_id: str | None = None,
-        data: dict[str, str] = None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
-        """向上游下单"""
-        data = {
-                "goods_id": sku_id,
-                "buy_number": quantity,
-                "customer_order_id": customer_order_id,
-                "buy_params": data
-                }
+        """向上游下单（遵循基类契约，product_id 为供应商 SKU）"""
+        buy_params = {str(key): str(value) for key, value in (kwargs or {}).items()}
+        try:
+            goods_id = int(product_id)
+        except (TypeError, ValueError):
+            raise SupplierClientError(f"上游商品 ID 非法: {product_id}") from None
+        body = {
+            "goods_id": goods_id,
+            "buy_number": quantity,
+            "buy_params": buy_params,
+        }
+        customer_order_id = buy_params.pop("customer_order_id", None)
         if customer_order_id:
-            data["customer_order_id"] = customer_order_id
-        payload = self.post("/openapi/customer/Goods/Buy", data=data).json()
+            body["customer_order_id"] = customer_order_id
+
+        print("❤️body",body)
+        payload = self.post("/openapi/customer/Goods/Buy", json=body).json()
         data = self._data(payload)
         return data if isinstance(data, dict) else {}
 

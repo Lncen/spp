@@ -360,6 +360,7 @@ export type OrderPublic = {
     canceled_at?: (string | null);
     refunded_at?: (string | null);
     failed_at?: (string | null);
+    fulfill_failed_count?: number;
     created_at?: (string | null);
     updated_at?: (string | null);
     product_id: (string | null);
@@ -1071,6 +1072,31 @@ export type ScheduleUpdate = {
 };
 
 /**
+ * 设置项（登录用户可读）
+ */
+export type SettingRead = {
+    key: string;
+    value: unknown;
+    description: (string | null);
+    updated_by: (string | null);
+    updated_at: (string | null);
+};
+
+/**
+ * 设置列表响应
+ */
+export type SettingsRead = {
+    data: Array<SettingRead>;
+};
+
+/**
+ * 更新设置请求
+ */
+export type SettingUpdate = {
+    value: unknown;
+};
+
+/**
  * 商品来源
  */
 export type SourceType = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
@@ -1321,6 +1347,10 @@ export type UpstreamProductSyncRequest = {
  * 创建用户请求
  */
 export type UserCreate = {
+    /**
+     * 用户名，不填时默认使用邮箱
+     */
+    username?: (string | null);
     email: string;
     is_active?: boolean;
     is_superuser?: boolean;
@@ -1333,6 +1363,7 @@ export type UserCreate = {
  * 用户公开响应
  */
 export type UserPublic = {
+    username: string;
     email: string;
     is_active?: boolean;
     is_superuser?: boolean;
@@ -1346,6 +1377,10 @@ export type UserPublic = {
  * 用户注册请求
  */
 export type UserRegister = {
+    /**
+     * 用户名，不填时默认使用邮箱
+     */
+    username?: (string | null);
     email: string;
     password: string;
     full_name?: (string | null);
@@ -1363,6 +1398,7 @@ export type UsersPublic = {
  * 更新用户请求（全部可选）
  */
 export type UserUpdate = {
+    username?: (string | null);
     email?: (string | null);
     is_active?: (boolean | null);
     is_superuser?: (boolean | null);
@@ -1375,6 +1411,7 @@ export type UserUpdate = {
  * 当前用户更新个人信息请求
  */
 export type UserUpdateMe = {
+    username?: (string | null);
     full_name?: (string | null);
     email?: (string | null);
 };
@@ -1835,6 +1872,15 @@ export type SchedulesReadTaskStatusData = {
 };
 
 export type SchedulesReadTaskStatusResponse = (TaskStatusPublic);
+
+export type SettingsReadSettingsResponse = (SettingsRead);
+
+export type SettingsUpdateSettingEndpointData = {
+    key: string;
+    requestBody: SettingUpdate;
+};
+
+export type SettingsUpdateSettingEndpointResponse = (SettingRead);
 
 export type SuppliersReadSuppliersData = {
     limit?: number;

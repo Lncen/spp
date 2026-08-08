@@ -8,6 +8,12 @@ from sqlmodel import Field, SQLModel
 
 class UserBase(SQLModel):
     """用户基础属性"""
+    username: str | None = Field(
+        default=None,
+        max_length=255,
+        title="用户名",
+        description="用户名，不填时默认使用邮箱",
+    )
     email: EmailStr = Field(unique=True, index=True, max_length=255)
     is_active: bool = True
     is_superuser: bool = False
@@ -22,6 +28,12 @@ class UserCreate(UserBase):
 
 class UserRegister(SQLModel):
     """用户注册请求"""
+    username: str | None = Field(
+        default=None,
+        max_length=255,
+        title="用户名",
+        description="用户名，不填时默认使用邮箱",
+    )
     email: EmailStr = Field(max_length=255)
     password: str = Field(min_length=8, max_length=128)
     full_name: str | None = Field(default=None, max_length=255)
@@ -29,6 +41,7 @@ class UserRegister(SQLModel):
 
 class UserUpdate(SQLModel):
     """更新用户请求（全部可选）"""
+    username: str | None = Field(default=None, max_length=255)
     email: EmailStr | None = Field(default=None, max_length=255)
     is_active: bool | None = None
     is_superuser: bool | None = None
@@ -39,6 +52,7 @@ class UserUpdate(SQLModel):
 
 class UserUpdateMe(SQLModel):
     """当前用户更新个人信息请求"""
+    username: str | None = Field(default=None, max_length=255)
     full_name: str | None = Field(default=None, max_length=255)
     email: EmailStr | None = Field(default=None, max_length=255)
 
@@ -51,6 +65,7 @@ class UpdatePassword(SQLModel):
 
 class UserPublic(UserBase):
     """用户公开响应"""
+    username: str
     id: uuid.UUID
     created_at: datetime | None = None
 

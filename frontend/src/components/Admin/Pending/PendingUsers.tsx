@@ -12,10 +12,11 @@ const PendingUsers = () => (
   <Table>
     <TableHeader>
       <TableRow>
-        <TableHead>Full Name</TableHead>
-        <TableHead>Email</TableHead>
-        <TableHead>Role</TableHead>
-        <TableHead>Status</TableHead>
+        <TableHead>姓名</TableHead>
+        <TableHead>用户名</TableHead>
+        <TableHead>邮箱</TableHead>
+        <TableHead>角色</TableHead>
+        <TableHead>状态</TableHead>
         <TableHead>
           <span className="sr-only">Actions</span>
         </TableHead>
@@ -24,6 +25,9 @@ const PendingUsers = () => (
     <TableBody>
       {Array.from({ length: 5 }).map((_, index) => (
         <TableRow key={index}>
+          <TableCell>
+            <Skeleton className="h-4 w-32" />
+          </TableCell>
           <TableCell>
             <Skeleton className="h-4 w-32" />
           </TableCell>

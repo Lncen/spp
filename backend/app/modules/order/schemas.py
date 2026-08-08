@@ -49,6 +49,7 @@ class OrderPublic(SQLModel):
     canceled_at: datetime | None = None
     refunded_at: datetime | None = None
     failed_at: datetime | None = None
+    fulfill_failed_count: int = 0
     created_at: datetime | None = None
     updated_at: datetime | None = None
     product_id: uuid.UUID | None

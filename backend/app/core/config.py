@@ -113,6 +113,9 @@ class Settings(BaseSettings):
         password_part = f":{self.REDIS_PASSWORD}@" if self.REDIS_PASSWORD else ""
         return f"redis://{password_part}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.CELERY_RESULT_DB}"
 
+    # 订单向上游履约连续失败次数上限，达到后标记异常并通知管理员
+    ORDER_FULFILL_FAIL_LIMIT: int = 10
+
     IMAGE_MAX_SIZE: int = 10 * 1024 * 1024  # 10MB
     THUMBNAIL_MAX_DIMENSION: int = 1200
     ALLOWED_IMAGE_EXTENSIONS: set[str] = {".jpg", ".jpeg", ".png", ".webp"}

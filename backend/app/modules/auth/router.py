@@ -31,7 +31,7 @@ def login_access_token(
 ) -> Token:
     """OAuth2 兼容的登录接口，获取访问令牌"""
     user = authenticate(
-        session=session, email=form_data.username, password=form_data.password
+        session=session, login=form_data.username, password=form_data.password
     )
     if not user:
         raise HTTPException(status_code=400, detail="邮箱或密码错误")

@@ -26,9 +26,16 @@ from app.modules.user.schemas import (
     UserUpdate,
     UserUpdateMe,
 )
-from app.modules.user.service import create_user as create_user_service
-from app.modules.user.service import get_user_by_email
-from app.modules.user.service import update_user as update_user_service
+from app.modules.user.service import (
+    create_user as create_user_service,
+)
+from app.modules.user.service import (
+    get_user_by_email,
+    get_user_by_username,
+)
+from app.modules.user.service import (
+    update_user as update_user_service,
+)
 from app.utils import generate_new_account_email, send_email
 
 # ── 公共用户路由 ──────────────────────────────────────────────
@@ -64,6 +71,10 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
     user = get_user_by_email(session=session, email=user_in.email)
     if user:
         raise HTTPException(status_code=400, detail="该邮箱已被注册")
+    if user_in.username:
+        existing = get_user_by_username(session=session, username=user_in.username)
+        if existing:
+            raise HTTPException(status_code=400, detail="该用户名已被使用")
 
     user = create_user_service(session=session, user_create=user_in)
     if settings.emails_enabled and user_in.email:
@@ -87,6 +98,12 @@ def update_user_me(
         existing_user = get_user_by_email(session=session, email=user_in.email)
         if existing_user and existing_user.id != current_user.id:
             raise HTTPException(status_code=409, detail="该邮箱已被其他用户使用")
+    if user_in.username:
+        existing_user = get_user_by_username(
+            session=session, username=user_in.username
+        )
+        if existing_user and existing_user.id != current_user.id:
+            raise HTTPException(status_code=409, detail="该用户名已被其他用户使用")
     user_data = user_in.model_dump(exclude_unset=True)
     current_user.sqlmodel_update(user_data)
     session.add(current_user)
@@ -134,6 +151,10 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
     user = get_user_by_email(session=session, email=user_in.email)
     if user:
         raise HTTPException(status_code=400, detail="该邮箱已注册")
+    if user_in.username:
+        existing = get_user_by_username(session=session, username=user_in.username)
+        if existing:
+            raise HTTPException(status_code=400, detail="该用户名已被使用")
     user_create = UserCreate.model_validate(user_in)
     user = create_user_service(session=session, user_create=user_create)
     return user
@@ -173,6 +194,12 @@ def update_user(
         existing_user = get_user_by_email(session=session, email=user_in.email)
         if existing_user and existing_user.id != user_id:
             raise HTTPException(status_code=409, detail="该邮箱已被其他用户使用")
+    if user_in.username:
+        existing_user = get_user_by_username(
+            session=session, username=user_in.username
+        )
+        if existing_user and existing_user.id != user_id:
+            raise HTTPException(status_code=409, detail="该用户名已被其他用户使用")
 
     db_user = update_user_service(session=session, db_user=db_user, user_in=user_in)
     return db_user
@@ -204,6 +231,7 @@ def create_user_private(user_in: PrivateUserCreate, session: SessionDep) -> Any:
     """内部接口：创建新用户（仅开发环境可用）"""
     user = User(
         email=user_in.email,
+        username=user_in.email,
         full_name=user_in.full_name,
         hashed_password=get_password_hash(user_in.password),
     )

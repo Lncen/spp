@@ -10,7 +10,7 @@ function extractErrorMessage(err: ApiError): string {
   if (Array.isArray(errDetail) && errDetail.length > 0) {
     return errDetail[0].msg
   }
-  return errDetail || "Something went wrong."
+  return errDetail || "出错了，请稍后重试"
 }
 
 export const handleError = function (

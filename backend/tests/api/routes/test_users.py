@@ -222,6 +222,48 @@ def test_update_user_me(
     assert user_db.full_name == full_name
 
 
+def test_update_user_me_username(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+) -> None:
+    """当前用户更新自己的用户名"""
+    new_username = random_lower_string()
+    data = {"username": new_username}
+    r = client.patch(
+        f"{settings.API_V1_STR}/users/me",
+        headers=normal_user_token_headers,
+        json=data,
+    )
+    assert r.status_code == 200
+    updated_user = r.json()
+    assert updated_user["username"] == new_username
+
+    user_db = db.exec(
+        select(User).where(User.username == new_username)
+    ).first()
+    assert user_db
+    assert user_db.username == new_username
+
+
+def test_update_user_me_username_exists(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+) -> None:
+    """用户名被其他用户占用时报错"""
+    username = random_lower_string()
+    user_in = UserCreate(
+        email=random_email(), username=username, password=random_lower_string()
+    )
+    create_user(session=db, user_create=user_in)
+
+    data = {"username": username}
+    r = client.patch(
+        f"{settings.API_V1_STR}/users/me",
+        headers=normal_user_token_headers,
+        json=data,
+    )
+    assert r.status_code == 409
+    assert r.json()["detail"] == "该用户名已被其他用户使用"
+
+
 def test_update_password_me(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
@@ -338,6 +380,46 @@ def test_register_user(client: TestClient, db: Session) -> None:
     assert user_db.full_name == full_name
     verified, _ = verify_password(password, user_db.hashed_password)
     assert verified
+
+
+def test_register_user_with_username(client: TestClient, db: Session) -> None:
+    """注册时指定用户名"""
+    email = random_email()
+    username = random_lower_string()
+    password = random_lower_string()
+    data = {"email": email, "username": username, "password": password}
+    r = client.post(
+        f"{settings.API_V1_STR}/users/signup",
+        json=data,
+    )
+    assert r.status_code == 200
+    created_user = r.json()
+    assert created_user["username"] == username
+
+    user_query = select(User).where(User.email == email)
+    user_db = db.exec(user_query).first()
+    assert user_db
+    assert user_db.username == username
+
+
+def test_register_user_username_exists_error(
+    client: TestClient, db: Session
+) -> None:
+    """注册用户名重复时报错"""
+    username = random_lower_string()
+    password = random_lower_string()
+    user_in = UserCreate(
+        email=random_email(), username=username, password=password
+    )
+    create_user(session=db, user_create=user_in)
+
+    data = {"email": random_email(), "username": username, "password": password}
+    r = client.post(
+        f"{settings.API_V1_STR}/users/signup",
+        json=data,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "该用户名已被使用"
 
 
 def test_register_user_already_exists_error(client: TestClient) -> None:

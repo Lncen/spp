@@ -9,6 +9,7 @@ import {
   Percent,
   ReceiptText,
   Server,
+  Settings,
   Tags,
   Users,
 } from "lucide-react"
@@ -37,6 +38,7 @@ const baseItems: Item[] = [
   { icon: Server, title: "上游管理", path: "/suppliers" },
   { icon: Clock, title: "计划任务", path: "/schedules" },
   { icon: ReceiptText, title: "订单", path: "/orders" },
+  { icon: Settings, title: "全局设置", path: "/global-settings" },
   { icon: Users, title: "用户", path: "/admin" },
 ]
 

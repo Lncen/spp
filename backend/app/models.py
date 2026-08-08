@@ -21,10 +21,11 @@ from app.modules.product.product.models import (
     ProductPricing,
     ProductSupplier,
 )
+from app.modules.schedule.models import ScheduleRun
+from app.modules.setting.models import AppSetting
 from app.modules.supplier.models import Supplier
 from app.modules.user.models import User
 from app.modules.wallet.models import Wallet, WalletTransaction
-from app.modules.schedule.models import ScheduleRun
 
 __all__ = [
     "SQLModel",
@@ -34,6 +35,7 @@ __all__ = [
     "Image",
     "ImageCategory",
     "Supplier",
+    "AppSetting",
     "Order",
     "OrderParam",
     "PriceTemplate",

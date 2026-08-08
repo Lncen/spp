@@ -33,7 +33,9 @@ function UserInfo({ fullName, email }: UserInfoProps) {
         </AvatarFallback>
       </Avatar>
       <div className="flex flex-col items-start min-w-0">
-        <p className="text-sm font-medium truncate w-full">{fullName}</p>
+        <p className="text-sm font-medium truncate w-full">
+          {fullName || "未设置"}
+        </p>
         <p className="text-xs text-muted-foreground truncate w-full">{email}</p>
       </div>
     </div>
@@ -82,12 +84,12 @@ export function User({ user }: { user: any }) {
             <RouterLink to="/settings" onClick={handleMenuClick}>
               <DropdownMenuItem>
                 <Settings />
-                User Settings
+                用户设置
               </DropdownMenuItem>
             </RouterLink>
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
-              Log Out
+              退出登录
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

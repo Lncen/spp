@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 # 可同步上游状态的订单状态（终态订单无需再查询）
 SYNCABLE_ORDER_STATUSES = frozenset(
     {
-        OrderStatus.PAID,
+        # OrderStatus.PAID,
         OrderStatus.PENDING,
         OrderStatus.PROCESSING,
         OrderStatus.SUPPLEMENTING,
@@ -109,7 +109,7 @@ def _query_api_orders_status(
             raise SupplierClientError("供应商不存在")
         with SupplierClientBase.get_client(supplier) as client:
             upstream = client.query_order(
-                [int(db_order.supplier_order_id) for db_order in orders]
+                [db_order.supplier_order_id for db_order in orders]
             )
         if len(orders) == 1 and isinstance(upstream, dict):
             # 兼容单订单 dict 返回（旧格式/测试 mock），不依赖 id 映射

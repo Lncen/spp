@@ -9,9 +9,11 @@ from app.modules.user.models import User
 DUMMY_HASH = "$argon2id$v=19$m=65536,t=3,p=4$MjQyZWE1MzBjYjJlZTI0Yw$YTU4NGM5ZTZmYjE2NzZlZjY0ZWY3ZGRkY2U2OWFjNjk"
 
 
-def authenticate(*, session: Session, email: str, password: str) -> User | None:
-    """验证用户凭据，返回用户对象或 None"""
-    statement = select(User).where(User.email == email)
+def authenticate(*, session: Session, login: str, password: str) -> User | None:
+    """验证用户凭据，支持用户名或邮箱登录，返回用户对象或 None"""
+    statement = select(User).where(
+        (User.email == login) | (User.username == login)
+    )
     db_user = session.exec(statement).first()
     if not db_user:
         # 即使邮箱不存在也执行密码验证，防止时序攻击

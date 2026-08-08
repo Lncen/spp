@@ -30,7 +30,7 @@ def init_db(session: Session) -> None:
 
     seed_supplier_templates(session=session)
 
-    # seed_product_category_templates(session=session)
+    seed_product_category_templates(session=session)
 
     # Tables should be created with Alembic migrations
     # But if you don't want to use migrations, create

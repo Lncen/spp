@@ -22,8 +22,9 @@ import { cn } from "@/lib/utils"
 import { handleError } from "@/utils"
 
 const formSchema = z.object({
+  username: z.string().max(255).optional(),
   full_name: z.string().max(30).optional(),
-  email: z.email({ message: "Invalid email address" }),
+  email: z.email({ message: "邮箱格式不正确" }),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -39,6 +40,7 @@ const UserInformation = () => {
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
+      username: currentUser?.username ?? undefined,
       full_name: currentUser?.full_name ?? undefined,
       email: currentUser?.email,
     },
@@ -52,7 +54,7 @@ const UserInformation = () => {
     mutationFn: (data: UserUpdateMe) =>
       UsersService.updateUserMe({ requestBody: data }),
     onSuccess: () => {
-      showSuccessToast("User updated successfully")
+      showSuccessToast("用户信息更新成功")
       toggleEditMode()
     },
     onError: handleError.bind(showErrorToast),
@@ -65,6 +67,9 @@ const UserInformation = () => {
     const updateData: UserUpdateMe = {}
 
     // only include fields that have changed
+    if (data.username !== currentUser?.username) {
+      updateData.username = data.username
+    }
     if (data.full_name !== currentUser?.full_name) {
       updateData.full_name = data.full_name
     }
@@ -82,7 +87,7 @@ const UserInformation = () => {
 
   return (
     <div className="max-w-md">
-      <h3 className="text-lg font-semibold py-4">User Information</h3>
+      <h3 className="text-lg font-semibold py-4">个人信息</h3>
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -90,11 +95,11 @@ const UserInformation = () => {
         >
           <FormField
             control={form.control}
-            name="full_name"
+            name="username"
             render={({ field }) =>
               editMode ? (
                 <FormItem>
-                  <FormLabel>Full name</FormLabel>
+                  <FormLabel>用户名</FormLabel>
                   <FormControl>
                     <Input type="text" {...field} />
                   </FormControl>
@@ -102,14 +107,42 @@ const UserInformation = () => {
                 </FormItem>
               ) : (
                 <FormItem>
-                  <FormLabel>Full name</FormLabel>
+                  <FormLabel>用户名</FormLabel>
                   <p
                     className={cn(
                       "py-2 truncate max-w-sm",
                       !field.value && "text-muted-foreground",
                     )}
                   >
-                    {field.value || "N/A"}
+                    {field.value || "未设置"}
+                  </p>
+                </FormItem>
+              )
+            }
+          />
+
+          <FormField
+            control={form.control}
+            name="full_name"
+            render={({ field }) =>
+              editMode ? (
+                <FormItem>
+                  <FormLabel>姓名</FormLabel>
+                  <FormControl>
+                    <Input type="text" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              ) : (
+                <FormItem>
+                  <FormLabel>姓名</FormLabel>
+                  <p
+                    className={cn(
+                      "py-2 truncate max-w-sm",
+                      !field.value && "text-muted-foreground",
+                    )}
+                  >
+                    {field.value || "未填写"}
                   </p>
                 </FormItem>
               )
@@ -122,7 +155,7 @@ const UserInformation = () => {
             render={({ field }) =>
               editMode ? (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>邮箱</FormLabel>
                   <FormControl>
                     <Input type="email" {...field} />
                   </FormControl>
@@ -130,7 +163,7 @@ const UserInformation = () => {
                 </FormItem>
               ) : (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>邮箱</FormLabel>
                   <p className="py-2 truncate max-w-sm">{field.value}</p>
                 </FormItem>
               )
@@ -145,7 +178,7 @@ const UserInformation = () => {
                   loading={mutation.isPending}
                   disabled={!form.formState.isDirty}
                 >
-                  Save
+                  保存
                 </LoadingButton>
                 <Button
                   type="button"
@@ -153,12 +186,12 @@ const UserInformation = () => {
                   onClick={onCancel}
                   disabled={mutation.isPending}
                 >
-                  Cancel
+                  取消
                 </Button>
               </>
             ) : (
               <Button type="button" onClick={toggleEditMode}>
-                Edit
+                编辑
               </Button>
             )}
           </div>

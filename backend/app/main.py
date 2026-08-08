@@ -8,8 +8,8 @@ from starlette.staticfiles import StaticFiles
 
 from app.api.main import api_router
 from app.core.config import settings
-from app.core.middleware import SecurityHeadersMiddleware
-from app.core.redis import init_redis, close_redis
+from app.core.middleware import MaintenanceMiddleware, SecurityHeadersMiddleware
+from app.core.redis import close_redis, init_redis
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -17,7 +17,7 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     """应用生命周期：启动时初始化 Redis，关闭时清理"""
     await init_redis()
     if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
@@ -35,6 +35,7 @@ app = FastAPI(
 )
 
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(MaintenanceMiddleware)
 
 # Set all CORS enabled origins
 if settings.all_cors_origins:

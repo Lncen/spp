@@ -311,6 +311,45 @@ const EditSchedule = ({ schedule, onSuccess }: EditScheduleProps) => {
 
               {scheduleType === "crontab" ? (
                 <div className="grid grid-cols-5 gap-4">
+                 <FormField
+                    control={form.control}
+                    name="crontab.minute"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>分钟</FormLabel>
+                        <FormControl>
+                          <Input placeholder="*" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                 />
+                  <FormField
+                    control={form.control}
+                    name="crontab.hour"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>小时</FormLabel>
+                        <FormControl>
+                          <Input placeholder="*" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="crontab.day_of_month"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>日</FormLabel>
+                        <FormControl>
+                          <Input placeholder="*" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     control={form.control}
                     name="crontab.month_of_year"
@@ -338,50 +377,6 @@ const EditSchedule = ({ schedule, onSuccess }: EditScheduleProps) => {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="crontab.day_of_month"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>日</FormLabel>
-                        <FormControl>
-                          <Input placeholder="*" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="crontab.hour"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>小时</FormLabel>
-                        <FormControl>
-                          <Input placeholder="*" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="crontab.minute"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>分钟</FormLabel>
-                        <FormControl>
-                          <Input placeholder="*" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
- 
- 
-   
- 
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-4">

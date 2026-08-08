@@ -35,6 +35,21 @@ def test_get_access_token_incorrect_password(client: TestClient) -> None:
     assert r.status_code == 400
 
 
+def test_get_access_token_with_username(client: TestClient, db: Session) -> None:
+    """使用用户名登录"""
+    email = random_email()
+    username = random_lower_string()
+    password = random_lower_string()
+    user_in = UserCreate(email=email, username=username, password=password)
+    create_user(session=db, user_create=user_in)
+
+    login_data = {"username": username, "password": password}
+    r = client.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
+    assert r.status_code == 200
+    tokens = r.json()
+    assert "access_token" in tokens
+
+
 def test_use_access_token(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
@@ -139,7 +154,9 @@ def test_login_with_bcrypt_password_upgrades_to_argon2(
     bcrypt_hash = bcrypt_hasher.hash(password)
     assert bcrypt_hash.startswith("$2")  # bcrypt hashes start with $2
 
-    user = User(email=email, hashed_password=bcrypt_hash, is_active=True)
+    user = User(
+        email=email, username=email, hashed_password=bcrypt_hash, is_active=True
+    )
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -173,7 +190,9 @@ def test_login_with_argon2_password_keeps_hash(client: TestClient, db: Session) 
     assert argon2_hash.startswith("$argon2")
 
     # Create user with argon2 hash
-    user = User(email=email, hashed_password=argon2_hash, is_active=True)
+    user = User(
+        email=email, username=email, hashed_password=argon2_hash, is_active=True
+    )
     db.add(user)
     db.commit()
     db.refresh(user)

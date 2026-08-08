@@ -1215,6 +1215,11 @@ export const OrderPublicSchema = {
             ],
             title: 'Failed At'
         },
+        fulfill_failed_count: {
+            type: 'integer',
+            title: 'Fulfill Failed Count',
+            default: 0
+        },
         created_at: {
             anyOf: [
                 {
@@ -4001,6 +4006,85 @@ export const SchedulesPublicSchema = {
     description: '计划任务列表响应'
 } as const;
 
+export const SettingReadSchema = {
+    properties: {
+        key: {
+            type: 'string',
+            title: 'Key'
+        },
+        value: {
+            title: 'Value'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        updated_by: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated By'
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At'
+        }
+    },
+    type: 'object',
+    required: ['key', 'value', 'description', 'updated_by', 'updated_at'],
+    title: 'SettingRead',
+    description: '设置项（登录用户可读）'
+} as const;
+
+export const SettingUpdateSchema = {
+    properties: {
+        value: {
+            title: 'Value'
+        }
+    },
+    type: 'object',
+    required: ['value'],
+    title: 'SettingUpdate',
+    description: '更新设置请求'
+} as const;
+
+export const SettingsReadSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/SettingRead'
+            },
+            type: 'array',
+            title: 'Data'
+        }
+    },
+    type: 'object',
+    required: ['data'],
+    title: 'SettingsRead',
+    description: '设置列表响应'
+} as const;
+
 export const SourceTypeSchema = {
     type: 'integer',
     enum: [1, 2, 3, 4, 5, 6, 7, 8],
@@ -4656,6 +4740,19 @@ export const UpstreamProductsPublicSchema = {
 
 export const UserCreateSchema = {
     properties: {
+        username: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '用户名',
+            description: '用户名，不填时默认使用邮箱'
+        },
         email: {
             type: 'string',
             maxLength: 255,
@@ -4704,6 +4801,10 @@ export const UserCreateSchema = {
 
 export const UserPublicSchema = {
     properties: {
+        username: {
+            type: 'string',
+            title: 'Username'
+        },
         email: {
             type: 'string',
             maxLength: 255,
@@ -4756,13 +4857,26 @@ export const UserPublicSchema = {
         }
     },
     type: 'object',
-    required: ['email', 'id'],
+    required: ['username', 'email', 'id'],
     title: 'UserPublic',
     description: '用户公开响应'
 } as const;
 
 export const UserRegisterSchema = {
     properties: {
+        username: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '用户名',
+            description: '用户名，不填时默认使用邮箱'
+        },
         email: {
             type: 'string',
             maxLength: 255,
@@ -4796,6 +4910,18 @@ export const UserRegisterSchema = {
 
 export const UserUpdateSchema = {
     properties: {
+        username: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Username'
+        },
         email: {
             anyOf: [
                 {
@@ -4875,6 +5001,18 @@ export const UserUpdateSchema = {
 
 export const UserUpdateMeSchema = {
     properties: {
+        username: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Username'
+        },
         full_name: {
             anyOf: [
                 {

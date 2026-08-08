@@ -24,6 +24,7 @@ from app.modules.order.service.validation import (
     _money,
     _normalize_param_value,
 )
+from app.modules.setting.service import get_setting
 from app.modules.user.models import User
 from app.modules.wallet.service import adjust_balance, get_wallet_by_user_id
 
@@ -48,6 +49,8 @@ def create_order(*, session: Session, user: User, order_in: OrderCreate) -> Orde
     """创建单张订单：校验用户、钱包、商品与供应商，扣库存并原子扣款"""
     if not user.can_order:
         raise HTTPException(status_code=400, detail="暂无下单权限")
+    if not get_setting(session=session, key="order_enabled"):
+        raise HTTPException(status_code=403, detail="当前暂停下单，请稍后再试")
     wallet = get_wallet_by_user_id(session=session, user_id=user.id)
     if not wallet:
         raise HTTPException(status_code=400, detail="钱包不存在")

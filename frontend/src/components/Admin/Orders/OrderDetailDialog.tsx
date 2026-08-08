@@ -40,7 +40,7 @@ import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 import { ORDER_STATUS_BADGE_VARIANT, orderStatusLabel } from "./constants"
 
-const STATUS_UPDATE_OPTIONS: OrderStatus[] = [3, 5, 6, 9]
+const STATUS_UPDATE_OPTIONS: OrderStatus[] = [1, 3, 5, 6, 9]
 // 可向供应商申请退单的订单状态：已付款/待处理/处理中
 const APPLY_REFUND_STATUSES: OrderStatus[] = [1, 2, 3]
 const REDEEM_TYPE_LABELS: Record<number, string> = {
@@ -332,6 +332,9 @@ export const OrderDetailDialog = ({
                       </DetailRow>
                       <DetailRow label="失败时间">
                         {formatDateTime(order.failed_at)}
+                      </DetailRow>
+                      <DetailRow label="失败次数">
+                        {order.fulfill_failed_count ?? 0}
                       </DetailRow>
                       <DetailRow label="更新时间">
                         {formatDateTime(order.updated_at)}
