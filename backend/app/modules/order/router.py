@@ -26,11 +26,10 @@ from app.modules.order.service import (
     create_orders,
     preview_admin_orders,
 )
+from app.modules.order.service.cancel import cancel_order
 from app.modules.order.service.fulfillment import (
-    cancel_order,
     fulfill_order,
     record_supplier_order_id,
-    refund_order,
     sync_order_status,
     update_order_status,
 )
@@ -42,6 +41,7 @@ from app.modules.order.service.query import (
     to_order_list_item,
     to_order_public,
 )
+from app.modules.order.service.refund import refund_order
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 

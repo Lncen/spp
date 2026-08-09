@@ -11,7 +11,7 @@ from sqlmodel import Session, select
 from app.core.config import settings
 from app.modules.level.models import UserLevel
 from app.modules.order.models import Order
-from app.modules.order.service.status_sync import (
+from app.modules.order.service.sync import (
     apply_refund_applications,
     sync_orders_status,
 )
@@ -536,10 +536,23 @@ def test_create_order_rejects_reorder_while_after_sale_pending(
     client: TestClient,
     db: Session,
     superuser_token_headers: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     headers, _ = _create_wallet_user(client, db)
     _fund_wallet(client, headers, superuser_token_headers)
-    product = _create_ready_product(client, superuser_token_headers, price_mode="fixed")
+    product, _ = _create_api_product_with_supplier(
+        client, db, superuser_token_headers
+    )
+    monkeypatch.setattr(
+        YlsupClient,
+        "create_order",
+        lambda self, **kwargs: {"order_id": "10086"},
+    )
+    monkeypatch.setattr(
+        YlsupClient,
+        "query_order",
+        lambda self, order_ids: {"status": 3},
+    )
 
     first = client.post(
         f"{settings.API_V1_STR}/orders/",
@@ -547,8 +560,14 @@ def test_create_order_rejects_reorder_while_after_sale_pending(
         json=_order_payload(product["id"]),
     )
     assert first.status_code == 200
+    order_id = _first_order_result(first)["id"]
+    fulfill = client.post(
+        f"{settings.API_V1_STR}/orders/{order_id}/fulfill",
+        headers=superuser_token_headers,
+    )
+    assert fulfill.status_code == 200
     cancel = client.post(
-        f"{settings.API_V1_STR}/orders/me/{_first_order_result(first)['id']}/cancel",
+        f"{settings.API_V1_STR}/orders/me/{order_id}/cancel",
         headers=headers,
     )
     assert cancel.status_code == 200
@@ -568,7 +587,7 @@ def test_create_order_rejects_reorder_while_after_sale_pending(
     assert result["detail"] == "该商品相同参数订单未完成，禁止重复下单"
 
 
-def test_cancel_order_marks_after_sale_without_refund(
+def test_cancel_order_locally_refunds_unfulfilled_order(
     client: TestClient,
     db: Session,
     superuser_token_headers: dict[str, str],
@@ -592,14 +611,53 @@ def test_cancel_order_marks_after_sale_without_refund(
     )
     assert response.status_code == 200
     content = response.json()
-    assert content["status"] == 10
+    assert content["status"] == 8
     assert content["canceled_at"] is not None
-    assert content["refunded_at"] is None
+    assert content["refunded_at"] is not None
+    assert _wallet_balance(client, headers) == Decimal("100.00")
+    assert _product_stock(client, product["id"], superuser_token_headers) == 100
+
+    transactions = _order_transactions(client, headers)
+    assert {item["tx_type"] for item in transactions} == {"consume", "refund"}
+
+
+def test_cancel_unfulfilled_api_order_locally_refunds(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product, _ = _create_api_product_with_supplier(
+        client, db, superuser_token_headers
+    )
+    monkeypatch.setattr(
+        YlsupClient,
+        "create_order",
+        lambda self, **kwargs: {"order_id": "10086"},
+    )
+
+    order_response = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert order_response.status_code == 200
+    order_id = _first_order_result(order_response)["id"]
     assert _wallet_balance(client, headers) == Decimal("80.00")
     assert _product_stock(client, product["id"], superuser_token_headers) == 99
 
-    transactions = _order_transactions(client, headers)
-    assert {item["tx_type"] for item in transactions} == {"consume"}
+    cancel = client.post(
+        f"{settings.API_V1_STR}/orders/me/{order_id}/cancel",
+        headers=headers,
+    )
+    assert cancel.status_code == 200
+    content = cancel.json()
+    assert content["status"] == 8
+    assert content["refunded_at"] is not None
+    assert _wallet_balance(client, headers) == Decimal("100.00")
+    assert _product_stock(client, product["id"], superuser_token_headers) == 100
 
 
 def test_fulfill_manual_order_and_refund(
@@ -894,7 +952,7 @@ def test_admin_update_order_status(
         assert response.json()["detail"] == "当前状态不允许手动设置"
 
 
-def test_cancel_order_after_manual_fulfill_marks_after_sale(
+def test_cancel_order_after_manual_fulfill_locally_refunds(
     client: TestClient,
     db: Session,
     superuser_token_headers: dict[str, str],
@@ -924,10 +982,10 @@ def test_cancel_order_after_manual_fulfill_marks_after_sale(
         headers=headers,
     )
     assert response.status_code == 200
-    assert response.json()["status"] == 10
-    assert response.json()["refunded_at"] is None
-    assert _wallet_balance(client, headers) == Decimal("80.00")
-    assert _product_stock(client, product["id"], superuser_token_headers) == 99
+    assert response.json()["status"] == 8
+    assert response.json()["refunded_at"] is not None
+    assert _wallet_balance(client, headers) == Decimal("100.00")
+    assert _product_stock(client, product["id"], superuser_token_headers) == 100
 
 
 def test_api_refund_application_auto_refunds_on_upstream_refunded(

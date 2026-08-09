@@ -9,7 +9,7 @@ from sqlalchemy import and_, or_, update
 from sqlmodel import Session, select
 
 from app.core.db import engine
-from app.modules.order.constants import OrderStatus
+from app.modules.order.constants import SYNCABLE_ORDER_STATUSES, OrderStatus
 from app.modules.order.models import Order
 from app.modules.order.service.fulfillment_core import (
     FulfillmentUnknownError,
@@ -17,8 +17,7 @@ from app.modules.order.service.fulfillment_core import (
     fulfill_claimed_order,
 )
 from app.modules.order.service.notification import notify_order_exception
-from app.modules.order.service.status_sync import (
-    SYNCABLE_ORDER_STATUSES,
+from app.modules.order.service.sync import (
     apply_refund_applications,
     sync_orders_status,
 )

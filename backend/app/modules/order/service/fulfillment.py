@@ -1,10 +1,8 @@
-"""订单模块：履约与状态同步"""
+"""订单模块：履约与状态管理"""
 
 import logging
 import uuid
 from datetime import UTC, datetime
-from decimal import Decimal
-from typing import Any
 
 from fastapi import HTTPException
 from sqlmodel import Session
@@ -16,102 +14,11 @@ from app.modules.order.service.fulfillment_core import (
     claim_order,
     fulfill_claimed_order,
 )
-from app.modules.order.service.status_sync import sync_orders_status
+from app.modules.order.service.sync import sync_orders_status
 from app.modules.product.constants import RedeemType
 from app.modules.supplier.service.clients.base import SupplierClientError
-from app.modules.wallet.service import adjust_balance, get_wallet_by_user_id
 
 logger = logging.getLogger(__name__)
-
-
-def _refund_order(
-    *,
-    session: Session,
-    db_order: Order,
-    amount: Decimal,
-    operator_id: Any = None,
-) -> None:
-    """按指定金额退款入账，只写流水不提交"""
-    wallet = get_wallet_by_user_id(session=session, user_id=db_order.user_id)
-    if not wallet:
-        raise HTTPException(status_code=400, detail="钱包不存在")
-    adjust_balance(
-        session=session,
-        wallet=wallet,
-        amount=amount,
-        tx_type="refund",
-        ref_type="order",
-        ref_id=db_order.id,
-        remark=f"订单 {db_order.order_no} 退款",
-        operator_id=operator_id,
-        commit=False,
-    )
-
-
-def cancel_order(
-    *,
-    session: Session,
-    db_order: Order,
-    operator_id: uuid.UUID | None = None,  # noqa: ARG001
-) -> Order:
-    """申请退单：状态置申请售后中，后续由 celery 向上游申请退单"""
-    if db_order.status not in (
-        OrderStatus.PAID,
-        OrderStatus.PENDING,
-        OrderStatus.PROCESSING,
-    ):
-        raise HTTPException(status_code=400, detail="当前状态不可申请退单")
-    if not db_order.can_refund:
-        raise HTTPException(status_code=400, detail="该订单不支持向供应商申请退单")
-    now = datetime.now(UTC)
-    db_order.status = OrderStatus.APPLYING_AFTER_SALE
-    db_order.canceled_at = now
-    session.add(db_order)
-    session.commit()
-    session.refresh(db_order)
-    return db_order
-
-
-def refund_order(
-    *,
-    session: Session,
-    db_order: Order,
-    amount: Decimal,
-    operator_id: uuid.UUID | None = None,
-) -> Order:
-    """管理员手动退款：仅已完成订单可用，金额由管理员核对且不能超过订单金额"""
-    if db_order.status != OrderStatus.COMPLETED:
-        raise HTTPException(status_code=400, detail="仅已完成订单可手动退款")
-    if amount > db_order.total_amount:
-        raise HTTPException(status_code=400, detail="退款金额不能超过订单金额")
-    _refund_order(
-        session=session,
-        db_order=db_order,
-        amount=amount,
-        operator_id=operator_id,
-    )
-    db_order.status = OrderStatus.REFUNDED
-    db_order.refunded_at = datetime.now(UTC)
-    session.add(db_order)
-    session.commit()
-    session.refresh(db_order)
-    return db_order
-
-
-def _merge_upstream_statuses(statuses: list[OrderStatus]) -> OrderStatus:
-    """多商品项取最不利状态，异常与退单中优先于已完成"""
-    priority = {
-        OrderStatus.EXCEPTION: 0,
-        OrderStatus.REFUNDING: 1,
-        OrderStatus.SUPPLEMENTING: 2,
-        OrderStatus.PENDING: 3,
-        OrderStatus.PROCESSING: 4,
-        OrderStatus.PAID: 5,
-        OrderStatus.COMPLETED: 6,
-        OrderStatus.CANCELED: 7,
-        OrderStatus.REFUNDED: 8,
-    }
-    return min(statuses, key=lambda status: priority[status])
 
 
 def fulfill_order(

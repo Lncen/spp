@@ -7,7 +7,7 @@ from app.modules.product.constants import ProductStatus
 
 class OrderStatus(IntEnum):
     """订单状态（与上游一致）"""
-
+    CREATE = 0  # 创建
     PAID = 1  # 已付款
     PENDING = 2  # 待处理
     PROCESSING = 3  # 处理中
@@ -22,3 +22,29 @@ class OrderStatus(IntEnum):
 
 # 可下单的商品状态
 SALABLE_PRODUCT_STATUSES = frozenset({ProductStatus.APPROVED})
+
+
+# 存在时禁止同商品同参数重复下单的订单状态
+ACTIVE_ORDER_STATUSES = (
+    OrderStatus.PAID,
+    OrderStatus.PENDING,
+    OrderStatus.PROCESSING,
+    OrderStatus.SUPPLEMENTING,
+    OrderStatus.REFUNDING,
+    OrderStatus.EXCEPTION,
+    OrderStatus.APPLYING_AFTER_SALE,
+)
+
+
+# 可同步上游状态的订单状态（终态订单无需再查询）
+SYNCABLE_ORDER_STATUSES = frozenset(
+    {
+        OrderStatus.PAID,
+        OrderStatus.PENDING,
+        OrderStatus.PROCESSING,
+        OrderStatus.SUPPLEMENTING,
+        OrderStatus.REFUNDING,
+        OrderStatus.EXCEPTION,
+        OrderStatus.APPLYING_AFTER_SALE,
+    }
+)

@@ -11,7 +11,7 @@ from app.core.config import settings
 from app.modules.order.constants import OrderStatus
 from app.modules.order.models import Order
 from app.modules.order.service.notification import notify_order_exception
-from app.modules.order.service.status_sync import _query_api_orders_status
+from app.modules.order.service.sync import query_api_orders_status
 from app.modules.product.constants import RedeemType
 from app.modules.product.product.models import ProductSupplier
 from app.modules.supplier.models import Supplier
@@ -26,8 +26,10 @@ class FulfillmentUnknownError(Exception):
     """履约结果未知（上游可能已下单），已转人工确认，不应自动重试"""
 
 
-def _extract_supplier_order_id(result: dict[str, Any]) -> str | None:
+def _extract_supplier_order_id(result: Any) -> str | None:
     """从上游下单返回中提取供应商订单号"""
+    if not isinstance(result, dict):
+        return None
     payload = result.get("data") if isinstance(result.get("data"), dict) else result
     for key in ("order_id", "orderId", "id"):
         value = payload.get(key)
@@ -66,7 +68,12 @@ def _fulfill_api_item(*, session: Session, db_order: Order) -> None:
             customer_order_id=db_order.order_no,
             **upstream_params,
         )
-        db_order.supplier_order_id = _extract_supplier_order_id(result)
+        supplier_order_id = _extract_supplier_order_id(result)
+        if supplier_order_id is None:
+            raise SupplierClientUnknownError(
+                "上游下单成功但未返回订单号，需人工确认"
+            )
+        db_order.supplier_order_id = supplier_order_id
         db_order.status = OrderStatus.PENDING
         session.add(db_order)
     finally:
@@ -145,7 +152,7 @@ def _finalize_fulfillment(
         db_order.completed_at = now
     else:
         try:
-            status = _query_api_orders_status(
+            status = query_api_orders_status(
                 session=session, db_orders=[db_order]
             )[db_order.id]
             db_order.status = status

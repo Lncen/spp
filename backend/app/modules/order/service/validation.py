@@ -3,20 +3,20 @@
 import json
 import uuid
 from datetime import UTC, datetime
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 from typing import Any
 
 from fastapi import HTTPException
-from sqlmodel import Session, select, update
+from sqlmodel import Session, select
 
 from app.modules.order.constants import (
+    ACTIVE_ORDER_STATUSES,
     SALABLE_PRODUCT_STATUSES,
     OrderStatus,
 )
 from app.modules.order.models import Order
 from app.modules.order.schemas import OrderCreate
-from app.modules.price_template.constants import MONEY_PRECISION
-from app.modules.price_template.service import get_user_price
+from app.modules.order.service.pricing import calc_unit_price, money
 from app.modules.product.product.models import (
     Product,
     ProductBuyParam,
@@ -29,27 +29,10 @@ from app.modules.supplier.models import Supplier
 from app.modules.supplier.schemas import PlatformEnum
 from app.modules.user.models import User
 
-# 未完成订单状态：存在时禁止同商品同参数重复下单
-ACTIVE_ORDER_STATUSES = (
-    OrderStatus.PAID,
-    OrderStatus.PENDING,
-    OrderStatus.PROCESSING,
-    OrderStatus.SUPPLEMENTING,
-    OrderStatus.REFUNDING,
-    OrderStatus.COMPLETED,
-    OrderStatus.EXCEPTION,
-    OrderStatus.APPLYING_AFTER_SALE,
-)
-
 
 def _generate_order_no() -> str:
     """生成唯一订单号"""
     return uuid.uuid4().hex.upper()
-
-
-def _money(value: Decimal) -> Decimal:
-    """金额按业务精度四舍五入"""
-    return value.quantize(MONEY_PRECISION, rounding=ROUND_HALF_UP)
 
 
 def _validate_product_sellable(
@@ -131,7 +114,7 @@ def _validate_and_build_params(
     return values
 
 
-def _normalize_param_value(value: Any) -> str:
+def normalize_param_value(value: Any) -> str:
     """参数值统一转字符串比较，复合类型用 JSON 稳定序列化"""
     if isinstance(value, dict):
         return json.dumps(value, sort_keys=True, ensure_ascii=False)
@@ -143,27 +126,20 @@ def _normalize_param_value(value: Any) -> str:
 def _normalize_params(params: dict[str, Any] | None) -> dict[str, str]:
     """参数按 key 排序后统一序列化，用于重复下单比较"""
     return {
-        str(key): _normalize_param_value(value)
+        str(key): normalize_param_value(value)
         for key, value in sorted((params or {}).items())
     }
 
 
-def _ensure_no_duplicate_active_order(
+def ensure_no_duplicate_active_order(
     *,
     session: Session,
     user_id: uuid.UUID,
     product_id: uuid.UUID,
     params: dict[str, Any],
-    seen_items: set[tuple[str, tuple[tuple[str, str], ...]]],
 ) -> None:
     """同用户同商品同参数且未完成的订单禁止重复创建，数量不参与比较"""
     normalized = _normalize_params(params)
-    key = (str(product_id), tuple(normalized.items()))
-    if key in seen_items:
-        raise HTTPException(
-            status_code=400,
-            detail="该商品相同参数订单未完成，禁止重复下单",
-        )
     statement = select(Order).where(
         Order.user_id == user_id,
         Order.product_id == product_id,
@@ -175,77 +151,14 @@ def _ensure_no_duplicate_active_order(
                 status_code=400,
                 detail="该商品相同参数订单未完成，禁止重复下单",
             )
-    seen_items.add(key)
 
 
-def _calc_unit_price(
-    *, session: Session, pricing: ProductPricing, user_level_id: uuid.UUID | None
-) -> Decimal:
-    """按定价规则计算成交单价"""
-    base_price = pricing.cost_price + pricing.loss_price
-    if pricing.fixed_price is not None:
-        unit_price = pricing.fixed_price
-    elif pricing.item_coefficient is not None:
-        unit_price = base_price * pricing.item_coefficient
-    else:
-        unit_price = get_user_price(
-            session=session,
-            base_price=base_price,
-            price_template_id=pricing.price_template_id,
-            user_level_id=user_level_id,
-        )
-    return _money(unit_price)
-
-
-def _deduct_stock(
-    *, session: Session, inventory: ProductInventory, quantity: int
-) -> None:
-    """条件扣减库存，库存不足时抛错；无限库存直接跳过"""
-    if inventory.stock == -1:
-        return
-    result = session.exec(
-        update(ProductInventory)
-        .where(
-            ProductInventory.id == inventory.id,
-            ProductInventory.stock >= quantity,
-        )
-        .values(stock=ProductInventory.stock - quantity)
-    )
-    if result.rowcount == 0:
-        raise HTTPException(status_code=400, detail="库存不足")
-
-
-def _restore_stock(
-    *, session: Session, product_id: uuid.UUID | None, quantity: int
-) -> None:
-    """订单取消或退款时回补库存"""
-    if product_id is None:
-        return
-    inventory = session.exec(
-        select(ProductInventory).where(ProductInventory.product_id == product_id)
-    ).first()
-    if inventory is None or inventory.stock == -1:
-        return
-    inventory.stock += quantity
-    session.add(inventory)
-
-
-def _calc_refund_amount(*, db_order: Order) -> Decimal:
-    """退单退款金额 = (订单数量 - (当前数量 - 开始数量)) × 成交单价，限制在 [0, 订单金额]"""
-    unfinished = db_order.quantity - (
-        db_order.current_quantity - db_order.start_quantity
-    )
-    amount = Decimal(max(unfinished, 0)) * db_order.unit_price
-    return min(amount, db_order.total_amount)
-
-
-def _build_order_data(
+def _load_order_snapshot(
     *,
     session: Session,
-    user: User,
     order_in: OrderCreate,
-) -> tuple[Decimal, dict[str, Any]]:
-    """校验单张订单商品、供应商、数量与参数，返回总额和快照数据"""
+) -> dict[str, Any]:
+    """校验商品、供应商、数量与参数，返回不含价格的订单快照字段"""
     product = session.get(Product, order_in.product_id)
     if not product:
         raise HTTPException(status_code=400, detail="商品不存在")
@@ -271,34 +184,50 @@ def _build_order_data(
         params=order_in.params,
         buy_params=buy_params,
     )
-    pricing = session.exec(
-        select(ProductPricing).where(ProductPricing.product_id == product.id)
-    ).first()
-    if pricing is None:
-        raise HTTPException(status_code=400, detail="商品定价配置不存在")
-
-    unit_price = _calc_unit_price(
-        session=session,
-        pricing=pricing,
-        user_level_id=user.level_id,
-    )
-    subtotal = _money(unit_price * order_in.quantity)
-    data = {
+    return {
         "product": product,
         "inventory": inventory,
-        "pricing": pricing,
         "fulfillment": fulfillment,
         "supplier_id": supplier_sku.supplier_id if supplier_sku else None,
         "sku_id": supplier_sku.sku_id if supplier_sku else None,
         "quantity": order_in.quantity,
-        "unit_price": unit_price,
-        "subtotal": subtotal,
         "params": params_snapshot,
     }
-    return _money(subtotal), data
 
 
-def _build_order(
+def build_order_data(
+    *,
+    session: Session,
+    user: User,
+    order_in: OrderCreate,
+) -> tuple[Decimal, dict[str, Any]]:
+    """校验单张订单并计算总额，返回 (总额, 快照数据)"""
+    data = _load_order_snapshot(session=session, order_in=order_in)
+    pricing = session.exec(
+        select(ProductPricing).where(
+            ProductPricing.product_id == data["product"].id
+        )
+    ).first()
+    if pricing is None:
+        raise HTTPException(status_code=400, detail="商品定价配置不存在")
+
+    unit_price = calc_unit_price(
+        session=session,
+        pricing=pricing,
+        user_level_id=user.level_id,
+    )
+    subtotal = money(unit_price * order_in.quantity)
+    data.update(
+        {
+            "pricing": pricing,
+            "unit_price": unit_price,
+            "subtotal": subtotal,
+        }
+    )
+    return money(subtotal), data
+
+
+def build_order(
     *,
     user_id: uuid.UUID,
     total: Decimal,
