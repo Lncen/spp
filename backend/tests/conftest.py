@@ -8,6 +8,7 @@ from sqlmodel import Session, SQLModel, delete
 from app.core.config import settings
 from app.core.db import engine, init_db
 from app.main import app
+from app.modules.auth.models import RefreshToken
 from app.modules.image.models import Image, ImageCategory
 from app.modules.item.models import Item
 from app.modules.order.models import Order, OrderParam
@@ -143,6 +144,7 @@ def db() -> Generator[Session]:
         SQLModel.metadata.create_all(
             engine,
             tables=[
+                RefreshToken.__table__,
                 PriceTemplate.__table__,
                 PriceTemplateRule.__table__,
                 ProductCategory.__table__,
@@ -193,6 +195,8 @@ def db() -> Generator[Session]:
         statement = delete(PriceTemplate)
         session.execute(statement)
         statement = delete(ScheduleRun)
+        session.execute(statement)
+        statement = delete(RefreshToken)
         session.execute(statement)
         statement = delete(Supplier)
         session.execute(statement)

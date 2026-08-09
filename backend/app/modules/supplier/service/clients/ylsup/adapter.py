@@ -150,7 +150,7 @@ def yl_goods_adapter(raw: dict[str, Any]) -> UpstreamProductDetail:
         ),  # TODO: 确认上游 is_repeat 语义
         is_batch=_parse_int(raw.get("is_batch"), 1) == 1,
         is_card_code=_parse_int(raw.get("is_card_code"), 0) == 1,
-        is_closed=_parse_int(raw.get("is_close"), 1) == 2,
+        is_closed=_parse_int(raw.get("is_close"), 1) == 1,
         can_refund=bool(raw.get("refund_status")),
         unit=str(raw.get("unit") or "1"),
         description=str(raw.get("particulars") or ""),

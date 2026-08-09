@@ -112,6 +112,17 @@ class OrderStatusUpdateRequest(SQLModel):
     status: OrderStatus = Field(title="目标状态")
 
 
+class SupplierOrderIdUpdateRequest(SQLModel):
+    """管理员补录供应商订单号请求"""
+
+    supplier_order_id: str = Field(
+        min_length=1,
+        max_length=255,
+        title="供应商订单号",
+        description="人工确认上游已下单后补录",
+    )
+
+
 class AdminOrdersCreate(SQLModel):
     """管理员批量下单请求"""
 

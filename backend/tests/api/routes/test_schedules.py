@@ -40,7 +40,7 @@ def test_read_failed_runs_lists_record(
 ) -> None:
     run = ScheduleRun(
         task_id="failed-task-001",
-        task_name="app.tasks.product.sync_product_status",
+        task_name="app.modules.product.tasks.sync_product_status",
         schedule_name="同步商品状态",
         error_type="ValueError",
         error_message="boom",

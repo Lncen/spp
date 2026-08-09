@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from app.common.router import router as utils_router
 from app.core.config import settings
-from app.modules.auth.router import router as login_router
+from app.modules.auth.router import login_router, password_router, token_router
 from app.modules.image.models import Image, ImageCategory  # noqa: F401
 from app.modules.image.router import (
     category_router as image_category_router,
@@ -48,6 +48,8 @@ from app.modules.wallet.router import router as wallet_router
 
 api_router = APIRouter()
 api_router.include_router(login_router)
+api_router.include_router(password_router)
+api_router.include_router(token_router)
 api_router.include_router(user_router)
 api_router.include_router(wallet_router)
 api_router.include_router(utils_router)

@@ -19,6 +19,10 @@ class SupplierClientError(Exception):
     """供应商 API 调用异常"""
 
 
+class SupplierClientUnknownError(SupplierClientError):
+    """供应商 API 结果未知（超时/网络错误），上游可能已产生副作用"""
+
+
 # ================= 1. 元类：仅负责自动注册 =================
 class ClientMeta(ABCMeta):
     _registry: dict[str, type[SupplierClientBase]] = {}
@@ -107,9 +111,9 @@ class BaseHttpClient(ABC):
                 )
 
             except httpx.TimeoutException as e:
-                last_error = SupplierClientError(f"供应商 API 超时: {e}")
+                last_error = SupplierClientUnknownError(f"供应商 API 超时: {e}")
             except httpx.NetworkError as e:
-                last_error = SupplierClientError(f"供应商 API 网络错误: {e}")
+                last_error = SupplierClientUnknownError(f"供应商 API 网络错误: {e}")
                 # 网络错误时立即标记为 offline（在最后一次重试后）
             except httpx.RequestError as e:
                 raise SupplierClientError(f"供应商 API 请求失败: {e}") from e
@@ -162,7 +166,7 @@ class BaseHttpClient(ABC):
         try:
             self._session.add(self.supplier)
             self._session.commit()
-        except Exception as e:
+        except Exception:
             # 状态更新失败不影响主流程
             self._session.rollback()
 

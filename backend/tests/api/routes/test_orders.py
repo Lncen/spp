@@ -16,7 +16,10 @@ from app.modules.order.service.status_sync import (
     sync_orders_status,
 )
 from app.modules.product.product.models import ProductSupplier
-from app.modules.supplier.service.clients.base import SupplierClientError
+from app.modules.supplier.service.clients.base import (
+    SupplierClientError,
+    SupplierClientUnknownError,
+)
 from app.modules.supplier.service.clients.ylsup import YlsupClient
 from app.modules.supplier.service.dto import UpstreamOrder
 from app.modules.user.models import User
@@ -1133,7 +1136,7 @@ def test_fulfill_api_order_syncs_upstream_status(
     assert sync.json()["completed_at"] is not None
 
 
-def test_fulfill_api_order_failure_marks_refunding(
+def test_fulfill_api_order_definite_failure_rolls_back_claim(
     client: TestClient,
     db: Session,
     superuser_token_headers: dict[str, str],
@@ -1160,15 +1163,79 @@ def test_fulfill_api_order_failure_marks_refunding(
         headers=superuser_token_headers,
     )
     assert fulfill.status_code == 502
-    assert fulfill.json()["detail"] == "供应商履约失败，订单已转入退款处理: 上游下单失败"
-    assert _wallet_balance(client, headers) == Decimal("80.00")
-    assert _product_stock(client, product["id"], superuser_token_headers) == 100
+    assert fulfill.json()["detail"] == "供应商履约失败: 上游下单失败"
 
     detail = client.get(
         f"{settings.API_V1_STR}/orders/{_first_order_result(order)['id']}",
         headers=superuser_token_headers,
     )
-    assert detail.json()["status"] == 5
+    assert detail.json()["status"] == 1  # 明确失败回滚为已付款，等待下一轮重试
+    assert detail.json()["fulfill_failed_count"] == 1
+    assert _wallet_balance(client, headers) == Decimal("80.00")  # 失败不退款
+    assert _product_stock(client, product["id"], superuser_token_headers) == 99
+
+
+def test_fulfill_api_order_unknown_outcome_marks_exception(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product, _ = _create_api_product_with_supplier(client, db, superuser_token_headers)
+
+    def raise_unknown_error(_self: object, **kwargs: object) -> dict:
+        del kwargs
+        raise SupplierClientUnknownError("供应商 API 超时")
+
+    monkeypatch.setattr(YlsupClient, "create_order", raise_unknown_error)
+    order = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert order.status_code == 200
+
+    fulfill = client.post(
+        f"{settings.API_V1_STR}/orders/{_first_order_result(order)['id']}/fulfill",
+        headers=superuser_token_headers,
+    )
+    assert fulfill.status_code == 502
+    assert "供应商履约结果未知，订单已转人工确认" in fulfill.json()["detail"]
+
+    detail = client.get(
+        f"{settings.API_V1_STR}/orders/{_first_order_result(order)['id']}",
+        headers=superuser_token_headers,
+    )
+    assert detail.json()["status"] == 9  # 结果未知转人工确认
+    assert detail.json()["fulfill_failed_count"] == 0
+
+
+def test_record_supplier_order_id_restores_pending(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product, _ = _create_api_product_with_supplier(client, db, superuser_token_headers)
+
+    order = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert order.status_code == 200
+
+    record = client.post(
+        f"{settings.API_V1_STR}/orders/{_first_order_result(order)['id']}/supplier-order-id",
+        headers=superuser_token_headers,
+        json={"supplier_order_id": "10086"},
+    )
+    assert record.status_code == 200
+    assert record.json()["supplier_order_id"] == "10086"
+    assert record.json()["status"] == 2  # PENDING，状态同步任务可继续处理
 
 
 def _admin_order_payload(products: list[dict], quantities: list[int]) -> dict:
@@ -1181,7 +1248,7 @@ def _admin_order_payload(products: list[dict], quantities: list[int]) -> dict:
                 "remark": f"管理员测试单-{index}",
             }
             for index, (product, quantity) in enumerate(
-                zip(products, quantities), start=1
+                zip(products, quantities, strict=False), start=1
             )
         ]
     }

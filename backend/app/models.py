@@ -7,6 +7,7 @@
 
 from sqlmodel import SQLModel
 
+from app.modules.auth.models import RefreshToken
 from app.modules.image.models import Image, ImageCategory
 from app.modules.item.models import Item
 from app.modules.level.models import UserLevel
@@ -29,6 +30,7 @@ from app.modules.wallet.models import Wallet, WalletTransaction
 
 __all__ = [
     "SQLModel",
+    "RefreshToken",
     "UserLevel",
     "Item",
     "User",

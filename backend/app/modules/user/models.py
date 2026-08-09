@@ -1,5 +1,4 @@
 ﻿import uuid
-
 from typing import TYPE_CHECKING
 
 from pydantic import EmailStr
@@ -9,7 +8,7 @@ from app.core.mixin.models import BaseModelMixin
 
 if TYPE_CHECKING:
 
-    from app.modules.level.models import UserLevel
+    from app.modules.auth.models import RefreshToken
     from app.modules.image.models import Image
     from app.modules.item.models import Item
 
@@ -69,5 +68,8 @@ class User(BaseModelMixin, SQLModel, table=True):
     # 关系字段不需要也不支持 Field 参数，保持原样即可
     items: list[Item] = Relationship(back_populates="owner", cascade_delete=True)
     images: list[Image] = Relationship(back_populates="owner", cascade_delete=True)
+    refresh_tokens: list[RefreshToken] = Relationship(
+        back_populates="user", cascade_delete=True
+    )
 
 

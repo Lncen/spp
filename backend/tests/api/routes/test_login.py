@@ -5,6 +5,7 @@ from pwdlib.hashers.bcrypt import BcryptHasher
 from sqlmodel import Session
 
 from app.core.config import settings
+from app.core.redis import get_redis, run_redis_sync
 from app.core.security import get_password_hash, verify_password
 from app.modules.user.models import User
 from app.modules.user.schemas import UserCreate
@@ -209,3 +210,81 @@ def test_login_with_argon2_password_keeps_hash(client: TestClient, db: Session) 
 
     assert user.hashed_password == original_hash
     assert user.hashed_password.startswith("$argon2")
+
+
+def test_login_locked_after_too_many_failures(client: TestClient) -> None:
+    """连续登录失败达到上限后，账号被锁定返回 429，清理后恢复"""
+    login_data = {
+        "username": settings.FIRST_SUPERUSER,
+        "password": "incorrect",
+    }
+    fail_key = f"login:fail:{settings.FIRST_SUPERUSER.lower()}"
+    try:
+        for _ in range(5):
+            r = client.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
+            assert r.status_code == 400
+        r = client.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
+        assert r.status_code == 429
+        assert "登录失败次数过多" in r.json()["detail"]
+    finally:
+        run_redis_sync(get_redis().delete(fail_key))
+
+
+def _login_and_get_refresh_token(client: TestClient) -> str:
+    """登录并返回 refresh_token"""
+    login_data = {
+        "username": settings.FIRST_SUPERUSER,
+        "password": settings.FIRST_SUPERUSER_PASSWORD,
+    }
+    r = client.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
+    assert r.status_code == 200
+    tokens = r.json()
+    assert tokens["refresh_token"]
+    refresh_token = tokens["refresh_token"]
+    assert isinstance(refresh_token, str)
+    return refresh_token
+
+
+def test_login_returns_refresh_token(client: TestClient) -> None:
+    """登录应同时返回访问令牌与刷新令牌"""
+    _login_and_get_refresh_token(client)
+
+
+def test_refresh_token_rotates_and_old_one_expires(client: TestClient) -> None:
+    """刷新后返回新令牌，旧刷新令牌立即失效"""
+    old_token = _login_and_get_refresh_token(client)
+
+    r = client.post(
+        f"{settings.API_V1_STR}/login/refresh-token",
+        json={"refresh_token": old_token},
+    )
+    assert r.status_code == 200
+    new_tokens = r.json()
+    assert new_tokens["access_token"]
+    assert new_tokens["refresh_token"]
+    assert new_tokens["refresh_token"] != old_token
+
+    # 旧令牌已被旋转作废，再次使用应失败
+    r = client.post(
+        f"{settings.API_V1_STR}/login/refresh-token",
+        json={"refresh_token": old_token},
+    )
+    assert r.status_code == 401
+
+
+def test_logout_revokes_refresh_token(client: TestClient) -> None:
+    """登出后刷新令牌失效，无法再刷新"""
+    token = _login_and_get_refresh_token(client)
+
+    r = client.post(
+        f"{settings.API_V1_STR}/login/logout",
+        json={"refresh_token": token},
+    )
+    assert r.status_code == 200
+    assert r.json() == {"message": "退出成功"}
+
+    r = client.post(
+        f"{settings.API_V1_STR}/login/refresh-token",
+        json={"refresh_token": token},
+    )
+    assert r.status_code == 401

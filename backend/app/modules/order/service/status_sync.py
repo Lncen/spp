@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 # 可同步上游状态的订单状态（终态订单无需再查询）
 SYNCABLE_ORDER_STATUSES = frozenset(
     {
-        # OrderStatus.PAID,
+        OrderStatus.PAID,
         OrderStatus.PENDING,
         OrderStatus.PROCESSING,
         OrderStatus.SUPPLEMENTING,

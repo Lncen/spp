@@ -12,6 +12,14 @@ DEFAULT_SETTINGS: dict[str, dict[str, Any]] = {
         "value": True,
         "description": "是否允许用户下单",
     },
+    "login_fail_limit": {
+        "value": 5,
+        "description": "登录失败次数上限，达到后锁定该账号",
+    },
+    "login_lockout_minutes": {
+        "value": 15,
+        "description": "登录失败锁定分钟数，到期后自动解锁",
+    },
 }
 
 

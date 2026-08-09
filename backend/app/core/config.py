@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     SECRET_KEY: str = secrets.token_urlsafe(32)
     # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
+    # 刷新令牌有效期（天），过期后需重新登录
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     FRONTEND_HOST: str = "http://localhost:5173"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
@@ -98,6 +100,8 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     REDIS_PASSWORD: str = ""
     REDIS_DB: int = 0
+    # 全局设置缓存 TTL：懒加载到 Redis 后，超过该时长自动重新从数据库加载
+    SETTINGS_CACHE_TTL_SECONDS: int = 600
     CELERY_BROKER_DB: int = 1
     CELERY_RESULT_DB: int = 2
 

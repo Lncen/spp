@@ -1,6 +1,7 @@
 """Redis 客户端封装"""
 
-from collections.abc import AsyncIterator
+import asyncio
+from collections.abc import AsyncIterator, Awaitable
 from contextlib import asynccontextmanager
 
 from redis.asyncio import Redis as AsyncRedis
@@ -8,6 +9,7 @@ from redis.asyncio import Redis as AsyncRedis
 from app.core.config import settings
 
 redis_client: AsyncRedis | None = None
+_event_loop: asyncio.AbstractEventLoop | None = None
 
 
 def get_redis_url(db: int = 0) -> str:
@@ -18,7 +20,8 @@ def get_redis_url(db: int = 0) -> str:
 
 async def init_redis() -> None:
     """初始化 Redis 连接（应用启动时调用）"""
-    global redis_client
+    global redis_client, _event_loop
+    _event_loop = asyncio.get_running_loop()
     redis_client = AsyncRedis.from_url(
         get_redis_url(settings.REDIS_DB),
         decode_responses=True,
@@ -43,6 +46,21 @@ def get_redis() -> AsyncRedis:
     if redis_client is None:
         raise RuntimeError("Redis client 未初始化，请先调用 init_redis()")
     return redis_client
+
+
+def run_redis_sync[T](awaitable: Awaitable[T], *, timeout: float = 5.0) -> T:
+    """在同步上下文（如 FastAPI 线程池路由）中执行 Redis 命令
+
+    将协程调度到应用主事件循环，避免连接跨事件循环复用。
+    """
+    if _event_loop is None or _event_loop.is_closed():
+        raise RuntimeError("Redis 主事件循环未就绪")
+
+    async def _run() -> T:
+        return await awaitable
+
+    future = asyncio.run_coroutine_threadsafe(_run(), _event_loop)
+    return future.result(timeout=timeout)
 
 
 @asynccontextmanager

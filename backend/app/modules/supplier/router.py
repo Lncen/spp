@@ -203,7 +203,7 @@ def create_upstream_products_sync(
     if not sync_in.product_ids:
         raise HTTPException(status_code=400, detail="请至少选择一个商品")
     task = celery_app.send_task(
-        "app.tasks.supplier.sync_upstream_products",
+        "app.modules.supplier.tasks.sync_upstream_products",
         kwargs={
             "supplier_id": str(supplier.id),
             "product_ids": sync_in.product_ids,

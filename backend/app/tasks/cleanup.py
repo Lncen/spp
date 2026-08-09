@@ -52,6 +52,7 @@ def cleanup_expired_data() -> dict:
     return stats
 
 
+
 @shared_task(ignore_result=False)
 def cleanup_schedule_runs(retention_days: int = 30) -> dict:
     """清理超过保留期的计划任务失败执行记录"""

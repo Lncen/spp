@@ -146,7 +146,6 @@ class YlsupClient(SupplierClientBase):
         if customer_order_id:
             body["customer_order_id"] = customer_order_id
 
-        print("❤️body",body)
         payload = self.post("/openapi/customer/Goods/Buy", json=body).json()
         data = self._data(payload)
         return data if isinstance(data, dict) else {}

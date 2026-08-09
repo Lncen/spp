@@ -17,8 +17,9 @@ from app.modules.order.schemas import (
     AdminOrdersPublic,
     OrderPublic,
     OrderRefundRequest,
-    OrderStatusUpdateRequest,
     OrdersPublic,
+    OrderStatusUpdateRequest,
+    SupplierOrderIdUpdateRequest,
 )
 from app.modules.order.service import (
     create_admin_orders,
@@ -28,6 +29,7 @@ from app.modules.order.service import (
 from app.modules.order.service.fulfillment import (
     cancel_order,
     fulfill_order,
+    record_supplier_order_id,
     refund_order,
     sync_order_status,
     update_order_status,
@@ -289,4 +291,25 @@ def sync_order_status_api(
     """同步上游订单状态（仅超级管理员可用）"""
     db_order = get_order(session=session, order_id=order_id)
     db_order = sync_order_status(session=session, db_order=db_order)
+    return to_order_public(session=session, orders=[db_order])[0]
+
+
+@router.post(
+    "/{order_id}/supplier-order-id",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=OrderPublic,
+)
+def record_supplier_order_id_api(
+    *,
+    session: SessionDep,
+    order_id: uuid.UUID,
+    body: SupplierOrderIdUpdateRequest,
+) -> Any:
+    """人工确认上游已下单后补录供应商订单号（仅超级管理员）"""
+    db_order = get_order(session=session, order_id=order_id)
+    db_order = record_supplier_order_id(
+        session=session,
+        db_order=db_order,
+        supplier_order_id=body.supplier_order_id,
+    )
     return to_order_public(session=session, orders=[db_order])[0]
