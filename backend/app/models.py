@@ -8,6 +8,12 @@
 from sqlmodel import SQLModel
 
 from app.modules.auth.models import RefreshToken
+from app.modules.automation.models import (
+    AutomationEvent,
+    AutomationRule,
+    AutomationTask,
+    AutomationTaskArchive,
+)
 from app.modules.image.models import Image, ImageCategory
 from app.modules.item.models import Item
 from app.modules.level.models import UserLevel
@@ -22,7 +28,6 @@ from app.modules.product.product.models import (
     ProductPricing,
     ProductSupplier,
 )
-from app.modules.schedule.models import ScheduleRun
 from app.modules.setting.models import AppSetting
 from app.modules.supplier.models import Supplier
 from app.modules.user.models import User
@@ -31,6 +36,10 @@ from app.modules.wallet.models import Wallet, WalletTransaction
 __all__ = [
     "SQLModel",
     "RefreshToken",
+    "AutomationTask",
+    "AutomationTaskArchive",
+    "AutomationEvent",
+    "AutomationRule",
     "UserLevel",
     "Item",
     "User",
@@ -51,5 +60,4 @@ __all__ = [
     "ProductBuyParam",
     "Wallet",
     "WalletTransaction",
-    "ScheduleRun",
 ]

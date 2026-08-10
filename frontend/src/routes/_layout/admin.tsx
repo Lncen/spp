@@ -1,6 +1,7 @@
 ﻿import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, redirect } from "@tanstack/react-router"
-import { Suspense } from "react"
+import type { PaginationState } from "@tanstack/react-table"
+import { Suspense, useState } from "react"
 
 import { type UserPublic, UsersService } from "@/client"
 import PendingUsers from "@/components/Admin/Pending/PendingUsers"
@@ -9,10 +10,14 @@ import { columns, type UserTableData } from "@/components/Admin/Users/columns"
 import { DataTable } from "@/components/Common/DataTable"
 import useAuth from "@/hooks/useAuth"
 
-function getUsersQueryOptions() {
+function getUsersQueryOptions(pagination: PaginationState) {
   return {
-    queryFn: () => UsersService.readUsers({ skip: 0, limit: 100 }),
-    queryKey: ["users"],
+    queryFn: () =>
+      UsersService.readUsers({
+        skip: pagination.pageIndex * pagination.pageSize,
+        limit: pagination.pageSize,
+      }),
+    queryKey: ["users", pagination],
   }
 }
 
@@ -37,14 +42,26 @@ export const Route = createFileRoute("/_layout/admin")({
 
 function UsersTableContent() {
   const { user: currentUser } = useAuth()
-  const { data: users } = useSuspenseQuery(getUsersQueryOptions())
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  })
+  const { data: users } = useSuspenseQuery(getUsersQueryOptions(pagination))
 
   const tableData: UserTableData[] = users.data.map((user: UserPublic) => ({
     ...user,
     isCurrentUser: currentUser?.id === user.id,
   }))
 
-  return <DataTable columns={columns} data={tableData} />
+  return (
+    <DataTable
+      columns={columns}
+      data={tableData}
+      total={users.count}
+      pagination={pagination}
+      onPaginationChange={setPagination}
+    />
+  )
 }
 
 function UsersTable() {

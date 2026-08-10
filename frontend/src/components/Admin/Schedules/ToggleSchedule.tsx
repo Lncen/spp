@@ -32,9 +32,7 @@ const ToggleSchedule = ({ schedule, onSuccess }: ToggleScheduleProps) => {
   const mutation = useMutation({
     mutationFn: () => SchedulesService.toggleSchedule({ id: schedule.id }),
     onSuccess: (data) => {
-      showSuccessToast(
-        `计划任务已${data.enabled ? "启用" : "停用"}`,
-      )
+      showSuccessToast(`计划任务已${data.enabled ? "启用" : "停用"}`)
       setIsOpen(false)
       onSuccess()
     },
@@ -55,7 +53,9 @@ const ToggleSchedule = ({ schedule, onSuccess }: ToggleScheduleProps) => {
       </DropdownMenuItem>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{schedule.enabled ? "停用计划任务" : "启用计划任务"}</DialogTitle>
+          <DialogTitle>
+            {schedule.enabled ? "停用计划任务" : "启用计划任务"}
+          </DialogTitle>
           <DialogDescription>
             确定要{schedule.enabled ? "停用" : "启用"}计划任务{" "}
             <strong>{schedule.name}</strong> 吗？

@@ -177,13 +177,13 @@ const EditSchedule = ({ schedule, onSuccess }: EditScheduleProps) => {
     const kwargs = parseJsonField(data.kwargs, "object")
     if (!args) {
       form.setError("args", {
-        message: "必须是合法的 JSON 数组，例如 [\"a\", 1]",
+        message: '必须是合法的 JSON 数组，例如 ["a", 1]',
       })
       return
     }
     if (!kwargs) {
       form.setError("kwargs", {
-        message: "必须是合法的 JSON 对象，例如 {\"key\": \"value\"}",
+        message: '必须是合法的 JSON 对象，例如 {"key": "value"}',
       })
       return
     }
@@ -192,10 +192,8 @@ const EditSchedule = ({ schedule, onSuccess }: EditScheduleProps) => {
       name: data.name,
       task: data.task,
       schedule_type: data.schedule_type,
-      crontab:
-        data.schedule_type === "crontab" ? data.crontab : undefined,
-      interval:
-        data.schedule_type === "interval" ? data.interval : undefined,
+      crontab: data.schedule_type === "crontab" ? data.crontab : undefined,
+      interval: data.schedule_type === "interval" ? data.interval : undefined,
       args,
       kwargs,
       enabled: data.enabled,
@@ -230,59 +228,64 @@ const EditSchedule = ({ schedule, onSuccess }: EditScheduleProps) => {
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center gap-4 text-base">
                     <FormControl>
-                      <Checkbox 
-                        checked={field.value} 
-                        onCheckedChange={field.onChange}  
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
                         className="h-5 w-5"
                       />
                     </FormControl>
-                    <FormLabel className="font-normal text-base">启用</FormLabel>
+                    <FormLabel className="font-normal text-base">
+                      启用
+                    </FormLabel>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            <div className="grid grid-cols-2 gap-4">
-              {/* 第一列：计划名称 - 占 3/6 = 1/2 */}
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem className="col-span-1">
-                    <FormLabel>计划名称</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {/* 第二列：调度类型 - 占 2/6 = 1/3 */}
-              <FormField
-                control={form.control}
-                name="schedule_type"
-                render={({ field }) => (
-                  <FormItem className="col-span-1">
-                    <FormLabel>调度类型</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+              <div className="grid grid-cols-2 gap-4">
+                {/* 第一列：计划名称 - 占 3/6 = 1/2 */}
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem className="col-span-1">
+                      <FormLabel>计划名称</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
+                        <Input {...field} />
                       </FormControl>
-                      <SelectContent>
-                        {SCHEDULE_TYPE_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 第二列：调度类型 - 占 2/6 = 1/3 */}
+                <FormField
+                  control={form.control}
+                  name="schedule_type"
+                  render={({ field }) => (
+                    <FormItem className="col-span-1">
+                      <FormLabel>调度类型</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {SCHEDULE_TYPE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}
@@ -292,7 +295,7 @@ const EditSchedule = ({ schedule, onSuccess }: EditScheduleProps) => {
                     <FormLabel>任务</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger  className="w-full">
+                        <SelectTrigger className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                       </FormControl>
@@ -311,7 +314,7 @@ const EditSchedule = ({ schedule, onSuccess }: EditScheduleProps) => {
 
               {scheduleType === "crontab" ? (
                 <div className="grid grid-cols-5 gap-4">
-                 <FormField
+                  <FormField
                     control={form.control}
                     name="crontab.minute"
                     render={({ field }) => (
@@ -323,7 +326,7 @@ const EditSchedule = ({ schedule, onSuccess }: EditScheduleProps) => {
                         <FormMessage />
                       </FormItem>
                     )}
-                 />
+                  />
                   <FormField
                     control={form.control}
                     name="crontab.hour"
@@ -376,7 +379,6 @@ const EditSchedule = ({ schedule, onSuccess }: EditScheduleProps) => {
                       </FormItem>
                     )}
                   />
-
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
@@ -453,7 +455,6 @@ const EditSchedule = ({ schedule, onSuccess }: EditScheduleProps) => {
               </div>
 
               <div className="grid grid-cols-1 gap-4">
-   
                 <FormField
                   control={form.control}
                   name="description"
@@ -461,7 +462,7 @@ const EditSchedule = ({ schedule, onSuccess }: EditScheduleProps) => {
                     <FormItem>
                       <FormLabel>描述</FormLabel>
                       <FormControl>
-                        <Input placeholder="备注说明（可选）" {...field}/>
+                        <Input placeholder="备注说明（可选）" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

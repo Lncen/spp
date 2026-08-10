@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, redirect } from "@tanstack/react-router"
-import { Suspense } from "react"
+import type { PaginationState } from "@tanstack/react-table"
+import { Suspense, useState } from "react"
 
 import type { SupplierPublic } from "@/client"
 import { UsersService } from "@/client"
@@ -9,13 +10,16 @@ import AddSupplier from "@/components/Admin/Suppliers/AddSupplier"
 import { columns } from "@/components/Admin/Suppliers/columns"
 import { DataTable } from "@/components/Common/DataTable"
 
-function getSuppliersQueryOptions() {
+function getSuppliersQueryOptions(pagination: PaginationState) {
   return {
     queryFn: () =>
       import("@/client").then((m) =>
-        m.SuppliersService.readSuppliers({ skip: 0, limit: 100 }),
+        m.SuppliersService.readSuppliers({
+          skip: pagination.pageIndex * pagination.pageSize,
+          limit: pagination.pageSize,
+        }),
       ),
-    queryKey: ["suppliers"],
+    queryKey: ["suppliers", pagination],
   }
 }
 
@@ -39,7 +43,13 @@ export const Route = createFileRoute("/_layout/suppliers")({
 })
 
 function SuppliersTableContent() {
-  const { data: suppliers } = useSuspenseQuery(getSuppliersQueryOptions())
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  })
+  const { data: suppliers } = useSuspenseQuery(
+    getSuppliersQueryOptions(pagination),
+  )
 
   const tableData: SupplierPublic[] = suppliers.data.map(
     (s: SupplierPublic) => ({
@@ -47,7 +57,15 @@ function SuppliersTableContent() {
     }),
   )
 
-  return <DataTable columns={columns} data={tableData} />
+  return (
+    <DataTable
+      columns={columns}
+      data={tableData}
+      total={suppliers.count}
+      pagination={pagination}
+      onPaginationChange={setPagination}
+    />
+  )
 }
 
 function SuppliersTable() {

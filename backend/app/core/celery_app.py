@@ -2,8 +2,6 @@
 
 from celery import Celery  # type: ignore[import-untyped]
 
-# 注册任务失败记录信号（导入即注册，worker 与 app 共用）
-import app.modules.schedule.signals  # noqa: F401
 from app.core.config import settings
 from app.tasks import init_tasks
 
@@ -34,7 +32,9 @@ celery_app.conf.beat_schedule = init_tasks
 def discover_tasks() -> None:
     """自动发现任务模块（确保模块被导入，Celery 能注册到任务表中）"""
     import app.modules.auth.tasks  # noqa: F401
-    import app.modules.order.tasks  # noqa: F401
+    import app.modules.automation.infrastructure.event_listeners  # noqa: F401
+    import app.modules.automation.infrastructure.tasks  # noqa: F401
+    import app.modules.order.infrastructure.tasks  # noqa: F401
     import app.modules.product.tasks  # noqa: F401
     import app.modules.supplier.tasks  # noqa: F401
     import app.tasks.cleanup  # noqa: F401

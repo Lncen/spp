@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { Suspense } from "react"
+import type { PaginationState } from "@tanstack/react-table"
+import { Suspense, useState } from "react"
 
 import { PriceTemplatesService } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
@@ -7,18 +8,35 @@ import AddPriceTemplate from "./AddPriceTemplate"
 import PendingPriceTemplates from "./PendingPriceTemplates"
 import { priceTemplateColumns } from "./PriceTemplateColumns"
 
-function getPriceTemplatesQueryOptions() {
+function getPriceTemplatesQueryOptions(pagination: PaginationState) {
   return {
     queryFn: () =>
-      PriceTemplatesService.readPriceTemplates({ skip: 0, limit: 100 }),
-    queryKey: ["price-templates"],
+      PriceTemplatesService.readPriceTemplates({
+        skip: pagination.pageIndex * pagination.pageSize,
+        limit: pagination.pageSize,
+      }),
+    queryKey: ["price-templates", pagination],
   }
 }
 
 function PriceTemplatesTableContent() {
-  const { data: templates } = useSuspenseQuery(getPriceTemplatesQueryOptions())
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  })
+  const { data: templates } = useSuspenseQuery(
+    getPriceTemplatesQueryOptions(pagination),
+  )
 
-  return <DataTable columns={priceTemplateColumns} data={templates.data} />
+  return (
+    <DataTable
+      columns={priceTemplateColumns}
+      data={templates.data}
+      total={templates.count}
+      pagination={pagination}
+      onPaginationChange={setPagination}
+    />
+  )
 }
 
 function PriceTemplatesTable() {

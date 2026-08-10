@@ -148,6 +148,528 @@ export const AdminOrdersPublicSchema = {
     description: '管理员批量下单响应'
 } as const;
 
+export const AutomationEventCreateSchema = {
+    properties: {
+        event_type: {
+            type: 'string',
+            maxLength: 64,
+            minLength: 1,
+            title: '事件类型',
+            description: '如 order.paid'
+        },
+        payload: {
+            additionalProperties: true,
+            type: 'object',
+            title: '事件载荷'
+        }
+    },
+    type: 'object',
+    required: ['event_type'],
+    title: 'AutomationEventCreate',
+    description: '发布业务事件请求'
+} as const;
+
+export const AutomationEventPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        event_type: {
+            type: 'string',
+            title: 'Event Type'
+        },
+        payload: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Payload'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'event_type', 'payload', 'created_at'],
+    title: 'AutomationEventPublic',
+    description: '自动化事件公开响应'
+} as const;
+
+export const AutomationEventsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/AutomationEventPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'AutomationEventsPublic',
+    description: '自动化事件列表响应'
+} as const;
+
+export const AutomationRuleCreateSchema = {
+    properties: {
+        event_type: {
+            type: 'string',
+            maxLength: 64,
+            minLength: 1,
+            title: '事件类型',
+            description: '监听的业务事件类型'
+        },
+        action_type: {
+            type: 'string',
+            maxLength: 64,
+            minLength: 1,
+            title: '动作类型',
+            description: '对应已注册 Executor 的任务类型'
+        },
+        config: {
+            additionalProperties: true,
+            type: 'object',
+            title: '规则配置',
+            description: '合并进任务 payload，可覆盖事件载荷中的同名参数'
+        },
+        is_active: {
+            type: 'boolean',
+            title: '是否启用',
+            default: true
+        }
+    },
+    type: 'object',
+    required: ['event_type', 'action_type'],
+    title: 'AutomationRuleCreate',
+    description: '创建自动化规则请求'
+} as const;
+
+export const AutomationRulePublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        event_type: {
+            type: 'string',
+            title: 'Event Type'
+        },
+        action_type: {
+            type: 'string',
+            title: 'Action Type'
+        },
+        config: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Config'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'event_type', 'action_type', 'config', 'is_active', 'created_at', 'updated_at'],
+    title: 'AutomationRulePublic',
+    description: '自动化规则公开响应'
+} as const;
+
+export const AutomationRuleUpdateSchema = {
+    properties: {
+        event_type: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 64,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Type'
+        },
+        action_type: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 64,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Action Type'
+        },
+        config: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Config'
+        },
+        is_active: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Active'
+        }
+    },
+    type: 'object',
+    title: 'AutomationRuleUpdate',
+    description: '更新自动化规则请求（全部可选）'
+} as const;
+
+export const AutomationRulesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/AutomationRulePublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'AutomationRulesPublic',
+    description: '自动化规则列表响应'
+} as const;
+
+export const AutomationTaskArchivePublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        task_type: {
+            type: 'string',
+            title: 'Task Type'
+        },
+        status: {
+            '$ref': '#/components/schemas/AutomationTaskStatus'
+        },
+        priority: {
+            type: 'integer',
+            title: 'Priority'
+        },
+        execute_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Execute At'
+        },
+        retry_count: {
+            type: 'integer',
+            title: 'Retry Count'
+        },
+        max_retry: {
+            type: 'integer',
+            title: 'Max Retry'
+        },
+        payload: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Payload'
+        },
+        error_message: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error Message'
+        },
+        finished_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Finished At'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At'
+        },
+        archived_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Archived At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'task_type', 'status', 'priority', 'execute_at', 'retry_count', 'max_retry', 'payload', 'error_message', 'finished_at', 'created_at', 'updated_at', 'archived_at'],
+    title: 'AutomationTaskArchivePublic',
+    description: '自动化任务归档公开响应'
+} as const;
+
+export const AutomationTaskArchivesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/AutomationTaskArchivePublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'AutomationTaskArchivesPublic',
+    description: '自动化任务归档列表响应'
+} as const;
+
+export const AutomationTaskCreateSchema = {
+    properties: {
+        task_type: {
+            type: 'string',
+            maxLength: 64,
+            minLength: 1,
+            title: '任务类型',
+            description: '对应已注册 Executor 的任务类型'
+        },
+        payload: {
+            additionalProperties: true,
+            type: 'object',
+            title: '任务参数',
+            description: '执行所需参数'
+        },
+        priority: {
+            type: 'integer',
+            title: '优先级',
+            description: '数值越大越优先执行',
+            default: 0
+        },
+        execute_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '计划执行时间',
+            description: '为空则立即执行'
+        },
+        max_retry: {
+            type: 'integer',
+            maximum: 10,
+            minimum: 0,
+            title: '最大重试次数',
+            default: 3
+        }
+    },
+    type: 'object',
+    required: ['task_type'],
+    title: 'AutomationTaskCreate',
+    description: '创建自动化任务请求'
+} as const;
+
+export const AutomationTaskPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        task_type: {
+            type: 'string',
+            title: 'Task Type'
+        },
+        status: {
+            '$ref': '#/components/schemas/AutomationTaskStatus'
+        },
+        priority: {
+            type: 'integer',
+            title: 'Priority'
+        },
+        execute_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Execute At'
+        },
+        retry_count: {
+            type: 'integer',
+            title: 'Retry Count'
+        },
+        max_retry: {
+            type: 'integer',
+            title: 'Max Retry'
+        },
+        payload: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Payload'
+        },
+        error_message: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error Message'
+        },
+        finished_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Finished At'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'task_type', 'status', 'priority', 'execute_at', 'retry_count', 'max_retry', 'payload', 'error_message', 'finished_at', 'created_at', 'updated_at'],
+    title: 'AutomationTaskPublic',
+    description: '自动化任务公开响应'
+} as const;
+
+export const AutomationTaskStatusSchema = {
+    type: 'string',
+    enum: ['pending', 'running', 'success', 'failed', 'canceled'],
+    title: 'AutomationTaskStatus',
+    description: '自动化任务状态'
+} as const;
+
+export const AutomationTasksPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/AutomationTaskPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'AutomationTasksPublic',
+    description: '自动化任务列表响应'
+} as const;
+
 export const BalancePublicSchema = {
     properties: {
         balance: {
@@ -1360,7 +1882,7 @@ export const OrderRefundRequestSchema = {
                 },
                 {
                     type: 'string',
-                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)'
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,19}0*$)\\d{0,11}\\.\\d{0,7}0*$)'
                 }
             ],
             title: '退款金额',
@@ -1375,7 +1897,7 @@ export const OrderRefundRequestSchema = {
 
 export const OrderStatusSchema = {
     type: 'integer',
-    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     title: 'OrderStatus',
     description: '订单状态（与上游一致）'
 } as const;
@@ -3550,6 +4072,20 @@ export const RedeemTypeSchema = {
     description: '发货方式'
 } as const;
 
+export const RefreshTokenRequestSchema = {
+    properties: {
+        refresh_token: {
+            type: 'string',
+            minLength: 1,
+            title: 'Refresh Token'
+        }
+    },
+    type: 'object',
+    required: ['refresh_token'],
+    title: 'RefreshTokenRequest',
+    description: '刷新令牌请求'
+} as const;
+
 export const RuleTypeSchema = {
     type: 'integer',
     enum: [1, 2, 3],
@@ -3754,120 +4290,6 @@ export const SchedulePublicSchema = {
     required: ['id', 'name', 'task', 'schedule_type', 'args', 'kwargs', 'enabled'],
     title: 'SchedulePublic',
     description: '计划任务公开响应'
-} as const;
-
-export const ScheduleRunPublicSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Id'
-        },
-        task_id: {
-            type: 'string',
-            title: 'Task Id'
-        },
-        task_name: {
-            type: 'string',
-            title: 'Task Name'
-        },
-        schedule_id: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Schedule Id'
-        },
-        schedule_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Schedule Name'
-        },
-        error_type: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Error Type'
-        },
-        error_message: {
-            type: 'string',
-            title: 'Error Message'
-        },
-        traceback: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Traceback'
-        },
-        finished_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Finished At'
-        },
-        created_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Created At'
-        }
-    },
-    type: 'object',
-    required: ['id', 'task_id', 'task_name', 'error_message'],
-    title: 'ScheduleRunPublic',
-    description: '计划任务失败执行记录响应'
-} as const;
-
-export const ScheduleRunsPublicSchema = {
-    properties: {
-        data: {
-            items: {
-                '$ref': '#/components/schemas/ScheduleRunPublic'
-            },
-            type: 'array',
-            title: 'Data'
-        },
-        count: {
-            type: 'integer',
-            title: 'Count'
-        }
-    },
-    type: 'object',
-    required: ['data', 'count'],
-    title: 'ScheduleRunsPublic',
-    description: '失败执行记录列表响应'
 } as const;
 
 export const ScheduleTypeSchema = {
@@ -4171,6 +4593,22 @@ export const SupplierCreateSchema = {
     required: ['name', 'platform', 'base_url', 'app_key', 'app_secret'],
     title: 'SupplierCreate',
     description: '创建供应商请求'
+} as const;
+
+export const SupplierOrderIdUpdateRequestSchema = {
+    properties: {
+        supplier_order_id: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: '供应商订单号',
+            description: '人工确认上游已下单后补录'
+        }
+    },
+    type: 'object',
+    required: ['supplier_order_id'],
+    title: 'SupplierOrderIdUpdateRequest',
+    description: '管理员补录供应商订单号请求'
 } as const;
 
 export const SupplierPublicSchema = {
@@ -4549,12 +4987,23 @@ export const TokenSchema = {
             type: 'string',
             title: 'Token Type',
             default: 'bearer'
+        },
+        refresh_token: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Refresh Token'
         }
     },
     type: 'object',
     required: ['access_token'],
     title: 'Token',
-    description: '访问令牌响应'
+    description: '访问令牌响应（登录与刷新时返回）'
 } as const;
 
 export const UpdatePasswordSchema = {
@@ -5110,7 +5559,7 @@ export const WalletAdjustSchema = {
                 },
                 {
                     type: 'string',
-                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)'
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,11}|(?=[\\d.]{1,19}0*$)\\d{0,11}\\.\\d{0,7}0*$)'
                 }
             ],
             title: '调账金额',

@@ -26,6 +26,12 @@ from app.modules.supplier.service import create_supplier as create_supplier_serv
 from app.modules.supplier.service import supplier_client, sync_upstream_product
 from app.modules.supplier.service.clients.base import SupplierClientError
 from app.modules.supplier.service.clients.ylsup import YlsupClient
+from app.modules.supplier.service.dto import (
+    UpstreamBuyParam,
+    UpstreamCategory,
+    UpstreamProductDetail,
+    UpstreamProductSummary,
+)
 from tests.utils.utils import random_lower_string
 
 
@@ -268,16 +274,21 @@ def test_ylsup_client_parses_upstream_payloads(
     monkeypatch.setattr(client, "post", fake_post)
     try:
         assert client.get_categories() == [
-            {"id": "2", "name": "DY 运营", "parent_id": "0"},
-            {"id": "195", "name": "直播间", "parent_id": "2"},
+            UpstreamCategory(id="2", name="DY 运营", parent_id="0"),
+            UpstreamCategory(id="195", name="直播间", parent_id="2"),
         ]
         assert client.query_products_list(category_id="6") == [
-            {"id": 58, "name": "VIP444444444"}
+            UpstreamProductSummary(
+                upstream_id="58",
+                name="VIP444444444",
+                cost_price=None,
+            )
         ]
-        assert client.query_product_detail("838") == {
-            "id": 838,
-            "price": 0.01296,
-        }
+        assert client.query_product_detail("838") == UpstreamProductDetail(
+            upstream_id="838",
+            cost_price=Decimal("0.01296"),
+            is_closed=True,
+        )
         assert client.create_order(
             product_id="1",
             quantity=1,
@@ -301,9 +312,9 @@ def test_ylsup_client_parses_upstream_payloads(
             }
         },
     )
-    assert calls[2] == ("post", {"params": {"goods_id": "838"}})
+    assert calls[2] == ("post", {"json": {"goods_id": "838"}})
     assert calls[3][1]["json"] == {
-        "goods_id": "1",
+        "goods_id": 1,
         "buy_number": 1,
         "buy_params": {"Parameter_1": "11"},
     }
@@ -323,8 +334,8 @@ def test_read_upstream_products_marks_synced(
         YlsupClient,
         "query_products_list",
         lambda self, **kwargs: [
-            {"id": 58, "name": "VIP444444444"},
-            {"id": 59, "name": "新商品"},
+            UpstreamProductSummary(upstream_id="58", name="VIP444444444"),
+            UpstreamProductSummary(upstream_id="59", name="新商品"),
         ],
     )
     response = client.get(
@@ -356,8 +367,8 @@ def test_read_upstream_categories(
         YlsupClient,
         "get_categories",
         lambda self: [
-            {"id": "101", "name": "自营", "parent_id": "0"},
-            {"id": "102", "name": "卡密", "parent_id": "0"},
+            UpstreamCategory(id="101", name="自营", parent_id="0"),
+            UpstreamCategory(id="102", name="卡密", parent_id="0"),
         ],
     )
     response = client.get(
@@ -406,34 +417,33 @@ def test_sync_upstream_product_creates_and_updates(
     db.add(second_category)
     db.commit()
     db.refresh(second_category)
-    detail = {
-        "id": 838,
-        "goods_category_id": 11,
-        "is_card_code": 2,
-        "stock": -1,
-        "buy_max_limit": 1000000,
-        "buy_min_limit": 10,
-        "buy_params": [
-            {
-                "is_default": False,
-                "name": "作品纯链接",
-                "key": "url",
-                "value": "",
-                "type": 61,
-                "type_config": "",
-                "description": "点击右侧提取",
-                "verify": {"min": 0, "max": 0},
-            }
+    detail = UpstreamProductDetail(
+        upstream_id="838",
+        name="VIP快速)",
+        cost_price=Decimal("0.01296"),
+        stock=-1,
+        min_quantity=10,
+        max_quantity=1_000_000,
+        is_repeatable=True,
+        is_batch=True,
+        is_card_code=False,
+        is_closed=False,
+        unit="1",
+        buy_params=[
+            UpstreamBuyParam(
+                key="url",
+                label="作品纯链接",
+                value="",
+                description="点击右侧提取",
+                input_type=61,
+                type_config=[],
+                validate_min=0,
+                validate_max=0,
+                default_value="",
+                use_default=False,
+            )
         ],
-        "buy_rate": 1,
-        "is_batch": 1,
-        "is_close": 2,
-        "is_repeat": 2,
-        "name": "VIP快速)",
-        "price": 0.01296,
-        "unit": "1",
-        "status": 1,
-    }
+    )
 
     action, product_id = sync_upstream_product(
         session=db,
@@ -469,7 +479,7 @@ def test_sync_upstream_product_creates_and_updates(
     action, updated_id = sync_upstream_product(
         session=db,
         supplier=supplier,
-        detail={**detail, "price": 0.02},
+        detail=detail.model_copy(update={"cost_price": Decimal("0.02")}),
         category_id=second_category.id,
     )
     assert action == "updated"
@@ -486,7 +496,7 @@ def test_sync_upstream_product_creates_and_updates(
     action, updated_id = sync_upstream_product(
         session=db,
         supplier=supplier,
-        detail={**detail, "price": 0.03},
+        detail=detail.model_copy(update={"cost_price": Decimal("0.03")}),
     )
     assert action == "updated"
     assert updated_id == product.id
@@ -510,12 +520,12 @@ def test_create_upstream_products_sync_returns_task_id(
     class FakeTask:
         id = "fake-task-id"
 
-    def fake_send_task(name: str, **kwargs: object) -> FakeTask:
+    def fake_send_task(_name: str, **kwargs: object) -> FakeTask:
         sent_kwargs.update(kwargs)
         return FakeTask()
 
     monkeypatch.setattr(
-        "app.modules.supplier.router.celery_app.send_task",
+        "app.modules.supplier.api.celery_app.send_task",
         fake_send_task,
     )
     response = client.post(
@@ -544,7 +554,7 @@ def test_read_upstream_products_sync_status(
         result = {"status": "success", "created": ["1"], "updated": [], "failed": []}
 
     monkeypatch.setattr(
-        "app.modules.schedule.service.AsyncResult",
+        "app.modules.automation.infrastructure.celery.AsyncResult",
         lambda task_id, app: FakeResult(),
     )
     response = client.get(
@@ -570,7 +580,7 @@ def test_read_upstream_products_sync_status_pending(
         state = "STARTED"
 
     monkeypatch.setattr(
-        "app.modules.schedule.service.AsyncResult",
+        "app.modules.automation.infrastructure.celery.AsyncResult",
         lambda task_id, app: FakeResult(),
     )
     response = client.get(

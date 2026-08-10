@@ -58,6 +58,182 @@ export type AdminOrdersPublic = {
 };
 
 /**
+ * 发布业务事件请求
+ */
+export type AutomationEventCreate = {
+    /**
+     * 如 order.paid
+     */
+    event_type: string;
+    payload?: {
+        [key: string]: unknown;
+    };
+};
+
+/**
+ * 自动化事件公开响应
+ */
+export type AutomationEventPublic = {
+    id: string;
+    event_type: string;
+    payload: {
+        [key: string]: unknown;
+    };
+    created_at: (string | null);
+};
+
+/**
+ * 自动化事件列表响应
+ */
+export type AutomationEventsPublic = {
+    data: Array<AutomationEventPublic>;
+    count: number;
+};
+
+/**
+ * 创建自动化规则请求
+ */
+export type AutomationRuleCreate = {
+    /**
+     * 监听的业务事件类型
+     */
+    event_type: string;
+    /**
+     * 对应已注册 Executor 的任务类型
+     */
+    action_type: string;
+    /**
+     * 合并进任务 payload，可覆盖事件载荷中的同名参数
+     */
+    config?: {
+        [key: string]: unknown;
+    };
+    is_active?: boolean;
+};
+
+/**
+ * 自动化规则公开响应
+ */
+export type AutomationRulePublic = {
+    id: string;
+    event_type: string;
+    action_type: string;
+    config: {
+        [key: string]: unknown;
+    };
+    is_active: boolean;
+    created_at: (string | null);
+    updated_at: (string | null);
+};
+
+/**
+ * 自动化规则列表响应
+ */
+export type AutomationRulesPublic = {
+    data: Array<AutomationRulePublic>;
+    count: number;
+};
+
+/**
+ * 更新自动化规则请求（全部可选）
+ */
+export type AutomationRuleUpdate = {
+    event_type?: (string | null);
+    action_type?: (string | null);
+    config?: ({
+    [key: string]: unknown;
+} | null);
+    is_active?: (boolean | null);
+};
+
+/**
+ * 自动化任务归档公开响应
+ */
+export type AutomationTaskArchivePublic = {
+    id: string;
+    task_type: string;
+    status: AutomationTaskStatus;
+    priority: number;
+    execute_at: string;
+    retry_count: number;
+    max_retry: number;
+    payload: {
+        [key: string]: unknown;
+    };
+    error_message: (string | null);
+    finished_at: (string | null);
+    created_at: (string | null);
+    updated_at: (string | null);
+    archived_at: string;
+};
+
+/**
+ * 自动化任务归档列表响应
+ */
+export type AutomationTaskArchivesPublic = {
+    data: Array<AutomationTaskArchivePublic>;
+    count: number;
+};
+
+/**
+ * 创建自动化任务请求
+ */
+export type AutomationTaskCreate = {
+    /**
+     * 对应已注册 Executor 的任务类型
+     */
+    task_type: string;
+    /**
+     * 执行所需参数
+     */
+    payload?: {
+        [key: string]: unknown;
+    };
+    /**
+     * 数值越大越优先执行
+     */
+    priority?: number;
+    /**
+     * 为空则立即执行
+     */
+    execute_at?: (string | null);
+    max_retry?: number;
+};
+
+/**
+ * 自动化任务公开响应
+ */
+export type AutomationTaskPublic = {
+    id: string;
+    task_type: string;
+    status: AutomationTaskStatus;
+    priority: number;
+    execute_at: string;
+    retry_count: number;
+    max_retry: number;
+    payload: {
+        [key: string]: unknown;
+    };
+    error_message: (string | null);
+    finished_at: (string | null);
+    created_at: (string | null);
+    updated_at: (string | null);
+};
+
+/**
+ * 自动化任务列表响应
+ */
+export type AutomationTasksPublic = {
+    data: Array<AutomationTaskPublic>;
+    count: number;
+};
+
+/**
+ * 自动化任务状态
+ */
+export type AutomationTaskStatus = 'pending' | 'running' | 'success' | 'failed' | 'canceled';
+
+/**
  * 供应商上游实时余额响应
  */
 export type BalancePublic = {
@@ -404,7 +580,7 @@ export type OrdersPublic = {
 /**
  * 订单状态（与上游一致）
  */
-export type OrderStatus = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+export type OrderStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 /**
  * 管理员设置订单状态请求
@@ -952,6 +1128,13 @@ export type ProductUpdate = {
 export type RedeemType = 1 | 2 | 3;
 
 /**
+ * 刷新令牌请求
+ */
+export type RefreshTokenRequest = {
+    refresh_token: string;
+};
+
+/**
  * 定价规则（由字段派生，不落库）
  */
 export type RuleType = 1 | 2 | 3;
@@ -1015,30 +1198,6 @@ export type SchedulePublic = {
     last_run_at?: (string | null);
     total_run_count?: number;
     date_changed?: (string | null);
-};
-
-/**
- * 计划任务失败执行记录响应
- */
-export type ScheduleRunPublic = {
-    id: string;
-    task_id: string;
-    task_name: string;
-    schedule_id?: (number | null);
-    schedule_name?: (string | null);
-    error_type?: (string | null);
-    error_message: string;
-    traceback?: (string | null);
-    finished_at?: (string | null);
-    created_at?: (string | null);
-};
-
-/**
- * 失败执行记录列表响应
- */
-export type ScheduleRunsPublic = {
-    data: Array<ScheduleRunPublic>;
-    count: number;
 };
 
 /**
@@ -1148,6 +1307,16 @@ export type SupplierCreate = {
 };
 
 /**
+ * 管理员补录供应商订单号请求
+ */
+export type SupplierOrderIdUpdateRequest = {
+    /**
+     * 人工确认上游已下单后补录
+     */
+    supplier_order_id: string;
+};
+
+/**
  * 供应商公开响应
  */
 export type SupplierPublic = {
@@ -1251,11 +1420,12 @@ export type TaskStatusPublic = {
 };
 
 /**
- * 访问令牌响应
+ * 访问令牌响应（登录与刷新时返回）
  */
 export type Token = {
     access_token: string;
     token_type?: string;
+    refresh_token?: (string | null);
 };
 
 /**
@@ -1483,6 +1653,100 @@ export type WalletTransactionsPublic = {
     count: number;
 };
 
+export type AutomationReadAutomationTasksData = {
+    limit?: number;
+    skip?: number;
+    status?: (AutomationTaskStatus | null);
+};
+
+export type AutomationReadAutomationTasksResponse = (AutomationTasksPublic);
+
+export type AutomationCreateAutomationTaskData = {
+    requestBody: AutomationTaskCreate;
+};
+
+export type AutomationCreateAutomationTaskResponse = (AutomationTaskPublic);
+
+export type AutomationReadExecutorOptionsResponse = (TaskOptionsPublic);
+
+export type AutomationReadAutomationTaskArchivesData = {
+    limit?: number;
+    skip?: number;
+    status?: (AutomationTaskStatus | null);
+};
+
+export type AutomationReadAutomationTaskArchivesResponse = (AutomationTaskArchivesPublic);
+
+export type AutomationReadAutomationTaskData = {
+    id: string;
+};
+
+export type AutomationReadAutomationTaskResponse = (AutomationTaskPublic);
+
+export type AutomationRetryAutomationTaskData = {
+    id: string;
+};
+
+export type AutomationRetryAutomationTaskResponse = (AutomationTaskPublic);
+
+export type AutomationCancelAutomationTaskData = {
+    id: string;
+};
+
+export type AutomationCancelAutomationTaskResponse = (AutomationTaskPublic);
+
+export type AutomationReadAutomationEventsData = {
+    eventType?: (string | null);
+    limit?: number;
+    skip?: number;
+};
+
+export type AutomationReadAutomationEventsResponse = (AutomationEventsPublic);
+
+export type AutomationPublishAutomationEventRouteData = {
+    requestBody: AutomationEventCreate;
+};
+
+export type AutomationPublishAutomationEventRouteResponse = (AutomationEventPublic);
+
+export type AutomationReadAutomationRulesData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type AutomationReadAutomationRulesResponse = (AutomationRulesPublic);
+
+export type AutomationCreateAutomationRuleData = {
+    requestBody: AutomationRuleCreate;
+};
+
+export type AutomationCreateAutomationRuleResponse = (AutomationRulePublic);
+
+export type AutomationReadAutomationRuleData = {
+    id: string;
+};
+
+export type AutomationReadAutomationRuleResponse = (AutomationRulePublic);
+
+export type AutomationUpdateAutomationRuleData = {
+    id: string;
+    requestBody: AutomationRuleUpdate;
+};
+
+export type AutomationUpdateAutomationRuleResponse = (AutomationRulePublic);
+
+export type AutomationDeleteAutomationRuleData = {
+    id: string;
+};
+
+export type AutomationDeleteAutomationRuleResponse = (Message);
+
+export type AutomationToggleAutomationRuleData = {
+    id: string;
+};
+
+export type AutomationToggleAutomationRuleResponse = (AutomationRulePublic);
+
 export type ImageCategoriesReadCategoriesResponse = (ImageCategoriesPublic);
 
 export type ImageCategoriesCreateNewCategoryData = {
@@ -1605,7 +1869,17 @@ export type LoginLoginAccessTokenData = {
 
 export type LoginLoginAccessTokenResponse = (Token);
 
-export type LoginTestTokenResponse = (UserPublic);
+export type LoginRefreshTokenData = {
+    requestBody: RefreshTokenRequest;
+};
+
+export type LoginRefreshTokenResponse = (Token);
+
+export type LoginLogoutData = {
+    requestBody: RefreshTokenRequest;
+};
+
+export type LoginLogoutResponse = (Message);
 
 export type LoginRecoverPasswordData = {
     email: string;
@@ -1624,6 +1898,8 @@ export type LoginRecoverPasswordHtmlContentData = {
 };
 
 export type LoginRecoverPasswordHtmlContentResponse = (string);
+
+export type LoginTestTokenResponse = (UserPublic);
 
 export type OrdersCreateUserOrdersData = {
     requestBody: AdminOrdersCreate;
@@ -1709,6 +1985,13 @@ export type OrdersSyncOrderStatusApiData = {
 };
 
 export type OrdersSyncOrderStatusApiResponse = (OrderPublic);
+
+export type OrdersRecordSupplierOrderIdApiData = {
+    orderId: string;
+    requestBody: SupplierOrderIdUpdateRequest;
+};
+
+export type OrdersRecordSupplierOrderIdApiResponse = (OrderPublic);
 
 export type PriceTemplatesReadPriceTemplatesData = {
     limit?: number;
@@ -1858,14 +2141,6 @@ export type SchedulesRunScheduleData = {
 };
 
 export type SchedulesRunScheduleResponse = (RunTaskPublic);
-
-export type SchedulesReadFailedRunsData = {
-    limit?: number;
-    skip?: number;
-    taskName?: (string | null);
-};
-
-export type SchedulesReadFailedRunsResponse = (ScheduleRunsPublic);
 
 export type SchedulesReadTaskStatusData = {
     taskId: string;

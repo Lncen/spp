@@ -1,6 +1,7 @@
 import type { OrderStatus } from "@/client"
 
 export const ORDER_STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
+  { value: 0, label: "创建" },
   { value: 1, label: "已支付" },
   { value: 2, label: "待处理" },
   { value: 3, label: "处理中" },
@@ -17,6 +18,7 @@ export const ORDER_STATUS_BADGE_VARIANT: Record<
   OrderStatus,
   "default" | "secondary" | "destructive" | "outline"
 > = {
+  0: "secondary",
   1: "default",
   2: "secondary",
   3: "outline",

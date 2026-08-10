@@ -2,6 +2,9 @@
 
 from typing import Any
 
+# 自动化任务归档数据保留天数
+AUTOMATION_TASK_RETENTION_DAYS = "automation_task_retention_days"
+
 # 每个键包含：value 默认值、description 说明
 DEFAULT_SETTINGS: dict[str, dict[str, Any]] = {
     "maintenance_mode": {
@@ -13,12 +16,16 @@ DEFAULT_SETTINGS: dict[str, dict[str, Any]] = {
         "description": "是否允许用户下单",
     },
     "login_fail_limit": {
-        "value": 5,
+        "value": 50,
         "description": "登录失败次数上限，达到后锁定该账号",
     },
     "login_lockout_minutes": {
         "value": 15,
         "description": "登录失败锁定分钟数，到期后自动解锁",
+    },
+    AUTOMATION_TASK_RETENTION_DAYS: {
+        "value": 3,
+        "description": "自动化任务归档数据保留天数，到期后物理删除",
     },
 }
 

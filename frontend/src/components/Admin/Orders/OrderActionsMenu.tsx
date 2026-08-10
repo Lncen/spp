@@ -90,7 +90,8 @@ export const OrderActionsMenu = ({ order }: OrderActionsMenuProps) => {
           <DialogHeader>
             <DialogTitle>取消订单（申请售后）</DialogTitle>
             <DialogDescription>
-              {order.product_name} × {order.quantity}，提交后订单状态将变为申请售后中
+              {order.product_name} × {order.quantity}
+              ，提交后订单状态将变为申请售后中
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4">

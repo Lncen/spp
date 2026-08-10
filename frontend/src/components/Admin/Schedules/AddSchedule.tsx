@@ -168,13 +168,13 @@ const AddSchedule = () => {
     const kwargs = parseJsonField(data.kwargs, "object")
     if (!args) {
       form.setError("args", {
-        message: "必须是合法的 JSON 数组，例如 [\"a\", 1]",
+        message: '必须是合法的 JSON 数组，例如 ["a", 1]',
       })
       return
     }
     if (!kwargs) {
       form.setError("kwargs", {
-        message: "必须是合法的 JSON 对象，例如 {\"key\": \"value\"}",
+        message: '必须是合法的 JSON 对象，例如 {"key": "value"}',
       })
       return
     }
@@ -183,10 +183,8 @@ const AddSchedule = () => {
       name: data.name,
       task: data.task,
       schedule_type: data.schedule_type,
-      crontab:
-        data.schedule_type === "crontab" ? data.crontab : undefined,
-      interval:
-        data.schedule_type === "interval" ? data.interval : undefined,
+      crontab: data.schedule_type === "crontab" ? data.crontab : undefined,
+      interval: data.schedule_type === "interval" ? data.interval : undefined,
       args,
       kwargs,
       enabled: data.enabled,

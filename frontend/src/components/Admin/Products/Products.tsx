@@ -1,4 +1,5 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query"
+import type { PaginationState } from "@tanstack/react-table"
 import { Suspense, useState } from "react"
 import type { ProductType } from "@/client"
 import { ProductCategoriesService, ProductsService } from "@/client"
@@ -32,30 +33,63 @@ interface ProductsFilters {
   categoryId: string
 }
 
-function getProductsQueryOptions(filters: ProductsFilters) {
+function getProductsQueryOptions(
+  filters: ProductsFilters,
+  pagination: PaginationState,
+) {
   return {
     queryFn: () =>
       ProductsService.readProducts({
-        skip: 0,
-        limit: 100,
+        skip: pagination.pageIndex * pagination.pageSize,
+        limit: pagination.pageSize,
         productType: toProductType(filters.productType),
         categoryId:
           filters.categoryId === NONE ? undefined : filters.categoryId,
       }),
-    queryKey: ["products", filters.productType, filters.categoryId],
+    queryKey: ["products", filters.productType, filters.categoryId, pagination],
   }
 }
 
-function ProductsTableContent({ filters }: { filters: ProductsFilters }) {
-  const { data: products } = useSuspenseQuery(getProductsQueryOptions(filters))
+function ProductsTableContent({
+  filters,
+  pagination,
+  setPagination,
+}: {
+  filters: ProductsFilters
+  pagination: PaginationState
+  setPagination: (pagination: PaginationState) => void
+}) {
+  const { data: products } = useSuspenseQuery(
+    getProductsQueryOptions(filters, pagination),
+  )
 
-  return <DataTable columns={columns} data={products.data} />
+  return (
+    <DataTable
+      columns={columns}
+      data={products.data}
+      total={products.count}
+      pagination={pagination}
+      onPaginationChange={setPagination}
+    />
+  )
 }
 
-function ProductsTable({ filters }: { filters: ProductsFilters }) {
+function ProductsTable({
+  filters,
+  pagination,
+  setPagination,
+}: {
+  filters: ProductsFilters
+  pagination: PaginationState
+  setPagination: (pagination: PaginationState) => void
+}) {
   return (
     <Suspense fallback={<PendingProducts />}>
-      <ProductsTableContent filters={filters} />
+      <ProductsTableContent
+        filters={filters}
+        pagination={pagination}
+        setPagination={setPagination}
+      />
     </Suspense>
   )
 }
@@ -65,6 +99,12 @@ export const Products = () => {
     productType: NONE,
     categoryId: NONE,
   })
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  })
+  const resetPage = () =>
+    setPagination((current) => ({ ...current, pageIndex: 0 }))
   const { data: categories } = useQuery({
     queryKey: ["product-categories"],
     queryFn: () => ProductCategoriesService.readProductCategories(),
@@ -82,9 +122,10 @@ export const Products = () => {
         <div className="flex flex-wrap items-center gap-2">
           <Select
             value={filters.categoryId}
-            onValueChange={(categoryId) =>
+            onValueChange={(categoryId) => {
               setFilters((current) => ({ ...current, categoryId }))
-            }
+              resetPage()
+            }}
           >
             <SelectTrigger className="w-52">
               <SelectValue placeholder="商品分类" />
@@ -105,9 +146,10 @@ export const Products = () => {
           </Select>
           <Select
             value={filters.productType}
-            onValueChange={(productType) =>
+            onValueChange={(productType) => {
               setFilters((current) => ({ ...current, productType }))
-            }
+              resetPage()
+            }}
           >
             <SelectTrigger className="w-40">
               <SelectValue placeholder="商品类型" />
@@ -124,7 +166,11 @@ export const Products = () => {
           <AddProduct />
         </div>
       </div>
-      <ProductsTable filters={filters} />
+      <ProductsTable
+        filters={filters}
+        pagination={pagination}
+        setPagination={setPagination}
+      />
     </div>
   )
 }

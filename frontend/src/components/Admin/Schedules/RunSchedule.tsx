@@ -59,7 +59,8 @@ const RunSchedule = ({ schedule }: RunScheduleProps) => {
         <DialogHeader>
           <DialogTitle>立即执行</DialogTitle>
           <DialogDescription>
-            向 Celery 发送一次任务 <strong>{schedule.name}</strong>，不影响原有调度。
+            向 Celery 发送一次任务 <strong>{schedule.name}</strong>
+            ，不影响原有调度。
           </DialogDescription>
         </DialogHeader>
 

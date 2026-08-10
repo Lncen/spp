@@ -1,7 +1,8 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import type { PaginationState } from "@tanstack/react-table"
 import { Search } from "lucide-react"
-import { Suspense } from "react"
+import { Suspense, useState } from "react"
 
 import { ItemsService } from "@/client"
 import AddItem from "@/components/Admin/Items/AddItem"
@@ -9,10 +10,14 @@ import { columns } from "@/components/Admin/Items/columns"
 import PendingItems from "@/components/Admin/Pending/PendingItems"
 import { DataTable } from "@/components/Common/DataTable"
 
-function getItemsQueryOptions() {
+function getItemsQueryOptions(pagination: PaginationState) {
   return {
-    queryFn: () => ItemsService.readItems({ skip: 0, limit: 100 }),
-    queryKey: ["items"],
+    queryFn: () =>
+      ItemsService.readItems({
+        skip: pagination.pageIndex * pagination.pageSize,
+        limit: pagination.pageSize,
+      }),
+    queryKey: ["items", pagination],
   }
 }
 
@@ -28,7 +33,11 @@ export const Route = createFileRoute("/_layout/items")({
 })
 
 function ItemsTableContent() {
-  const { data: items } = useSuspenseQuery(getItemsQueryOptions())
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  })
+  const { data: items } = useSuspenseQuery(getItemsQueryOptions(pagination))
 
   if (items.data.length === 0) {
     return (
@@ -42,7 +51,15 @@ function ItemsTableContent() {
     )
   }
 
-  return <DataTable columns={columns} data={items.data} />
+  return (
+    <DataTable
+      columns={columns}
+      data={items.data}
+      total={items.count}
+      pagination={pagination}
+      onPaginationChange={setPagination}
+    />
+  )
 }
 
 function ItemsTable() {

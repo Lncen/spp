@@ -6,7 +6,7 @@
 
 module/
 
-├── router/               # 接口层
+├── api/                  # 接口层
 ├── models/               # 数据模型
 ├── schemas/              # 数据传输对象
 ├── application/          # 应用服务
@@ -20,10 +20,11 @@ module/
 ## 分层职责
 
 
-### router
+### API
 
 负责：
 
+- 权限验证
 - 接收请求
 - 参数校验
 - 调用 Application
@@ -163,7 +164,7 @@ process_xxx.py
 
 ```
 
-ROUTER
+API
 
 ↓
 

@@ -17,9 +17,7 @@ interface ScheduleActionsMenuProps {
   schedule: SchedulePublic
 }
 
-export const ScheduleActionsMenu = ({
-  schedule,
-}: ScheduleActionsMenuProps) => {
+export const ScheduleActionsMenu = ({ schedule }: ScheduleActionsMenuProps) => {
   const [open, setOpen] = useState(false)
 
   return (
@@ -30,14 +28,8 @@ export const ScheduleActionsMenu = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <EditSchedule
-          schedule={schedule}
-          onSuccess={() => setOpen(false)}
-        />
-        <ToggleSchedule
-          schedule={schedule}
-          onSuccess={() => setOpen(false)}
-        />
+        <EditSchedule schedule={schedule} onSuccess={() => setOpen(false)} />
+        <ToggleSchedule schedule={schedule} onSuccess={() => setOpen(false)} />
         <RunSchedule schedule={schedule} />
         <DeleteSchedule
           id={schedule.id}

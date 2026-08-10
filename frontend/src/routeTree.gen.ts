@@ -27,7 +27,13 @@ import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutImagesRouteImport } from './routes/_layout/images'
 import { Route as LayoutGlobalSettingsRouteImport } from './routes/_layout/global-settings'
 import { Route as LayoutCategoriesRouteImport } from './routes/_layout/categories'
+import { Route as LayoutAutomationRouteImport } from './routes/_layout/automation'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
+import { Route as LayoutAutomationIndexRouteImport } from './routes/_layout/automation/index'
+import { Route as LayoutAutomationTasksRouteImport } from './routes/_layout/automation/tasks'
+import { Route as LayoutAutomationRulesRouteImport } from './routes/_layout/automation/rules'
+import { Route as LayoutAutomationEventsRouteImport } from './routes/_layout/automation/events'
+import { Route as LayoutAutomationArchivesRouteImport } from './routes/_layout/automation/archives'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -118,11 +124,42 @@ const LayoutCategoriesRoute = LayoutCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutAutomationRoute = LayoutAutomationRouteImport.update({
+  id: '/automation',
+  path: '/automation',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutAdminRoute = LayoutAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutAutomationIndexRoute = LayoutAutomationIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LayoutAutomationRoute,
+} as any)
+const LayoutAutomationTasksRoute = LayoutAutomationTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => LayoutAutomationRoute,
+} as any)
+const LayoutAutomationRulesRoute = LayoutAutomationRulesRouteImport.update({
+  id: '/rules',
+  path: '/rules',
+  getParentRoute: () => LayoutAutomationRoute,
+} as any)
+const LayoutAutomationEventsRoute = LayoutAutomationEventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => LayoutAutomationRoute,
+} as any)
+const LayoutAutomationArchivesRoute =
+  LayoutAutomationArchivesRouteImport.update({
+    id: '/archives',
+    path: '/archives',
+    getParentRoute: () => LayoutAutomationRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof LayoutIndexRoute
@@ -131,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
+  '/automation': typeof LayoutAutomationRouteWithChildren
   '/categories': typeof LayoutCategoriesRoute
   '/global-settings': typeof LayoutGlobalSettingsRoute
   '/images': typeof LayoutImagesRoute
@@ -143,6 +181,11 @@ export interface FileRoutesByFullPath {
   '/schedules': typeof LayoutSchedulesRoute
   '/settings': typeof LayoutSettingsRoute
   '/suppliers': typeof LayoutSuppliersRoute
+  '/automation/archives': typeof LayoutAutomationArchivesRoute
+  '/automation/events': typeof LayoutAutomationEventsRoute
+  '/automation/rules': typeof LayoutAutomationRulesRoute
+  '/automation/tasks': typeof LayoutAutomationTasksRoute
+  '/automation/': typeof LayoutAutomationIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -163,6 +206,11 @@ export interface FileRoutesByTo {
   '/settings': typeof LayoutSettingsRoute
   '/suppliers': typeof LayoutSuppliersRoute
   '/': typeof LayoutIndexRoute
+  '/automation/archives': typeof LayoutAutomationArchivesRoute
+  '/automation/events': typeof LayoutAutomationEventsRoute
+  '/automation/rules': typeof LayoutAutomationRulesRoute
+  '/automation/tasks': typeof LayoutAutomationTasksRoute
+  '/automation': typeof LayoutAutomationIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -172,6 +220,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
+  '/_layout/automation': typeof LayoutAutomationRouteWithChildren
   '/_layout/categories': typeof LayoutCategoriesRoute
   '/_layout/global-settings': typeof LayoutGlobalSettingsRoute
   '/_layout/images': typeof LayoutImagesRoute
@@ -185,6 +234,11 @@ export interface FileRoutesById {
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/suppliers': typeof LayoutSuppliersRoute
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/automation/archives': typeof LayoutAutomationArchivesRoute
+  '/_layout/automation/events': typeof LayoutAutomationEventsRoute
+  '/_layout/automation/rules': typeof LayoutAutomationRulesRoute
+  '/_layout/automation/tasks': typeof LayoutAutomationTasksRoute
+  '/_layout/automation/': typeof LayoutAutomationIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -195,6 +249,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
+    | '/automation'
     | '/categories'
     | '/global-settings'
     | '/images'
@@ -207,6 +262,11 @@ export interface FileRouteTypes {
     | '/schedules'
     | '/settings'
     | '/suppliers'
+    | '/automation/archives'
+    | '/automation/events'
+    | '/automation/rules'
+    | '/automation/tasks'
+    | '/automation/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -227,6 +287,11 @@ export interface FileRouteTypes {
     | '/settings'
     | '/suppliers'
     | '/'
+    | '/automation/archives'
+    | '/automation/events'
+    | '/automation/rules'
+    | '/automation/tasks'
+    | '/automation'
   id:
     | '__root__'
     | '/_layout'
@@ -235,6 +300,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/_layout/admin'
+    | '/_layout/automation'
     | '/_layout/categories'
     | '/_layout/global-settings'
     | '/_layout/images'
@@ -248,6 +314,11 @@ export interface FileRouteTypes {
     | '/_layout/settings'
     | '/_layout/suppliers'
     | '/_layout/'
+    | '/_layout/automation/archives'
+    | '/_layout/automation/events'
+    | '/_layout/automation/rules'
+    | '/_layout/automation/tasks'
+    | '/_layout/automation/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -386,6 +457,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutCategoriesRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/automation': {
+      id: '/_layout/automation'
+      path: '/automation'
+      fullPath: '/automation'
+      preLoaderRoute: typeof LayoutAutomationRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/admin': {
       id: '/_layout/admin'
       path: '/admin'
@@ -393,11 +471,66 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/automation/': {
+      id: '/_layout/automation/'
+      path: '/'
+      fullPath: '/automation/'
+      preLoaderRoute: typeof LayoutAutomationIndexRouteImport
+      parentRoute: typeof LayoutAutomationRoute
+    }
+    '/_layout/automation/tasks': {
+      id: '/_layout/automation/tasks'
+      path: '/tasks'
+      fullPath: '/automation/tasks'
+      preLoaderRoute: typeof LayoutAutomationTasksRouteImport
+      parentRoute: typeof LayoutAutomationRoute
+    }
+    '/_layout/automation/rules': {
+      id: '/_layout/automation/rules'
+      path: '/rules'
+      fullPath: '/automation/rules'
+      preLoaderRoute: typeof LayoutAutomationRulesRouteImport
+      parentRoute: typeof LayoutAutomationRoute
+    }
+    '/_layout/automation/events': {
+      id: '/_layout/automation/events'
+      path: '/events'
+      fullPath: '/automation/events'
+      preLoaderRoute: typeof LayoutAutomationEventsRouteImport
+      parentRoute: typeof LayoutAutomationRoute
+    }
+    '/_layout/automation/archives': {
+      id: '/_layout/automation/archives'
+      path: '/archives'
+      fullPath: '/automation/archives'
+      preLoaderRoute: typeof LayoutAutomationArchivesRouteImport
+      parentRoute: typeof LayoutAutomationRoute
+    }
   }
 }
 
+interface LayoutAutomationRouteChildren {
+  LayoutAutomationArchivesRoute: typeof LayoutAutomationArchivesRoute
+  LayoutAutomationEventsRoute: typeof LayoutAutomationEventsRoute
+  LayoutAutomationRulesRoute: typeof LayoutAutomationRulesRoute
+  LayoutAutomationTasksRoute: typeof LayoutAutomationTasksRoute
+  LayoutAutomationIndexRoute: typeof LayoutAutomationIndexRoute
+}
+
+const LayoutAutomationRouteChildren: LayoutAutomationRouteChildren = {
+  LayoutAutomationArchivesRoute: LayoutAutomationArchivesRoute,
+  LayoutAutomationEventsRoute: LayoutAutomationEventsRoute,
+  LayoutAutomationRulesRoute: LayoutAutomationRulesRoute,
+  LayoutAutomationTasksRoute: LayoutAutomationTasksRoute,
+  LayoutAutomationIndexRoute: LayoutAutomationIndexRoute,
+}
+
+const LayoutAutomationRouteWithChildren =
+  LayoutAutomationRoute._addFileChildren(LayoutAutomationRouteChildren)
+
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
+  LayoutAutomationRoute: typeof LayoutAutomationRouteWithChildren
   LayoutCategoriesRoute: typeof LayoutCategoriesRoute
   LayoutGlobalSettingsRoute: typeof LayoutGlobalSettingsRoute
   LayoutImagesRoute: typeof LayoutImagesRoute
@@ -415,6 +548,7 @@ interface LayoutRouteChildren {
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
+  LayoutAutomationRoute: LayoutAutomationRouteWithChildren,
   LayoutCategoriesRoute: LayoutCategoriesRoute,
   LayoutGlobalSettingsRoute: LayoutGlobalSettingsRoute,
   LayoutImagesRoute: LayoutImagesRoute,

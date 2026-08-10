@@ -2,11 +2,8 @@ import type { ColumnDef } from "@tanstack/react-table"
 
 import type { OrderListItem } from "@/client"
 import { Badge } from "@/components/ui/badge"
+import { ORDER_STATUS_BADGE_VARIANT, orderStatusLabel } from "./constants"
 import OrderActionsMenu from "./OrderActionsMenu"
-import {
-  ORDER_STATUS_BADGE_VARIANT,
-  orderStatusLabel,
-} from "./constants"
 
 function formatDateTime(value?: string | null) {
   if (!value) return "-"
@@ -30,15 +27,11 @@ export const columns: ColumnDef<OrderListItem>[] = [
     header: "订单参数",
     cell: ({ row }) => (
       <div className="max-w-56 space-y-0.5 break-all text-xs text-muted-foreground">
-        {Object.entries(row.original.params).length > 0 ? (
-          Object.entries(row.original.params).map(([key, value]) => (
-            <div key={key}>
-              {String(value)}
-            </div>
-          ))
-        ) : (
-          "-"
-        )}
+        {Object.entries(row.original.params).length > 0
+          ? Object.entries(row.original.params).map(([key, value]) => (
+              <div key={key}>{String(value)}</div>
+            ))
+          : "-"}
       </div>
     ),
   },
@@ -54,9 +47,7 @@ export const columns: ColumnDef<OrderListItem>[] = [
     header: "状态",
     cell: ({ row }) => (
       <Badge
-        variant={
-          ORDER_STATUS_BADGE_VARIANT[row.original.status] ?? "secondary"
-        }
+        variant={ORDER_STATUS_BADGE_VARIANT[row.original.status] ?? "secondary"}
       >
         {orderStatusLabel(row.original.status)}
       </Badge>

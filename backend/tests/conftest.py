@@ -9,6 +9,12 @@ from app.core.config import settings
 from app.core.db import engine, init_db
 from app.main import app
 from app.modules.auth.models import RefreshToken
+from app.modules.automation.models import (
+    AutomationEvent,
+    AutomationRule,
+    AutomationTask,
+    AutomationTaskArchive,
+)
 from app.modules.image.models import Image, ImageCategory
 from app.modules.item.models import Item
 from app.modules.order.models import Order, OrderParam
@@ -22,7 +28,6 @@ from app.modules.product.product.models import (
     ProductPricing,
     ProductSupplier,
 )
-from app.modules.schedule.models import ScheduleRun
 from app.modules.supplier.models import Supplier
 from app.modules.user.models import User
 from app.modules.wallet.models import Wallet, WalletTransaction
@@ -145,6 +150,10 @@ def db() -> Generator[Session]:
             engine,
             tables=[
                 RefreshToken.__table__,
+                AutomationTask.__table__,
+                AutomationTaskArchive.__table__,
+                AutomationEvent.__table__,
+                AutomationRule.__table__,
                 PriceTemplate.__table__,
                 PriceTemplateRule.__table__,
                 ProductCategory.__table__,
@@ -156,7 +165,6 @@ def db() -> Generator[Session]:
                 ProductBuyParam.__table__,
                 Order.__table__,
                 OrderParam.__table__,
-                ScheduleRun.__table__,
                 Wallet.__table__,
                 WalletTransaction.__table__,
             ],
@@ -194,9 +202,15 @@ def db() -> Generator[Session]:
         session.execute(statement)
         statement = delete(PriceTemplate)
         session.execute(statement)
-        statement = delete(ScheduleRun)
-        session.execute(statement)
         statement = delete(RefreshToken)
+        session.execute(statement)
+        statement = delete(AutomationTask)
+        session.execute(statement)
+        statement = delete(AutomationTaskArchive)
+        session.execute(statement)
+        statement = delete(AutomationEvent)
+        session.execute(statement)
+        statement = delete(AutomationRule)
         session.execute(statement)
         statement = delete(Supplier)
         session.execute(statement)

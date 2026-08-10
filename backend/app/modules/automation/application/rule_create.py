@@ -1,0 +1,29 @@
+"""自动化模块：创建自动化规则应用服务"""
+
+from sqlalchemy.orm import Session
+
+from app.modules.automation.infrastructure.executors import get_executor
+from app.modules.automation.models import AutomationRule
+from app.modules.automation.repositories.rule import (
+    create_rule as create_rule_record,
+)
+from app.modules.automation.schemas import AutomationRuleCreate
+
+
+def create_automation_rule(
+    *,
+    session: Session,
+    rule_in: AutomationRuleCreate,
+) -> AutomationRule:
+    """创建自动化规则，动作类型必须已注册 Executor，否则抛出 ValueError。"""
+    get_executor(rule_in.action_type)
+    rule = create_rule_record(
+        session=session,
+        event_type=rule_in.event_type,
+        action_type=rule_in.action_type,
+        config=rule_in.config,
+        is_active=rule_in.is_active,
+    )
+    session.commit()
+    session.refresh(rule)
+    return rule

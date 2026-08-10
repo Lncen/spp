@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { Link as RouterLink } from "@tanstack/react-router"
+import type { PaginationState } from "@tanstack/react-table"
 import { X } from "lucide-react"
 import { Suspense, useState } from "react"
 
@@ -32,44 +33,66 @@ interface OrdersFilters {
 function getOrdersQueryOptions(
   userId: string | undefined,
   filters: OrdersFilters,
+  pagination: PaginationState,
 ) {
   const status = toOrderStatus(filters.status)
   return {
     queryFn: () =>
       OrdersService.readOrders({
-        skip: 0,
-        limit: 100,
+        skip: pagination.pageIndex * pagination.pageSize,
+        limit: pagination.pageSize,
         status,
         userId: userId ?? null,
       }),
-    queryKey: ["orders", userId ?? null, status],
+    queryKey: ["orders", userId ?? null, status, pagination],
   }
 }
 
 function OrdersTableContent({
   userId,
   filters,
+  pagination,
+  setPagination,
 }: {
   userId: string | undefined
   filters: OrdersFilters
+  pagination: PaginationState
+  setPagination: (pagination: PaginationState) => void
 }) {
   const { data: orders } = useSuspenseQuery(
-    getOrdersQueryOptions(userId, filters),
+    getOrdersQueryOptions(userId, filters, pagination),
   )
 
-  return <DataTable columns={columns} data={orders.data} />
+  return (
+    <DataTable
+      columns={columns}
+      data={orders.data}
+      total={orders.count}
+      pagination={pagination}
+      onPaginationChange={setPagination}
+    />
+  )
 }
 
 function OrdersTable({
   userId,
   filters,
+  pagination,
+  setPagination,
 }: {
   userId: string | undefined
   filters: OrdersFilters
+  pagination: PaginationState
+  setPagination: (pagination: PaginationState) => void
 }) {
   return (
     <Suspense fallback={<PendingOrders />}>
-      <OrdersTableContent userId={userId} filters={filters} />
+      <OrdersTableContent
+        userId={userId}
+        filters={filters}
+        pagination={pagination}
+        setPagination={setPagination}
+      />
     </Suspense>
   )
 }
@@ -78,6 +101,15 @@ export function Orders({ userId }: { userId: string | undefined }) {
   const [filters, setFilters] = useState<OrdersFilters>({
     status: ALL_STATUS,
   })
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  })
+
+  const handleStatusChange = (status: string) => {
+    setFilters((current) => ({ ...current, status }))
+    setPagination((current) => ({ ...current, pageIndex: 0 }))
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -97,12 +129,7 @@ export function Orders({ userId }: { userId: string | undefined }) {
               </RouterLink>
             </Button>
           )}
-          <Select
-            value={filters.status}
-            onValueChange={(status) =>
-              setFilters((current) => ({ ...current, status }))
-            }
-          >
+          <Select value={filters.status} onValueChange={handleStatusChange}>
             <SelectTrigger className="w-40">
               <SelectValue placeholder="全部状态" />
             </SelectTrigger>
@@ -117,7 +144,12 @@ export function Orders({ userId }: { userId: string | undefined }) {
           </Select>
         </div>
       </div>
-      <OrdersTable userId={userId} filters={filters} />
+      <OrdersTable
+        userId={userId}
+        filters={filters}
+        pagination={pagination}
+        setPagination={setPagination}
+      />
     </div>
   )
 }

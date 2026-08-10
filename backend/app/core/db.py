@@ -1,6 +1,7 @@
 ﻿from sqlmodel import Session, create_engine, select
 
 from app.core.config import settings
+from app.init_models_data.automation_rules import seed_automation_rules
 from app.init_models_data.images import seed_image_categories
 from app.init_models_data.levels import seed_levels
 from app.init_models_data.price_templates import seed_price_templates
@@ -31,6 +32,9 @@ def init_db(session: Session) -> None:
     seed_supplier_templates(session=session)
 
     seed_product_category_templates(session=session)
+
+    # 播种默认自动化规则（幂等，已有则跳过）
+    seed_automation_rules(session=session)
 
     # Tables should be created with Alembic migrations
     # But if you don't want to use migrations, create

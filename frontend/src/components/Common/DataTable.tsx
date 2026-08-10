@@ -5,6 +5,8 @@ import {
   getCoreRowModel,
   getExpandedRowModel,
   getPaginationRowModel,
+  type PaginationState,
+  type Updater,
   useReactTable,
 } from "@tanstack/react-table"
 import {
@@ -35,26 +37,53 @@ import {
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  total?: number
+  pagination?: PaginationState
+  onPaginationChange?: (pagination: PaginationState) => void
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  total,
+  pagination,
+  onPaginationChange,
 }: DataTableProps<TData, TValue>) {
   const [expanded, setExpanded] = useState<ExpandedState>(true)
+  const manualPagination =
+    pagination !== undefined && onPaginationChange !== undefined
   const table = useReactTable({
     data,
     columns,
     state: {
       expanded,
+      ...(manualPagination ? { pagination } : {}),
     },
     onExpandedChange: setExpanded,
     getCoreRowModel: getCoreRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    ...(manualPagination
+      ? {
+          manualPagination: true,
+          rowCount: total ?? data.length,
+          onPaginationChange: (updater: Updater<PaginationState>) => {
+            const next =
+              typeof updater === "function" ? updater(pagination) : updater
+            onPaginationChange(
+              next.pageSize !== pagination.pageSize
+                ? { ...next, pageIndex: 0 }
+                : next,
+            )
+          },
+        }
+      : {
+          getPaginationRowModel: getPaginationRowModel(),
+        }),
     getSubRows: (row) => (row as { subRows?: TData[] }).subRows,
     getRowCanExpand: (row) => row.subRows.length > 0,
   })
+
+  const rowCount = table.getRowCount()
 
   return (
     <div className="flex flex-col gap-4">
@@ -113,10 +142,9 @@ export function DataTable<TData, TValue>({
               {Math.min(
                 (table.getState().pagination.pageIndex + 1) *
                   table.getState().pagination.pageSize,
-                data.length,
+                rowCount,
               )}{" "}
-              of{" "}
-              <span className="font-medium text-foreground">{data.length}</span>{" "}
+              of <span className="font-medium text-foreground">{rowCount}</span>{" "}
               entries
             </div>
             <div className="flex items-center gap-x-2">

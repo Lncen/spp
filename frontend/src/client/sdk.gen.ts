@@ -3,7 +3,330 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ImageCategoriesReadCategoriesResponse, ImageCategoriesCreateNewCategoryData, ImageCategoriesCreateNewCategoryResponse, ImageCategoriesReadCategoryOptionsResponse, ImageCategoriesReadCategoryData, ImageCategoriesReadCategoryResponse, ImageCategoriesUpdateExistingCategoryData, ImageCategoriesUpdateExistingCategoryResponse, ImageCategoriesDeleteExistingCategoryData, ImageCategoriesDeleteExistingCategoryResponse, ImagesReadImagesData, ImagesReadImagesResponse, ImagesReadImageData, ImagesReadImageResponse, ImagesDeleteImageData, ImagesDeleteImageResponse, ImagesUpdateImageData, ImagesUpdateImageResponse, ImagesUploadImageData, ImagesUploadImageResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LevelsReadLevelsResponse, LevelsReadLevelData, LevelsReadLevelResponse, LevelsUpdateLevelEndpointData, LevelsUpdateLevelEndpointResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, OrdersCreateUserOrdersData, OrdersCreateUserOrdersResponse, OrdersReadOrdersData, OrdersReadOrdersResponse, OrdersReadUserOrdersData, OrdersReadUserOrdersResponse, OrdersCreateAdminOrdersApiData, OrdersCreateAdminOrdersApiResponse, OrdersPreviewAdminOrdersApiData, OrdersPreviewAdminOrdersApiResponse, OrdersReadUserOrderData, OrdersReadUserOrderResponse, OrdersCancelUserOrderData, OrdersCancelUserOrderResponse, OrdersReadOrderData, OrdersReadOrderResponse, OrdersFulfillOrderApiData, OrdersFulfillOrderApiResponse, OrdersCancelOrderApiData, OrdersCancelOrderApiResponse, OrdersRefundOrderApiData, OrdersRefundOrderApiResponse, OrdersUpdateOrderStatusApiData, OrdersUpdateOrderStatusApiResponse, OrdersSyncOrderStatusApiData, OrdersSyncOrderStatusApiResponse, PriceTemplatesReadPriceTemplatesData, PriceTemplatesReadPriceTemplatesResponse, PriceTemplatesCreatePriceTemplateData, PriceTemplatesCreatePriceTemplateResponse, PriceTemplatesReadPriceTemplateData, PriceTemplatesReadPriceTemplateResponse, PriceTemplatesUpdatePriceTemplateData, PriceTemplatesUpdatePriceTemplateResponse, PriceTemplatesDeletePriceTemplateData, PriceTemplatesDeletePriceTemplateResponse, PrivateCreateUserPrivateData, PrivateCreateUserPrivateResponse, ProductCategoriesReadProductCategoriesResponse, ProductCategoriesCreateProductCategoryData, ProductCategoriesCreateProductCategoryResponse, ProductCategoriesReadProductCategoryData, ProductCategoriesReadProductCategoryResponse, ProductCategoriesUpdateProductCategoryData, ProductCategoriesUpdateProductCategoryResponse, ProductCategoriesDeleteProductCategoryData, ProductCategoriesDeleteProductCategoryResponse, ProductsReadProductsData, ProductsReadProductsResponse, ProductsCreateProductData, ProductsCreateProductResponse, ProductsReadProductData, ProductsReadProductResponse, ProductsUpdateProductData, ProductsUpdateProductResponse, ProductsDeleteProductData, ProductsDeleteProductResponse, SchedulesReadSchedulesData, SchedulesReadSchedulesResponse, SchedulesCreateScheduleData, SchedulesCreateScheduleResponse, SchedulesReadTaskOptionsResponse, SchedulesReadScheduleData, SchedulesReadScheduleResponse, SchedulesUpdateScheduleData, SchedulesUpdateScheduleResponse, SchedulesDeleteScheduleData, SchedulesDeleteScheduleResponse, SchedulesToggleScheduleData, SchedulesToggleScheduleResponse, SchedulesRunScheduleData, SchedulesRunScheduleResponse, SchedulesReadFailedRunsData, SchedulesReadFailedRunsResponse, SchedulesReadTaskStatusData, SchedulesReadTaskStatusResponse, SettingsReadSettingsResponse, SettingsUpdateSettingEndpointData, SettingsUpdateSettingEndpointResponse, SuppliersReadSuppliersData, SuppliersReadSuppliersResponse, SuppliersCreateSupplierData, SuppliersCreateSupplierResponse, SuppliersGetPlatformOptionsResponse, SuppliersReadSupplierData, SuppliersReadSupplierResponse, SuppliersUpdateSupplierData, SuppliersUpdateSupplierResponse, SuppliersDeleteSupplierData, SuppliersDeleteSupplierResponse, SuppliersReadSupplierBalanceData, SuppliersReadSupplierBalanceResponse, SuppliersReadUpstreamProductsData, SuppliersReadUpstreamProductsResponse, SuppliersReadUpstreamCategoriesData, SuppliersReadUpstreamCategoriesResponse, SuppliersCreateUpstreamProductsSyncData, SuppliersCreateUpstreamProductsSyncResponse, SuppliersReadUpstreamProductsSyncStatusData, SuppliersReadUpstreamProductsSyncStatusResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, WalletsReadWalletMeResponse, WalletsReadWalletTransactionsMeData, WalletsReadWalletTransactionsMeResponse, WalletsReadWalletsData, WalletsReadWalletsResponse, WalletsAdjustWalletBalanceData, WalletsAdjustWalletBalanceResponse } from './types.gen';
+import type { AutomationReadAutomationTasksData, AutomationReadAutomationTasksResponse, AutomationCreateAutomationTaskData, AutomationCreateAutomationTaskResponse, AutomationReadExecutorOptionsResponse, AutomationReadAutomationTaskArchivesData, AutomationReadAutomationTaskArchivesResponse, AutomationReadAutomationTaskData, AutomationReadAutomationTaskResponse, AutomationRetryAutomationTaskData, AutomationRetryAutomationTaskResponse, AutomationCancelAutomationTaskData, AutomationCancelAutomationTaskResponse, AutomationReadAutomationEventsData, AutomationReadAutomationEventsResponse, AutomationPublishAutomationEventRouteData, AutomationPublishAutomationEventRouteResponse, AutomationReadAutomationRulesData, AutomationReadAutomationRulesResponse, AutomationCreateAutomationRuleData, AutomationCreateAutomationRuleResponse, AutomationReadAutomationRuleData, AutomationReadAutomationRuleResponse, AutomationUpdateAutomationRuleData, AutomationUpdateAutomationRuleResponse, AutomationDeleteAutomationRuleData, AutomationDeleteAutomationRuleResponse, AutomationToggleAutomationRuleData, AutomationToggleAutomationRuleResponse, ImageCategoriesReadCategoriesResponse, ImageCategoriesCreateNewCategoryData, ImageCategoriesCreateNewCategoryResponse, ImageCategoriesReadCategoryOptionsResponse, ImageCategoriesReadCategoryData, ImageCategoriesReadCategoryResponse, ImageCategoriesUpdateExistingCategoryData, ImageCategoriesUpdateExistingCategoryResponse, ImageCategoriesDeleteExistingCategoryData, ImageCategoriesDeleteExistingCategoryResponse, ImagesReadImagesData, ImagesReadImagesResponse, ImagesReadImageData, ImagesReadImageResponse, ImagesDeleteImageData, ImagesDeleteImageResponse, ImagesUpdateImageData, ImagesUpdateImageResponse, ImagesUploadImageData, ImagesUploadImageResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LevelsReadLevelsResponse, LevelsReadLevelData, LevelsReadLevelResponse, LevelsUpdateLevelEndpointData, LevelsUpdateLevelEndpointResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshTokenData, LoginRefreshTokenResponse, LoginLogoutData, LoginLogoutResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, LoginTestTokenResponse, OrdersCreateUserOrdersData, OrdersCreateUserOrdersResponse, OrdersReadOrdersData, OrdersReadOrdersResponse, OrdersReadUserOrdersData, OrdersReadUserOrdersResponse, OrdersCreateAdminOrdersApiData, OrdersCreateAdminOrdersApiResponse, OrdersPreviewAdminOrdersApiData, OrdersPreviewAdminOrdersApiResponse, OrdersReadUserOrderData, OrdersReadUserOrderResponse, OrdersCancelUserOrderData, OrdersCancelUserOrderResponse, OrdersReadOrderData, OrdersReadOrderResponse, OrdersFulfillOrderApiData, OrdersFulfillOrderApiResponse, OrdersCancelOrderApiData, OrdersCancelOrderApiResponse, OrdersRefundOrderApiData, OrdersRefundOrderApiResponse, OrdersUpdateOrderStatusApiData, OrdersUpdateOrderStatusApiResponse, OrdersSyncOrderStatusApiData, OrdersSyncOrderStatusApiResponse, OrdersRecordSupplierOrderIdApiData, OrdersRecordSupplierOrderIdApiResponse, PriceTemplatesReadPriceTemplatesData, PriceTemplatesReadPriceTemplatesResponse, PriceTemplatesCreatePriceTemplateData, PriceTemplatesCreatePriceTemplateResponse, PriceTemplatesReadPriceTemplateData, PriceTemplatesReadPriceTemplateResponse, PriceTemplatesUpdatePriceTemplateData, PriceTemplatesUpdatePriceTemplateResponse, PriceTemplatesDeletePriceTemplateData, PriceTemplatesDeletePriceTemplateResponse, PrivateCreateUserPrivateData, PrivateCreateUserPrivateResponse, ProductCategoriesReadProductCategoriesResponse, ProductCategoriesCreateProductCategoryData, ProductCategoriesCreateProductCategoryResponse, ProductCategoriesReadProductCategoryData, ProductCategoriesReadProductCategoryResponse, ProductCategoriesUpdateProductCategoryData, ProductCategoriesUpdateProductCategoryResponse, ProductCategoriesDeleteProductCategoryData, ProductCategoriesDeleteProductCategoryResponse, ProductsReadProductsData, ProductsReadProductsResponse, ProductsCreateProductData, ProductsCreateProductResponse, ProductsReadProductData, ProductsReadProductResponse, ProductsUpdateProductData, ProductsUpdateProductResponse, ProductsDeleteProductData, ProductsDeleteProductResponse, SchedulesReadSchedulesData, SchedulesReadSchedulesResponse, SchedulesCreateScheduleData, SchedulesCreateScheduleResponse, SchedulesReadTaskOptionsResponse, SchedulesReadScheduleData, SchedulesReadScheduleResponse, SchedulesUpdateScheduleData, SchedulesUpdateScheduleResponse, SchedulesDeleteScheduleData, SchedulesDeleteScheduleResponse, SchedulesToggleScheduleData, SchedulesToggleScheduleResponse, SchedulesRunScheduleData, SchedulesRunScheduleResponse, SchedulesReadTaskStatusData, SchedulesReadTaskStatusResponse, SettingsReadSettingsResponse, SettingsUpdateSettingEndpointData, SettingsUpdateSettingEndpointResponse, SuppliersReadSuppliersData, SuppliersReadSuppliersResponse, SuppliersCreateSupplierData, SuppliersCreateSupplierResponse, SuppliersGetPlatformOptionsResponse, SuppliersReadSupplierData, SuppliersReadSupplierResponse, SuppliersUpdateSupplierData, SuppliersUpdateSupplierResponse, SuppliersDeleteSupplierData, SuppliersDeleteSupplierResponse, SuppliersReadSupplierBalanceData, SuppliersReadSupplierBalanceResponse, SuppliersReadUpstreamProductsData, SuppliersReadUpstreamProductsResponse, SuppliersReadUpstreamCategoriesData, SuppliersReadUpstreamCategoriesResponse, SuppliersCreateUpstreamProductsSyncData, SuppliersCreateUpstreamProductsSyncResponse, SuppliersReadUpstreamProductsSyncStatusData, SuppliersReadUpstreamProductsSyncStatusResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, WalletsReadWalletMeResponse, WalletsReadWalletTransactionsMeData, WalletsReadWalletTransactionsMeResponse, WalletsReadWalletsData, WalletsReadWalletsResponse, WalletsAdjustWalletBalanceData, WalletsAdjustWalletBalanceResponse } from './types.gen';
+
+export class AutomationService {
+    /**
+     * Read Automation Tasks
+     * 获取自动化任务列表（超管权限）
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @param data.status
+     * @returns AutomationTasksPublic Successful Response
+     * @throws ApiError
+     */
+    public static readAutomationTasks(data: AutomationReadAutomationTasksData = {}): CancelablePromise<AutomationReadAutomationTasksResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/automation/tasks/',
+            query: {
+                skip: data.skip,
+                limit: data.limit,
+                status: data.status
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Automation Task
+     * 创建自动化任务（超管权限）
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns AutomationTaskPublic Successful Response
+     * @throws ApiError
+     */
+    public static createAutomationTask(data: AutomationCreateAutomationTaskData): CancelablePromise<AutomationCreateAutomationTaskResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/automation/tasks/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Executor Options
+     * 获取已注册 Executor 任务类型列表（超管权限，前端下拉使用）
+     * @returns TaskOptionsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readExecutorOptions(): CancelablePromise<AutomationReadExecutorOptionsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/automation/tasks/task-options'
+        });
+    }
+    
+    /**
+     * Read Automation Task Archives
+     * 获取自动化任务归档列表（超管权限）
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @param data.status
+     * @returns AutomationTaskArchivesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readAutomationTaskArchives(data: AutomationReadAutomationTaskArchivesData = {}): CancelablePromise<AutomationReadAutomationTaskArchivesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/automation/tasks/archive',
+            query: {
+                skip: data.skip,
+                limit: data.limit,
+                status: data.status
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Automation Task
+     * 根据 ID 获取自动化任务（超管权限）
+     * @param data The data for the request.
+     * @param data.id
+     * @returns AutomationTaskPublic Successful Response
+     * @throws ApiError
+     */
+    public static readAutomationTask(data: AutomationReadAutomationTaskData): CancelablePromise<AutomationReadAutomationTaskResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/automation/tasks/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Retry Automation Task
+     * 手动重试失败任务（超管权限）
+     * @param data The data for the request.
+     * @param data.id
+     * @returns AutomationTaskPublic Successful Response
+     * @throws ApiError
+     */
+    public static retryAutomationTask(data: AutomationRetryAutomationTaskData): CancelablePromise<AutomationRetryAutomationTaskResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/automation/tasks/{id}/retry',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Cancel Automation Task
+     * 取消待执行任务（超管权限）
+     * @param data The data for the request.
+     * @param data.id
+     * @returns AutomationTaskPublic Successful Response
+     * @throws ApiError
+     */
+    public static cancelAutomationTask(data: AutomationCancelAutomationTaskData): CancelablePromise<AutomationCancelAutomationTaskResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/automation/tasks/{id}/cancel',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Automation Events
+     * 获取自动化事件列表（超管权限）
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @param data.eventType
+     * @returns AutomationEventsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readAutomationEvents(data: AutomationReadAutomationEventsData = {}): CancelablePromise<AutomationReadAutomationEventsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/automation/events/',
+            query: {
+                skip: data.skip,
+                limit: data.limit,
+                event_type: data.eventType
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Publish Automation Event Route
+     * 手动发布业务事件并触发规则分发（超管权限）
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns AutomationEventPublic Successful Response
+     * @throws ApiError
+     */
+    public static publishAutomationEventRoute(data: AutomationPublishAutomationEventRouteData): CancelablePromise<AutomationPublishAutomationEventRouteResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/automation/events/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Automation Rules
+     * 获取自动化规则列表（超管权限）
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @returns AutomationRulesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readAutomationRules(data: AutomationReadAutomationRulesData = {}): CancelablePromise<AutomationReadAutomationRulesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/automation/rules/',
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Automation Rule
+     * 创建自动化规则（超管权限）
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns AutomationRulePublic Successful Response
+     * @throws ApiError
+     */
+    public static createAutomationRule(data: AutomationCreateAutomationRuleData): CancelablePromise<AutomationCreateAutomationRuleResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/automation/rules/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Automation Rule
+     * 根据 ID 获取自动化规则（超管权限）
+     * @param data The data for the request.
+     * @param data.id
+     * @returns AutomationRulePublic Successful Response
+     * @throws ApiError
+     */
+    public static readAutomationRule(data: AutomationReadAutomationRuleData): CancelablePromise<AutomationReadAutomationRuleResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/automation/rules/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Automation Rule
+     * 更新自动化规则（超管权限）
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns AutomationRulePublic Successful Response
+     * @throws ApiError
+     */
+    public static updateAutomationRule(data: AutomationUpdateAutomationRuleData): CancelablePromise<AutomationUpdateAutomationRuleResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/automation/rules/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Automation Rule
+     * 删除自动化规则（超管权限）
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteAutomationRule(data: AutomationDeleteAutomationRuleData): CancelablePromise<AutomationDeleteAutomationRuleResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/automation/rules/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Toggle Automation Rule
+     * 启用或停用自动化规则（超管权限）
+     * @param data The data for the request.
+     * @param data.id
+     * @returns AutomationRulePublic Successful Response
+     * @throws ApiError
+     */
+    public static toggleAutomationRule(data: AutomationToggleAutomationRuleData): CancelablePromise<AutomationToggleAutomationRuleResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/automation/rules/{id}/toggle',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
 
 export class ImageCategoriesService {
     /**
@@ -409,7 +732,7 @@ export class LevelsService {
 export class LoginService {
     /**
      * Login Access Token
-     * OAuth2 兼容的登录接口，获取访问令牌
+     * OAuth2 兼容的登录接口，获取访问令牌与刷新令牌
      * @param data The data for the request.
      * @param data.formData
      * @returns Token Successful Response
@@ -428,15 +751,42 @@ export class LoginService {
     }
     
     /**
-     * Test Token
-     * 测试访问令牌是否有效
-     * @returns UserPublic Successful Response
+     * Refresh Token
+     * 使用刷新令牌换取新的访问令牌，旧刷新令牌立即作废（旋转）
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns Token Successful Response
      * @throws ApiError
      */
-    public static testToken(): CancelablePromise<LoginTestTokenResponse> {
+    public static refreshToken(data: LoginRefreshTokenData): CancelablePromise<LoginRefreshTokenResponse> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/login/test-token'
+            url: '/api/v1/login/refresh-token',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Logout
+     * 登出：撤销刷新令牌，使其无法再刷新
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static logout(data: LoginLogoutData): CancelablePromise<LoginLogoutResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/login/logout',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
         });
     }
     
@@ -499,6 +849,19 @@ export class LoginService {
             errors: {
                 422: 'Validation Error'
             }
+        });
+    }
+    
+    /**
+     * Test Token
+     * 测试访问令牌是否有效
+     * @returns UserPublic Successful Response
+     * @throws ApiError
+     */
+    public static testToken(): CancelablePromise<LoginTestTokenResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/login/test-token'
         });
     }
 }
@@ -784,6 +1147,30 @@ export class OrdersService {
             path: {
                 order_id: data.orderId
             },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Record Supplier Order Id Api
+     * 人工确认上游已下单后补录供应商订单号（仅超级管理员）
+     * @param data The data for the request.
+     * @param data.orderId
+     * @param data.requestBody
+     * @returns OrderPublic Successful Response
+     * @throws ApiError
+     */
+    public static recordSupplierOrderIdApi(data: OrdersRecordSupplierOrderIdApiData): CancelablePromise<OrdersRecordSupplierOrderIdApiResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/orders/{order_id}/supplier-order-id',
+            path: {
+                order_id: data.orderId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: 'Validation Error'
             }
@@ -1306,31 +1693,6 @@ export class SchedulesService {
             url: '/api/v1/schedules/{id}/run',
             path: {
                 id: data.id
-            },
-            errors: {
-                422: 'Validation Error'
-            }
-        });
-    }
-    
-    /**
-     * Read Failed Runs
-     * 获取计划任务失败执行记录（超管权限）
-     * @param data The data for the request.
-     * @param data.skip
-     * @param data.limit
-     * @param data.taskName
-     * @returns ScheduleRunsPublic Successful Response
-     * @throws ApiError
-     */
-    public static readFailedRuns(data: SchedulesReadFailedRunsData = {}): CancelablePromise<SchedulesReadFailedRunsResponse> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/schedules/runs/failed',
-            query: {
-                skip: data.skip,
-                limit: data.limit,
-                task_name: data.taskName
             },
             errors: {
                 422: 'Validation Error'

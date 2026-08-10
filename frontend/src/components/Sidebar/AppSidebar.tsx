@@ -1,6 +1,7 @@
 import {
   Briefcase,
   Clock,
+  Cpu,
   FolderTree,
   Home,
   Image,
@@ -37,6 +38,7 @@ const baseItems: Item[] = [
   { icon: Percent, title: "价格模板", path: "/price-templates" },
   { icon: Server, title: "上游管理", path: "/suppliers" },
   { icon: Clock, title: "计划任务", path: "/schedules" },
+  { icon: Cpu, title: "自动化", path: "/automation" },
   { icon: ReceiptText, title: "订单", path: "/orders" },
   { icon: Settings, title: "全局设置", path: "/global-settings" },
   { icon: Users, title: "用户", path: "/admin" },
