@@ -1,11 +1,16 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Pencil } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { type UserPublic, UsersService } from "@/client"
+import {
+  ImagesService,
+  LevelsService,
+  type UserPublic,
+  UsersService,
+} from "@/client"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -28,6 +33,13 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
@@ -44,6 +56,8 @@ const formSchema = z
     confirm_password: z.string().optional(),
     is_superuser: z.boolean().optional(),
     is_active: z.boolean().optional(),
+    level_id: z.string().optional(),
+    avatar_id: z.string().optional(),
   })
   .refine((data) => !data.password || data.password === data.confirm_password, {
     message: "两次输入的密码不一致",
@@ -72,12 +86,39 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
       full_name: user.full_name ?? undefined,
       is_superuser: user.is_superuser,
       is_active: user.is_active,
+      level_id: user.level_id ?? undefined,
+      avatar_id: user.avatar_id ?? "none",
     },
+  })
+
+  const { data: levels } = useQuery({
+    queryKey: ["levels"],
+    queryFn: () => LevelsService.readLevels(),
+    enabled: isOpen,
+  })
+
+  const { data: avatarImages } = useQuery({
+    queryKey: ["avatar-images"],
+    queryFn: () => ImagesService.readImages({ category: "avatar", limit: 100 }),
+    enabled: isOpen,
   })
 
   const mutation = useMutation({
     mutationFn: (data: FormData) =>
-      UsersService.updateUser({ userId: user.id, requestBody: data }),
+      UsersService.updateUser({
+        userId: user.id,
+        requestBody: {
+          email: data.email,
+          username: data.username,
+          full_name: data.full_name,
+          is_superuser: data.is_superuser,
+          is_active: data.is_active,
+          password: data.password || undefined,
+          level_id: data.level_id || undefined,
+          avatar_id:
+            data.avatar_id === "none" ? null : (data.avatar_id ?? undefined),
+        },
+      }),
     onSuccess: () => {
       showSuccessToast("用户更新成功")
       setIsOpen(false)
@@ -90,12 +131,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
   })
 
   const onSubmit = (data: FormData) => {
-    // exclude confirm_password from submission data and remove password if empty
-    const { confirm_password: _, ...submitData } = data
-    if (!submitData.password) {
-      delete submitData.password
-    }
-    mutation.mutate(submitData)
+    mutation.mutate(data)
   }
 
   return (
@@ -163,6 +199,72 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                   </FormItem>
                 )}
               />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="level_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>用户等级</FormLabel>
+                      <Select
+                        value={field.value ?? ""}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="请选择等级" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {levels?.data.map((level) => (
+                            <SelectItem key={level.id} value={level.id}>
+                              Lv.{level.level} - {level.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="avatar_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>头像</FormLabel>
+                      <Select
+                        value={field.value ?? "none"}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="选择头像" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">无头像</SelectItem>
+                          {avatarImages?.data.map((image) => (
+                            <SelectItem key={image.id} value={image.id}>
+                              <span className="flex items-center gap-2">
+                                <img
+                                  src={image.url}
+                                  alt={image.filename}
+                                  className="size-6 rounded-full object-cover"
+                                />
+                                {image.filename}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}

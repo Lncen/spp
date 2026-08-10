@@ -1526,6 +1526,14 @@ export type UserCreate = {
     is_superuser?: boolean;
     can_order?: boolean;
     full_name?: (string | null);
+    /**
+     * 管理员对用户的备注，仅管理员可修改
+     */
+    remark?: (string | null);
+    /**
+     * 用户个人简介，由用户自己维护
+     */
+    bio?: (string | null);
     password: string;
 };
 
@@ -1539,7 +1547,17 @@ export type UserPublic = {
     is_superuser?: boolean;
     can_order?: boolean;
     full_name?: (string | null);
+    /**
+     * 管理员对用户的备注，仅管理员可修改
+     */
+    remark?: (string | null);
+    /**
+     * 用户个人简介，由用户自己维护
+     */
+    bio?: (string | null);
     id: string;
+    level_id?: (string | null);
+    avatar_id?: (string | null);
     created_at?: (string | null);
 };
 
@@ -1574,6 +1592,10 @@ export type UserUpdate = {
     is_superuser?: (boolean | null);
     can_order?: (boolean | null);
     full_name?: (string | null);
+    level_id?: (string | null);
+    avatar_id?: (string | null);
+    remark?: (string | null);
+    bio?: (string | null);
     password?: (string | null);
 };
 
@@ -1584,6 +1606,8 @@ export type UserUpdateMe = {
     username?: (string | null);
     full_name?: (string | null);
     email?: (string | null);
+    avatar_id?: (string | null);
+    bio?: (string | null);
 };
 
 export type ValidationError = {

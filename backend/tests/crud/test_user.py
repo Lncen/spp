@@ -4,9 +4,10 @@ from sqlmodel import Session
 
 from app.core.security import verify_password
 from app.modules.auth.service import authenticate
+from app.modules.user.application.user_create import create_user
+from app.modules.user.application.user_update import update_user
 from app.modules.user.models import User
 from app.modules.user.schemas import UserCreate, UserUpdate
-from app.modules.user.service import create_user, update_user
 from tests.utils.utils import random_email, random_lower_string
 
 

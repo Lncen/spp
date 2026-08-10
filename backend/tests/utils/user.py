@@ -2,9 +2,11 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app.core.config import settings
+from app.modules.user.application.user_create import create_user
+from app.modules.user.application.user_query import get_user_by_email
+from app.modules.user.application.user_update import update_user
 from app.modules.user.models import User
 from app.modules.user.schemas import UserCreate, UserUpdate
-from app.modules.user.service import create_user, get_user_by_email, update_user
 from tests.utils.utils import random_email, random_lower_string
 
 

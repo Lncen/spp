@@ -8,8 +8,9 @@ from fastapi.responses import HTMLResponse
 from app.api.deps import SessionDep, get_current_active_superuser
 from app.common.models import Message
 from app.modules.auth.schemas import NewPassword
+from app.modules.user.application.user_query import get_user_by_email
+from app.modules.user.application.user_update import update_user
 from app.modules.user.schemas import UserUpdate
-from app.modules.user.service import get_user_by_email, update_user
 from app.utils import (
     generate_password_reset_token,
     generate_reset_password_email,

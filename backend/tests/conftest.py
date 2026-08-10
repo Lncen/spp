@@ -48,6 +48,15 @@ def db() -> Generator[Session]:
                 )
             )
             conn.execute(
+                text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS avatar_id UUID')
+            )
+            conn.execute(
+                text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS remark VARCHAR(255)')
+            )
+            conn.execute(
+                text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS bio VARCHAR(1000)')
+            )
+            conn.execute(
                 text(
                     'CREATE INDEX IF NOT EXISTS ix_user_can_order '
                     'ON "user" (can_order)'

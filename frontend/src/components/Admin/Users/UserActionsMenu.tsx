@@ -22,9 +22,7 @@ export const UserActionsMenu = ({ user }: UserActionsMenuProps) => {
   const [open, setOpen] = useState(false)
   const { user: currentUser } = useAuth()
 
-  if (user.id === currentUser?.id) {
-    return null
-  }
+  const isCurrentUser = user.id === currentUser?.id
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -41,7 +39,9 @@ export const UserActionsMenu = ({ user }: UserActionsMenuProps) => {
           </RouterLink>
         </DropdownMenuItem>
         <EditUser user={user} onSuccess={() => setOpen(false)} />
-        <DeleteUser id={user.id} onSuccess={() => setOpen(false)} />
+        {!isCurrentUser && (
+          <DeleteUser id={user.id} onSuccess={() => setOpen(false)} />
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )

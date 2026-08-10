@@ -41,7 +41,10 @@ class Image(BaseModelMixin, ImageBase, table=True):
         description="图片分类：avatar-头像, product-商品, product_detail-商品详情"
     )
 
-    owner: Optional["User"] = Relationship(back_populates="images")
+    owner: Optional["User"] = Relationship(
+        back_populates="images",
+        sa_relationship_kwargs={"foreign_keys": "Image.owner_id"},
+    )
     # NOTE: 如果将来需要 Image → ImageCategory 的 FK 关系，请在此处添加 category_rel 字段
 
 

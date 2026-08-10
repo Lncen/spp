@@ -7,9 +7,9 @@ from app.init_models_data.levels import seed_levels
 from app.init_models_data.price_templates import seed_price_templates
 from app.init_models_data.product_category import seed_product_category_templates
 from app.init_models_data.supplier import seed_supplier_templates
+from app.modules.user.application.user_create import create_user
 from app.modules.user.models import User
 from app.modules.user.schemas import UserCreate
-from app.modules.user.service import create_user
 
 engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
 

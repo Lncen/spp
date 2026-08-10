@@ -5235,6 +5235,32 @@ export const UserCreateSchema = {
             ],
             title: 'Full Name'
         },
+        remark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '备注',
+            description: '管理员对用户的备注，仅管理员可修改'
+        },
+        bio: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '简介',
+            description: '用户个人简介，由用户自己维护'
+        },
         password: {
             type: 'string',
             maxLength: 128,
@@ -5287,10 +5313,60 @@ export const UserPublicSchema = {
             ],
             title: 'Full Name'
         },
+        remark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '备注',
+            description: '管理员对用户的备注，仅管理员可修改'
+        },
+        bio: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '简介',
+            description: '用户个人简介，由用户自己维护'
+        },
         id: {
             type: 'string',
             format: 'uuid',
             title: 'Id'
+        },
+        level_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '用户等级'
+        },
+        avatar_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '头像图片 ID'
         },
         created_at: {
             anyOf: [
@@ -5429,6 +5505,54 @@ export const UserUpdateSchema = {
             ],
             title: 'Full Name'
         },
+        level_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '用户等级'
+        },
+        avatar_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '头像图片 ID'
+        },
+        remark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '备注'
+        },
+        bio: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '简介'
+        },
         password: {
             anyOf: [
                 {
@@ -5486,6 +5610,30 @@ export const UserUpdateMeSchema = {
                 }
             ],
             title: 'Email'
+        },
+        avatar_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '头像图片 ID'
+        },
+        bio: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '简介'
         }
     },
     type: 'object',
