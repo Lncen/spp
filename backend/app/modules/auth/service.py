@@ -14,7 +14,7 @@ from app.core.config import settings
 from app.core.redis import get_redis, run_redis_sync
 from app.core.security import verify_password
 from app.modules.auth.models import RefreshToken
-from app.modules.setting.service import get_setting
+from app.modules.setting.application.setting_query import get_setting
 from app.modules.user.models import User
 
 logger = logging.getLogger(__name__)

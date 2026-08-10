@@ -1,18 +1,16 @@
-"""全局设置模块：路由层"""
+"""全局设置模块：接口层（仅路由，不含业务逻辑）"""
 
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.deps import CurrentUser, SessionDep, get_current_user
+from app.modules.setting.application.setting_query import get_setting_items
+from app.modules.setting.application.setting_update import update_setting
 from app.modules.setting.schemas import (
     SettingRead,
     SettingsRead,
     SettingUpdate,
-)
-from app.modules.setting.service import (
-    get_setting_items,
-    update_setting,
 )
 
 router = APIRouter(prefix="/settings", tags=["settings"])

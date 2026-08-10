@@ -9,7 +9,7 @@
 - **计划任务**：管理 `PeriodicTask`（crontab / interval），支持启停、立即执行、执行状态查询；
 - **自动化任务池**：`AutomationTask` 持久化业务任务，由 worker 扫描认领并交给 Executor 执行，失败自动重试；
 - **任务归档**：终态任务（成功 / 失败 / 取消）完成即移入 `AutomationTaskArchive` 归档表，任务池只保留待执行与执行中任务；
-- **定期清理**：归档数据按全局设置 `automation_task_retention_days`（默认 3 天）保留，到期由定时任务物理删除；
+- **定期清理**：归档与事件数据按全局设置 `automation_task_retention_days`（默认 3 天）保留，到期由定时任务同步物理删除；
 - **事件驱动**：业务模块通过 `app/core/event_bus.py` 发布事件 → 落库 `AutomationEvent` → 按启用的 `AutomationRule` 生成自动化任务。
 
 核心链路：
@@ -157,7 +157,7 @@ Authorization: Bearer <superuser-token>
 - **业务终态即失败**：执行器抛出 `ExecutorTerminalError`（如订单已转人工确认）时跳过重试，任务直接进入 `failed` 终态，不会被误标为成功；
 - **终态即归档**：`success` / `failed` / `canceled` 任务完成（或取消）时立即移入归档表 `automation_task_archives`，主表仅保留 `pending` / `running`；
 - **失败任务重新进入队列**：`POST /automation/tasks/{id}/retry` 可从任务池或归档表恢复失败任务，重试计数清零并重新获得完整自动重试预算（非失败状态返回 422，任务不存在返回 404）；
-- **定期清理**：`cleanup_automation_task_archives` 每天 04:00 执行，先归档遗留终态任务（兜底），再物理删除归档超过保留期的数据；保留天数通过全局设置 `automation_task_retention_days` 配置（`PUT /settings/automation_task_retention_days`，默认 3 天，非法值回退默认）。
+- **定期清理**：`cleanup_automation_task_archives` 每天 04:00 执行，先归档遗留终态任务（兜底），再按同一保留期同步物理删除归档与事件中超过保留期的数据；保留天数通过全局设置 `automation_task_retention_days` 配置（`PUT /settings/automation_task_retention_days`，默认 3 天，非法值回退默认）。
 
 ## 三、目录结构
 
@@ -220,7 +220,7 @@ backend/app/modules/automation/
 │   ├── __init__.py
 │   ├── schedule.py                 # PeriodicTask / CrontabSchedule / IntervalSchedule 查询与持久化
 │   ├── task.py                     # AutomationTask 创建 / 查询 / 原子认领 / 终态归档 / 失败任务重新入队 / 归档清理
-│   ├── event.py                    # AutomationEvent 创建 / 查询
+│   ├── event.py                    # AutomationEvent 创建 / 查询 / 清理
 │   └── rule.py                     # AutomationRule 创建 / 查询 / 启用规则查询
 └── schemas/                        # 数据传输对象
     ├── __init__.py
@@ -293,7 +293,7 @@ backend/app/modules/automation/
 5. **新增表需迁移**：`automation_tasks` 为新增表，迁移文件按项目规范另行生成。
 6. **事件驱动链路**：业务模块 `event_bus.publish` 落库事件 → 自动化监听器按启用规则生成任务 → 任务池执行；payload 合并规则为 `事件载荷 + 规则配置（配置优先）`。
 7. **终态即归档**：`mark_success` / `mark_failed`（重试耗尽或业务终态）/ `cancel_task` 在同一事务内将任务移入 `automation_task_archives`（保留原 ID，追加 `archived_at`），主表保持精简；失败任务可经 `retry` 接口从归档恢复重新入队（重试计数清零）。
-8. **保留期可配置**：保留天数由全局设置 `automation_task_retention_days` 控制（默认 3 天），每天 04:00 的 `cleanup_automation_task_archives` 批量归档遗留终态任务并物理清理超期归档数据。
+8. **保留期可配置**：保留天数由全局设置 `automation_task_retention_days` 控制（默认 3 天），每天 04:00 的 `cleanup_automation_task_archives` 批量归档遗留终态任务，并同步物理清理超期归档与事件数据。
 
 ## 七、演进方向（未实现）
 

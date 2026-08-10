@@ -30,7 +30,7 @@ from app.modules.order.schemas import (
     OrderCreate,
 )
 from app.modules.product.product.models import ProductPricing
-from app.modules.setting.service import get_setting
+from app.modules.setting.application.setting_query import get_setting
 from app.modules.user.models import User
 from app.modules.wallet.service import adjust_balance, get_wallet_by_user_id
 

@@ -1,9 +1,11 @@
 """自动化模块：自动化事件数据访问层"""
 
 import uuid
+from datetime import datetime
 from typing import Any
 
 from fastapi import HTTPException
+from sqlalchemy import delete
 from sqlmodel import Session, func, select
 
 from app.modules.automation.models import AutomationEvent
@@ -54,3 +56,24 @@ def list_events(
     if event_type is not None:
         stmt = stmt.where(AutomationEvent.event_type == event_type)
     return session.exec(stmt).all()
+
+
+def purge_events(
+    *,
+    session: Session,
+    before: datetime,
+    limit: int,
+) -> int:
+    """物理删除创建时间早于 before 的自动化事件，返回删除数量。"""
+    ids = session.exec(
+        select(AutomationEvent.id)
+        .where(AutomationEvent.created_at < before)
+        .limit(limit)
+    ).all()
+    if not ids:
+        return 0
+    session.exec(
+        delete(AutomationEvent).where(AutomationEvent.id.in_(ids))
+    )
+    session.commit()
+    return len(ids)

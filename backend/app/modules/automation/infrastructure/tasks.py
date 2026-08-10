@@ -11,6 +11,7 @@ from app.modules.automation.infrastructure.executors import (
     ExecutorTerminalError,
     get_executor,
 )
+from app.modules.automation.repositories.event import purge_events
 from app.modules.automation.repositories.task import (
     archive_finished_tasks,
     claim_due_tasks,
@@ -19,8 +20,8 @@ from app.modules.automation.repositories.task import (
     purge_archives,
     recover_stale_running_tasks,
 )
-from app.modules.setting.constants import AUTOMATION_TASK_RETENTION_DAYS
-from app.modules.setting.service import get_setting
+from app.modules.setting.application.setting_query import get_setting
+from app.modules.setting.domain.constants import AUTOMATION_TASK_RETENTION_DAYS
 
 logger = logging.getLogger(__name__)
 
@@ -110,12 +111,13 @@ def automation_task_scan() -> dict:
     ),
 )
 def cleanup_automation_task_archives() -> dict:
-    """定期清理自动化任务数据：归档遗留终态任务 + 物理删除超保留期归档数据。
+    """定期清理自动化任务数据：归档遗留终态任务 + 物理删除超保留期归档与事件数据。
 
-    保留天数由全局设置 `automation_task_retention_days` 控制，默认 3 天；
+    保留天数由全局设置 `automation_task_retention_days` 控制，默认 3 天，
+    归档与事件共用同一保留期同步清除；
     由 beat 每天低频触发，分批处理避免长事务。
     """
-    stats = {"archived": 0, "purged": 0, "errors": []}
+    stats = {"archived": 0, "purged": 0, "events_purged": 0, "errors": []}
     try:
         with Session(engine) as session:
             retention_days = _get_retention_days(session=session)
@@ -138,9 +140,18 @@ def cleanup_automation_task_archives() -> dict:
                 stats["purged"] += purged
                 if purged < PURGE_BATCH_LIMIT:
                     break
+            while True:
+                events_purged = purge_events(
+                    session=session,
+                    before=before,
+                    limit=PURGE_BATCH_LIMIT,
+                )
+                stats["events_purged"] += events_purged
+                if events_purged < PURGE_BATCH_LIMIT:
+                    break
     except Exception as exc:  # noqa: BLE001
         stats["errors"].append(str(exc))
-        logger.exception("自动化任务归档数据清理异常")
+        logger.exception("自动化任务归档与事件数据清理异常")
     return stats
 
 

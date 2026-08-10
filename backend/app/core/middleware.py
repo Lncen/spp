@@ -10,7 +10,7 @@ from starlette.responses import JSONResponse, Response
 
 from app.core.config import settings
 from app.core.db import engine
-from app.modules.setting.service import get_setting
+from app.modules.setting.application.setting_query import get_setting
 
 # 维护模式下仍然放行的接口：健康检查、登录、设置读写、OpenAPI 文档
 MAINTENANCE_EXEMPT_PREFIXES: tuple[str, ...] = (
