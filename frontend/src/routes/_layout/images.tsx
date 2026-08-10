@@ -107,11 +107,7 @@ function Images() {
   }
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">图片管理</h1>
-          <p className="text-muted-foreground">上传和管理你的图片资源</p>
-        </div>
+      <div className="flex items-center justify-end">
         <UploadImage />
       </div>
       <CategoryFilter

@@ -48,12 +48,6 @@ export function RulesSection() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight">自动化规则</h2>
-          <p className="text-sm text-muted-foreground">
-            配置「业务事件 → 动作」映射，启用后事件发布将自动生成任务。
-          </p>
-        </div>
         <RuleFormDialog />
       </div>
       <RulesTable />

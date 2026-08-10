@@ -90,12 +90,7 @@ export function TasksSection() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight">任务池</h2>
-          <p className="text-sm text-muted-foreground">
-            管理自动化任务：执行、重试与取消；终态任务会自动归档。
-          </p>
-        </div>
+
         <div className="flex items-center gap-2">
           <Select value={status} onValueChange={handleStatusChange}>
             <SelectTrigger className="w-36">

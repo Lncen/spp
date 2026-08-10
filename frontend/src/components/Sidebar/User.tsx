@@ -1,5 +1,13 @@
 import { Link as RouterLink } from "@tanstack/react-router"
-import { ChevronsUpDown, LogOut, Settings } from "lucide-react"
+import {
+  BadgeCheck,
+  Bell,
+  ChevronsUpDown,
+  CreditCard,
+  LogOut,
+  Settings,
+  Sparkles,
+} from "lucide-react"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -80,6 +88,25 @@ export function User({ user }: { user: any }) {
             <DropdownMenuLabel className="p-0 font-normal">
               <UserInfo fullName={user?.full_name} email={user?.email} />
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {/* 示例菜单项，替换为真实功能即可 */}
+            <DropdownMenuItem>
+              <Sparkles />
+              升级到 Pro
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <BadgeCheck />
+              账户
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <CreditCard />
+              账单
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Bell />
+              通知
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <RouterLink to="/settings" onClick={handleMenuClick}>
               <DropdownMenuItem>

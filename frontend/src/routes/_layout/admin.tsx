@@ -75,11 +75,7 @@ function UsersTable() {
 function Admin() {
   return (
     <div className="flex flex-col gap-10">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">用户管理</h1>
-          <p className="text-muted-foreground">管理用户账号与权限</p>
-        </div>
+      <div className="flex items-center justify-end">
         <AddUser />
       </div>
       <UsersTable />

@@ -48,12 +48,6 @@ export function EventsSection() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight">自动化事件</h2>
-          <p className="text-sm text-muted-foreground">
-            查看业务事件落库记录，可手动发布事件触发规则。
-          </p>
-        </div>
         <PublishEventDialog />
       </div>
       <EventsTable />

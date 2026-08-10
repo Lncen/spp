@@ -79,13 +79,7 @@ function SuppliersTable() {
 function Suppliers() {
   return (
     <div className="flex flex-col gap-10">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">上游管理</h1>
-          <p className="text-muted-foreground">
-            管理上游 AI API 供应商及其凭证
-          </p>
-        </div>
+      <div className="flex items-center justify-end">
         <AddSupplier />
       </div>
       <SuppliersTable />

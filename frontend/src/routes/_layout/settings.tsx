@@ -35,11 +35,6 @@ function UserSettings() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">用户设置</h1>
-        <p className="text-muted-foreground">管理你的账户设置与偏好</p>
-      </div>
-
       <Tabs defaultValue="my-profile">
         <TabsList>
           {finalTabs.map((tab) => (
