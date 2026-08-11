@@ -471,11 +471,7 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
           className="overflow-hidden"
           style={{ minHeight: 0, height: "min(680px, 78vh)" }}
         >
-          <Sidebar
-            collapsible="none"
-            className="hidden border-r md:flex"
-            style={{ backgroundColor: "transparent" }}
-          >
+          <Sidebar collapsible="none" className="hidden border-r md:flex">
             <SidebarHeader>
               <div className="relative">
                 <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
@@ -487,7 +483,7 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
                 />
               </div>
             </SidebarHeader>
-            <SidebarContent className="[scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar-track]:bg-transparent">
+            <SidebarContent>
               <SidebarGroup>
                 <SidebarGroupLabel>
                   <FolderTree />
@@ -583,7 +579,7 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
               </div>
             </header>
 
-            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4 [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar-track]:bg-transparent">
+            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
               <div className="flex items-center gap-2 md:hidden">
                 <span className="shrink-0 text-sm text-muted-foreground">
                   分类
@@ -678,7 +674,7 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
               )}
             </div>
 
-            <footer className="flex shrink-0 items-center justify-between gap-2 border-t px-4 py-3">
+            <footer className="flex shrink-0 items-center justify-end gap-2 border-t px-4 py-3">
               {result && (
                 <div className="rounded-md border bg-muted/40 p-3 text-sm text-left">
                   <div className="flex gap-4 ">
@@ -697,7 +693,7 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
                     </span>
                   </div>
                   {result.failed && result.failed.length > 0 && (
-                    <ul className="mt-2 max-h-24 space-y-1 overflow-y-auto text-xs text-muted-foreground [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar-track]:bg-transparent">
+                    <ul className="mt-2 max-h-24 space-y-1 overflow-y-auto text-xs text-muted-foreground">
                       {result.failed.map((item) => (
                         <li key={item.product_id}>
                           ID {item.product_id}：{item.error}
@@ -707,23 +703,22 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
                   )}
                 </div>
               )}
-              <div className="flex gap-2">
-                <DialogClose asChild>
-                  <Button variant="outline" disabled={mutation.isPending}>
-                    取消
-                  </Button>
-                </DialogClose>
-                <LoadingButton
-                  type="button"
-                  loading={mutation.isPending}
-                  disabled={selectedCount === 0 || isError || isLoading}
-                  onClick={handleSync}
-                >
-                  {mutation.isPending
-                    ? "同步中..."
-                    : `同步所选 (${selectedCount})`}
-                </LoadingButton>
-              </div>
+              
+              <DialogClose asChild>
+                <Button variant="outline" disabled={mutation.isPending}>
+                  取消
+                </Button>
+              </DialogClose>
+              <LoadingButton
+                type="button"
+                loading={mutation.isPending}
+                disabled={selectedCount === 0 || isError || isLoading}
+                onClick={handleSync}
+              >
+                {mutation.isPending
+                  ? "同步中..."
+                  : `同步所选 (${selectedCount})`}
+              </LoadingButton>
             </footer>
           </main>
         </SidebarProvider>
