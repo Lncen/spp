@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { RefreshCw } from "lucide-react"
-import { useState } from "react"
+import {
+  ChevronDown,
+  ChevronRight,
+  Folder,
+  FolderTree,
+  RefreshCw,
+  Search,
+} from "lucide-react"
+import { useMemo, useState } from "react"
 
 import type {
   ProductCategoryTreePublic,
@@ -9,14 +16,26 @@ import type {
 } from "@/client"
 import { ProductCategoriesService, SuppliersService } from "@/client"
 import { Badge } from "@/components/ui/badge"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import {
   Dialog,
   DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -29,6 +48,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInput,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarProvider,
+} from "@/components/ui/sidebar"
 import useCustomToast from "@/hooks/useCustomToast"
 import { cn } from "@/lib/utils"
 import { handleError } from "@/utils"
@@ -48,6 +81,13 @@ const PENDING_STATUSES = new Set(["PENDING", "STARTED", "RETRY"])
 const sleep = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms))
 
+interface CategoryNode {
+  id: string
+  name: string
+  parentId: string
+  children: CategoryNode[]
+}
+
 interface CategoryOption {
   id: string
   name: string
@@ -60,28 +100,60 @@ interface LocalCategoryOption {
   depth: number
 }
 
-const buildCategoryOptions = (
+const buildCategoryTree = (
   categories: UpstreamCategoryPublic[],
-): CategoryOption[] => {
-  const childrenMap = new Map<string | null, UpstreamCategoryPublic[]>()
+): CategoryNode[] => {
+  const nodes = new Map<string, CategoryNode>()
   for (const category of categories) {
-    const parentId =
-      category.parent_id && category.parent_id !== "0"
-        ? category.parent_id
-        : null
-    const siblings = childrenMap.get(parentId) ?? []
-    siblings.push(category)
-    childrenMap.set(parentId, siblings)
+    nodes.set(category.id, {
+      id: category.id,
+      name: category.name,
+      parentId:
+        category.parent_id && category.parent_id !== "0"
+          ? category.parent_id
+          : "",
+      children: [],
+    })
   }
-
-  const options: CategoryOption[] = []
-  const visit = (parentId: string | null, depth: number) => {
-    for (const category of childrenMap.get(parentId) ?? []) {
-      options.push({ id: category.id, name: category.name, depth })
-      visit(category.id, depth + 1)
+  const roots: CategoryNode[] = []
+  for (const node of nodes.values()) {
+    const parent = node.parentId ? nodes.get(node.parentId) : undefined
+    if (parent) {
+      parent.children.push(node)
+    } else {
+      roots.push(node)
     }
   }
-  visit(null, 0)
+  return roots
+}
+
+const filterCategoryTree = (
+  nodes: CategoryNode[],
+  keyword: string,
+): CategoryNode[] => {
+  const query = keyword.trim().toLowerCase()
+  if (!query) {
+    return nodes
+  }
+  const result: CategoryNode[] = []
+  for (const node of nodes) {
+    const children = filterCategoryTree(node.children, query)
+    if (node.name.toLowerCase().includes(query) || children.length > 0) {
+      result.push({ ...node, children })
+    }
+  }
+  return result
+}
+
+const flattenCategoryTree = (
+  nodes: CategoryNode[],
+  depth = 0,
+  options: CategoryOption[] = [],
+): CategoryOption[] => {
+  for (const node of nodes) {
+    options.push({ id: node.id, name: node.name, depth })
+    flattenCategoryTree(node.children, depth + 1, options)
+  }
   return options
 }
 
@@ -97,12 +169,81 @@ const buildLocalCategoryOptions = (
   return options
 }
 
+interface CategoryTreeItemProps {
+  node: CategoryNode
+  depth: number
+  activeId: string
+  expandedIds: Set<string>
+  forceExpand: boolean
+  onSelect: (id: string) => void
+  onToggleExpand: (id: string, open: boolean) => void
+}
+
+const CategoryTreeItem = ({
+  node,
+  depth,
+  activeId,
+  expandedIds,
+  forceExpand,
+  onSelect,
+  onToggleExpand,
+}: CategoryTreeItemProps) => {
+  const hasChildren = node.children.length > 0
+  const isExpanded = forceExpand || expandedIds.has(node.id)
+
+  return (
+    <SidebarMenuItem>
+      <Collapsible
+        open={isExpanded}
+        onOpenChange={(open) => onToggleExpand(node.id, open)}
+      >
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton
+            isActive={activeId === node.id}
+            onClick={() => onSelect(node.id)}
+            className={cn("pr-8", depth > 0 && "pl-8")}
+          >
+            <Folder />
+            <span className="truncate">{node.name}</span>
+            {hasChildren &&
+              (isExpanded ? (
+                <ChevronDown className="ml-auto shrink-0" />
+              ) : (
+                <ChevronRight className="ml-auto shrink-0" />
+              ))}
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
+        {hasChildren && (
+          <CollapsibleContent>
+            <SidebarMenuSub>
+              {node.children.map((child) => (
+                <CategoryTreeItem
+                  key={child.id}
+                  node={child}
+                  depth={depth + 1}
+                  activeId={activeId}
+                  expandedIds={expandedIds}
+                  forceExpand={forceExpand}
+                  onSelect={onSelect}
+                  onToggleExpand={onToggleExpand}
+                />
+              ))}
+            </SidebarMenuSub>
+          </CollapsibleContent>
+        )}
+      </Collapsible>
+    </SidebarMenuItem>
+  )
+}
+
 const SyncProducts = ({ id }: SyncProductsProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [result, setResult] = useState<SyncTaskResult | null>(null)
   const [categoryId, setCategoryId] = useState("")
   const [localCategoryId, setLocalCategoryId] = useState("")
+  const [search, setSearch] = useState("")
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
@@ -136,7 +277,29 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
   })
 
   const categories = categoriesData?.data ?? []
-  const categoryOptions = buildCategoryOptions(categories)
+  const categoryNodes = useMemo(
+    () => buildCategoryTree(categories),
+    [categories],
+  )
+  const categoryById = useMemo(() => {
+    const map = new Map<string, CategoryNode>()
+    const visit = (nodes: CategoryNode[]) => {
+      for (const node of nodes) {
+        map.set(node.id, node)
+        visit(node.children)
+      }
+    }
+    visit(categoryNodes)
+    return map
+  }, [categoryNodes])
+  const filteredCategoryNodes = useMemo(
+    () => filterCategoryTree(categoryNodes, search),
+    [categoryNodes, search],
+  )
+  const categoryOptions = useMemo(
+    () => flattenCategoryTree(categoryNodes),
+    [categoryNodes],
+  )
   const localCategoryOptions = buildLocalCategoryOptions(
     localCategoriesData?.data ?? [],
   )
@@ -148,19 +311,57 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
   const someChecked = products.some((product) =>
     selected.has(product.upstream_id),
   )
+  const selectedCategoryPath = useMemo(() => {
+    if (!categoryId) {
+      return []
+    }
+    const path: CategoryNode[] = []
+    let current = categoryById.get(categoryId)
+    while (current) {
+      path.unshift(current)
+      current = current.parentId
+        ? categoryById.get(current.parentId)
+        : undefined
+    }
+    return path
+  }, [categoryId, categoryById])
 
   const openDialog = () => {
     setCategoryId("")
     setLocalCategoryId("")
     setSelected(new Set())
     setResult(null)
+    setSearch("")
+    setExpandedIds(new Set())
     setIsOpen(true)
   }
 
-  const changeCategory = (value: string) => {
+  const toggleExpand = (nodeId: string, open: boolean) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev)
+      if (open) {
+        next.add(nodeId)
+      } else {
+        next.delete(nodeId)
+      }
+      return next
+    })
+  }
+
+  const selectCategory = (value: string) => {
     setSelected(new Set())
     setResult(null)
     setCategoryId(value)
+    setExpandedIds((prev) => {
+      const next = new Set(prev)
+      next.add(value)
+      let parent = categoryById.get(value)?.parentId
+      while (parent) {
+        next.add(parent)
+        parent = categoryById.get(parent)?.parentId
+      }
+      return next
+    })
   }
 
   const toggleProduct = (productId: string, checked: boolean) => {
@@ -181,6 +382,14 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
         ? new Set(products.map((product) => product.upstream_id))
         : new Set(),
     )
+  }
+
+  const handleSync = () => {
+    if (!localCategoryId) {
+      showErrorToast("请先选择本地分类")
+      return
+    }
+    mutation.mutate()
   }
 
   const mutation = useMutation({
@@ -248,162 +457,276 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
         同步商品
       </DropdownMenuItem>
       <DialogContent
-        className="sm:max-w-xl"
+        className="gap-0 overflow-hidden p-0 sm:max-w-2xl md:max-h-[820px] md:max-w-[960px] lg:max-w-[1120px]"
         showCloseButton={!mutation.isPending}
       >
-        <DialogHeader>
+        <DialogHeader className="px-6 pt-6">
           <DialogTitle>同步上游商品</DialogTitle>
           <DialogDescription>
             勾选要同步的商品。已匹配的本地商品只更新成本价，未匹配的会自动创建。
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center gap-2">
-          <span className="shrink-0 text-sm text-muted-foreground">分类</span>
-          <Select value={categoryId} onValueChange={changeCategory}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="请选择分类" />
-            </SelectTrigger>
-            <SelectContent>
-              {categoryOptions.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.depth > 0 ? "　".repeat(category.depth) : ""}
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="shrink-0 text-sm text-muted-foreground">
-            本地分类
-          </span>
-          <Select value={localCategoryId} onValueChange={setLocalCategoryId}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="不修改分类" />
-            </SelectTrigger>
-            <SelectContent>
-              {localCategoryOptions.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.depth > 0 ? "　".repeat(category.depth) : ""}
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="max-h-[55vh] space-y-1 overflow-y-auto pr-1 [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar-track]:bg-transparent">
-          {!categoryId ? (
-            <div className="py-10 text-center text-sm text-muted-foreground">
-              请选择分类后加载商品
-            </div>
-          ) : isLoading ? (
-            <div className="py-10 text-center text-sm text-muted-foreground">
-              正在获取上游商品列表...
-            </div>
-          ) : isError ? (
-            <div className="py-10 text-center text-sm text-destructive">
-              获取上游商品列表失败
-            </div>
-          ) : products.length === 0 ? (
-            <div className="py-10 text-center text-sm text-muted-foreground">
-              暂无上游商品
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-2 rounded-md border px-2 py-1.5">
-                <Checkbox
-                  checked={
-                    allChecked ? true : someChecked ? "indeterminate" : false
-                  }
-                  onCheckedChange={(checked) => toggleAll(checked === true)}
-                />
-                <span className="text-sm font-medium">全选</span>
-                <span className="ml-auto text-xs text-muted-foreground">
-                  已选 {selectedCount}/{products.length}
-                </span>
-              </div>
-              {products.map((product) => (
-                <div
-                  key={product.upstream_id}
-                  className="flex items-center gap-2 rounded-md border px-2 py-2 hover:bg-muted/50"
-                >
-                  <Checkbox
-                    checked={selected.has(product.upstream_id)}
-                    onCheckedChange={(checked) =>
-                      toggleProduct(product.upstream_id, checked === true)
-                    }
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">
-                      {product.name}
-                    </span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      ID: {product.upstream_id}
-                    </span>
-                  </span>
-                  {product.cost_price != null && (
-                    <span className="font-mono text-xs">
-                      {product.cost_price}
-                    </span>
-                  )}
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "shrink-0",
-                      product.synced && "border-green-500 text-green-700",
-                    )}
-                  >
-                    {product.synced ? "已同步" : "未同步"}
-                  </Badge>
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-
-        {result && (
-          <div className="rounded-md border bg-muted/40 p-3 text-sm">
-            <div className="flex gap-4">
-              <span>
-                创建 <strong>{result.created?.length ?? 0}</strong>
-              </span>
-              <span>
-                更新 <strong>{result.updated?.length ?? 0}</strong>
-              </span>
-              <span className={cn(result.failed?.length && "text-destructive")}>
-                失败 <strong>{result.failed?.length ?? 0}</strong>
-              </span>
-            </div>
-            {result.failed && result.failed.length > 0 && (
-              <ul className="mt-2 max-h-24 space-y-1 overflow-y-auto text-xs text-muted-foreground [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar-track]:bg-transparent">
-                {result.failed.map((item) => (
-                  <li key={item.product_id}>
-                    ID {item.product_id}：{item.error}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline" disabled={mutation.isPending}>
-              取消
-            </Button>
-          </DialogClose>
-          <LoadingButton
-            type="button"
-            loading={mutation.isPending}
-            disabled={selectedCount === 0 || isError || isLoading}
-            onClick={() => mutation.mutate()}
+        <SidebarProvider
+          className="overflow-hidden"
+          style={{ minHeight: 0, height: "min(680px, 78vh)" }}
+        >
+          <Sidebar
+            collapsible="none"
+            className="hidden border-r md:flex"
+            style={{ backgroundColor: "transparent" }}
           >
-            {mutation.isPending ? "同步中..." : `同步所选 (${selectedCount})`}
-          </LoadingButton>
-        </DialogFooter>
+            <SidebarHeader>
+              <div className="relative">
+                <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
+                <SidebarInput
+                  placeholder="搜索分类"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  className="pl-8"
+                />
+              </div>
+            </SidebarHeader>
+            <SidebarContent className="[scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar-track]:bg-transparent">
+              <SidebarGroup>
+                <SidebarGroupLabel>
+                  <FolderTree />
+                  上游分类
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                  {!categoriesData ? (
+                    <p className="px-2 py-4 text-center text-sm text-muted-foreground">
+                      正在加载分类…
+                    </p>
+                  ) : filteredCategoryNodes.length === 0 ? (
+                    <p className="px-2 py-4 text-center text-sm text-muted-foreground">
+                      {categories.length === 0 ? "暂无分类" : "无匹配分类"}
+                    </p>
+                  ) : (
+                    <SidebarMenu>
+                      {filteredCategoryNodes.map((node) => (
+                        <CategoryTreeItem
+                          key={node.id}
+                          node={node}
+                          depth={0}
+                          activeId={categoryId}
+                          expandedIds={expandedIds}
+                          forceExpand={search.trim() !== ""}
+                          onSelect={selectCategory}
+                          onToggleExpand={toggleExpand}
+                        />
+                      ))}
+                    </SidebarMenu>
+                  )}
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </SidebarContent>
+          </Sidebar>
+
+          <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            <header className="flex shrink-0 flex-wrap items-center gap-2 border-b px-4 py-2">
+              <Breadcrumb className="min-w-0 flex-1">
+                <BreadcrumbList>
+                  {selectedCategoryPath.length === 0 ? (
+                    <BreadcrumbItem>
+                      <BreadcrumbPage>请选择分类</BreadcrumbPage>
+                    </BreadcrumbItem>
+                  ) : (
+                    selectedCategoryPath.map((item, index) => {
+                      const isLast = index === selectedCategoryPath.length - 1
+                      return (
+                        <BreadcrumbItem key={item.id} className="min-w-0">
+                          {isLast ? (
+                            <BreadcrumbPage className="truncate">
+                              {item.name}
+                            </BreadcrumbPage>
+                          ) : (
+                            <>
+                              <BreadcrumbLink asChild>
+                                <button
+                                  type="button"
+                                  onClick={() => selectCategory(item.id)}
+                                  className="truncate"
+                                >
+                                  {item.name}
+                                </button>
+                              </BreadcrumbLink>
+                              <BreadcrumbSeparator />
+                            </>
+                          )}
+                        </BreadcrumbItem>
+                      )
+                    })
+                  )}
+                </BreadcrumbList>
+              </Breadcrumb>
+              <div className="flex items-center gap-2">
+                <span className="shrink-0 text-sm text-muted-foreground">
+                  本地分类
+                </span>
+                <Select
+                  value={localCategoryId}
+                  onValueChange={setLocalCategoryId}
+                >
+                  <SelectTrigger className="w-44">
+                    <SelectValue placeholder="请选择本地分类" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {localCategoryOptions.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.depth > 0 ? "　".repeat(category.depth) : ""}
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </header>
+
+            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4 [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar-track]:bg-transparent">
+              <div className="flex items-center gap-2 md:hidden">
+                <span className="shrink-0 text-sm text-muted-foreground">
+                  分类
+                </span>
+                <Select value={categoryId} onValueChange={selectCategory}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="请选择分类" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoryOptions.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.depth > 0 ? "　".repeat(category.depth) : ""}
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {!categoryId ? (
+                <div className="py-10 text-center text-sm text-muted-foreground">
+                  请选择分类后加载商品
+                </div>
+              ) : isLoading ? (
+                <div className="py-10 text-center text-sm text-muted-foreground">
+                  正在获取上游商品列表...
+                </div>
+              ) : isError ? (
+                <div className="py-10 text-center text-sm text-destructive">
+                  获取上游商品列表失败
+                </div>
+              ) : products.length === 0 ? (
+                <div className="py-10 text-center text-sm text-muted-foreground">
+                  暂无上游商品
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 rounded-md border px-2 py-1.5">
+                    <Checkbox
+                      checked={
+                        allChecked
+                          ? true
+                          : someChecked
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={(checked) => toggleAll(checked === true)}
+                    />
+                    <span className="text-sm font-medium">全选</span>
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      已选 {selectedCount}/{products.length}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {products.map((product) => (
+                      <div
+                        key={product.upstream_id}
+                        className="flex items-center gap-2 rounded-md border px-2 py-2 hover:bg-muted/50"
+                      >
+                        <Checkbox
+                          checked={selected.has(product.upstream_id)}
+                          onCheckedChange={(checked) =>
+                            toggleProduct(product.upstream_id, checked === true)
+                          }
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium">
+                            {product.name}
+                          </span>
+                          <span className="block truncate text-xs text-muted-foreground">
+                            ID: {product.upstream_id}
+                          </span>
+                        </span>
+                        {product.cost_price != null && (
+                          <span className="font-mono text-xs">
+                            {product.cost_price}
+                          </span>
+                        )}
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "shrink-0",
+                            product.synced && "border-green-500 text-green-700",
+                          )}
+                        >
+                          {product.synced ? "已同步" : "未同步"}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <footer className="flex shrink-0 items-center justify-between gap-2 border-t px-4 py-3">
+              {result && (
+                <div className="rounded-md border bg-muted/40 p-3 text-sm text-left">
+                  <div className="flex gap-4 ">
+                    <span>
+                      创建 <strong>{result.created?.length ?? 0}</strong>
+                    </span>
+                    <span>
+                      更新 <strong>{result.updated?.length ?? 0}</strong>
+                    </span>
+                    <span
+                      className={cn(
+                        result.failed?.length && "text-destructive",
+                      )}
+                    >
+                      失败 <strong>{result.failed?.length ?? 0}</strong>
+                    </span>
+                  </div>
+                  {result.failed && result.failed.length > 0 && (
+                    <ul className="mt-2 max-h-24 space-y-1 overflow-y-auto text-xs text-muted-foreground [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar-track]:bg-transparent">
+                      {result.failed.map((item) => (
+                        <li key={item.product_id}>
+                          ID {item.product_id}：{item.error}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <DialogClose asChild>
+                  <Button variant="outline" disabled={mutation.isPending}>
+                    取消
+                  </Button>
+                </DialogClose>
+                <LoadingButton
+                  type="button"
+                  loading={mutation.isPending}
+                  disabled={selectedCount === 0 || isError || isLoading}
+                  onClick={handleSync}
+                >
+                  {mutation.isPending
+                    ? "同步中..."
+                    : `同步所选 (${selectedCount})`}
+                </LoadingButton>
+              </div>
+            </footer>
+          </main>
+        </SidebarProvider>
       </DialogContent>
     </Dialog>
   )
