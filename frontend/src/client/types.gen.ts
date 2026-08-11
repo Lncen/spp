@@ -1642,7 +1642,9 @@ export type WalletPublic = {
     user_id: string;
     balance: string;
     currency: string;
+    is_active?: boolean;
     created_at?: (string | null);
+    updated_at?: (string | null);
 };
 
 /**
@@ -2320,12 +2322,33 @@ export type WalletsReadWalletTransactionsMeData = {
 
 export type WalletsReadWalletTransactionsMeResponse = (WalletTransactionsPublic);
 
+export type WalletsReadWalletByUserIdData = {
+    userId: string;
+};
+
+export type WalletsReadWalletByUserIdResponse = (WalletPublic);
+
 export type WalletsReadWalletsData = {
     limit?: number;
     skip?: number;
 };
 
 export type WalletsReadWalletsResponse = (WalletsPublic);
+
+export type WalletsReadWalletByIdData = {
+    walletId: string;
+};
+
+export type WalletsReadWalletByIdResponse = (WalletPublic);
+
+export type WalletsReadWalletTransactionsData = {
+    limit?: number;
+    skip?: number;
+    txType?: (string | null);
+    walletId: string;
+};
+
+export type WalletsReadWalletTransactionsResponse = (WalletTransactionsPublic);
 
 export type WalletsAdjustWalletBalanceData = {
     requestBody: WalletAdjust;

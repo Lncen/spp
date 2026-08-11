@@ -12,7 +12,8 @@ from app.modules.order.domain.constants import OrderStatus
 from app.modules.order.domain.refund import calc_refund_amount
 from app.modules.order.models import Order
 from app.modules.order.repositories.stock import restore_stock
-from app.modules.wallet.service import adjust_balance, get_wallet_by_user_id
+from app.modules.wallet.application.wallet_adjust import adjust_balance
+from app.modules.wallet.application.wallet_query import get_wallet_by_user_id
 
 logger = logging.getLogger(__name__)
 

@@ -1,30 +1,13 @@
-"""钱包模块：业务逻辑层"""
+"""钱包模块：调账应用服务"""
 
 import uuid
 from decimal import Decimal
 
 from fastapi import HTTPException
-from sqlmodel import Session, select, update
+from sqlmodel import Session
 
 from app.modules.wallet.models import Wallet, WalletTransaction
-
-
-def get_wallet_by_user_id(*, session: Session, user_id: uuid.UUID) -> Wallet | None:
-    """根据用户 ID 获取钱包"""
-    statement = select(Wallet).where(Wallet.user_id == user_id)
-    return session.exec(statement).first()
-
-
-def get_or_create_wallet(*, session: Session, user_id: uuid.UUID) -> Wallet:
-    """获取用户钱包，不存在则自动创建"""
-    wallet = get_wallet_by_user_id(session=session, user_id=user_id)
-    if wallet:
-        return wallet
-    wallet = Wallet(user_id=user_id)
-    session.add(wallet)
-    session.commit()
-    session.refresh(wallet)
-    return wallet
+from app.modules.wallet.repositories.wallet import apply_balance_change
 
 
 def adjust_balance(
@@ -43,17 +26,7 @@ def adjust_balance(
     if amount == 0:
         raise HTTPException(status_code=422, detail="调账金额不能为 0")
 
-    statement = (
-        update(Wallet)
-        .where(Wallet.id == wallet.id, Wallet.balance + amount >= 0)
-        .values(balance=Wallet.balance + amount)
-    )
-    result = session.exec(statement)
-    if result.rowcount == 0:
-        session.rollback()
-        raise HTTPException(status_code=400, detail="余额不足，无法扣减")
-
-    session.refresh(wallet)
+    apply_balance_change(session=session, wallet=wallet, amount=amount)
     transaction = WalletTransaction(
         wallet_id=wallet.id,
         amount=amount,

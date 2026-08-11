@@ -32,7 +32,8 @@ from app.modules.order.schemas import (
 from app.modules.product.product.models import ProductPricing
 from app.modules.setting.application.setting_query import get_setting
 from app.modules.user.models import User
-from app.modules.wallet.service import adjust_balance, get_wallet_by_user_id
+from app.modules.wallet.application.wallet_adjust import adjust_balance
+from app.modules.wallet.application.wallet_query import get_wallet_by_user_id
 
 logger = logging.getLogger(__name__)
 

@@ -31,7 +31,9 @@ class WalletPublic(SQLModel):
     user_id: uuid.UUID
     balance: Decimal
     currency: str
+    is_active: bool = True
     created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class WalletsPublic(SQLModel):

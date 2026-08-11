@@ -5748,6 +5748,11 @@ export const WalletPublicSchema = {
             type: 'string',
             title: 'Currency'
         },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active',
+            default: true
+        },
         created_at: {
             anyOf: [
                 {
@@ -5759,6 +5764,18 @@ export const WalletPublicSchema = {
                 }
             ],
             title: 'Created At'
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At'
         }
     },
     type: 'object',
