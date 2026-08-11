@@ -6,11 +6,14 @@ from uuid import UUID
 
 from sqlmodel import SQLModel
 
+from app.modules.setting.domain.constants import SettingType
+
 
 class SettingRead(SQLModel):
     """设置项（登录用户可读）"""
 
     key: str
+    type: SettingType
     value: Any
     description: str | None
     updated_by: UUID | None
@@ -27,3 +30,4 @@ class SettingUpdate(SQLModel):
     """更新设置请求"""
 
     value: Any
+    type: SettingType = SettingType.SYSTEM

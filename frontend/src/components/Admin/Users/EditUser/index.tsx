@@ -208,7 +208,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
         </DialogDescription>
         <SidebarProvider className="items-start min-h-0">
           <Sidebar collapsible="none" className="hidden bg-transparent md:flex">
-            <SidebarContent className="[scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar-track]:bg-transparent">
+            <SidebarContent>
               <SidebarGroup>
                 <SidebarGroupContent>
                   <SidebarMenu>
@@ -239,7 +239,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="flex h-[700px] flex-1 flex-col overflow-hidden"
               >
-                <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar-track]:bg-transparent">
+                <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
                   <Section id="basic" activeSection={activeSection}>
                     <BasicInfoFields
                       avatarImages={avatarImages}

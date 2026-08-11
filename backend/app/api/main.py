@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 import app.modules.automation.infrastructure.event_listeners  # noqa: F401  注册事件监听器
+import app.modules.notification.infrastructure.event_listeners  # noqa: F401  注册通知事件监听器
 from app.common.router import router as utils_router
 from app.core.config import settings
 from app.modules.auth.api import login_router, password_router, token_router
@@ -22,6 +23,11 @@ from app.modules.item.api import router as item_router
 from app.modules.item.models import Item  # noqa: F401
 from app.modules.level.api import router as level_router
 from app.modules.level.models import UserLevel  # noqa: F401
+from app.modules.notification.api import router as notification_router
+from app.modules.notification.models import (  # noqa: F401
+    Notification,
+    NotificationDelivery,
+)
 from app.modules.order.api import router as order_router
 from app.modules.order.models import Order  # noqa: F401
 from app.modules.price_template.api import router as price_template_router
@@ -60,6 +66,7 @@ api_router.include_router(wallet_router)
 api_router.include_router(utils_router)
 api_router.include_router(level_router)
 api_router.include_router(item_router)
+api_router.include_router(notification_router)
 api_router.include_router(order_router)
 api_router.include_router(image_router)
 api_router.include_router(image_category_router)

@@ -224,7 +224,7 @@ const ProductFormDialog = ({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-            <div className="grid gap-5 py-2 max-h-[70vh] overflow-y-auto pr-2 [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
+            <div className="grid gap-5 py-2 max-h-[70vh] overflow-y-auto pr-2">
               <section className="space-y-4">
                 <SectionHeading step="01" title="基本信息" />
                 <div className="grid gap-4 sm:grid-cols-2">

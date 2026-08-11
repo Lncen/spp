@@ -12,7 +12,7 @@ from sqlmodel import Session
 
 from app.core.config import settings
 from app.core.redis import get_redis, run_redis_sync
-from app.modules.setting.domain.constants import DEFAULT_SETTINGS
+from app.modules.setting.domain.constants import DEFAULT_SETTINGS, SettingType
 from app.modules.setting.repositories.setting import get_all_settings
 
 logger = logging.getLogger(__name__)
@@ -25,13 +25,18 @@ _MISS = object()
 
 def _serialize_setting_item(
     *,
+    setting_type: SettingType | str,
     value: Any,
     description: str | None,
     updated_by: UUID | None,
     updated_at: datetime | None,
 ) -> str:
     """设置项序列化为 Redis 缓存 JSON"""
+    type_value = (
+        setting_type.value if isinstance(setting_type, SettingType) else setting_type
+    )
     item = {
+        "type": type_value,
         "value": value,
         "description": description,
         "updated_by": str(updated_by) if updated_by else None,
@@ -44,6 +49,7 @@ def _parse_setting_item(key: str, raw: str) -> dict[str, Any]:
     """从 Redis 缓存 JSON 还原设置项（字段与 SettingRead 一致）"""
     item: dict[str, Any] = json.loads(raw)
     item["key"] = key
+    item["type"] = SettingType(item.get("type") or SettingType.SYSTEM.value)
     if item.get("updated_by"):
         item["updated_by"] = UUID(item["updated_by"])
     if item.get("updated_at"):
@@ -79,6 +85,7 @@ def load_settings_cache(*, session: Session) -> None:
     for key, default in DEFAULT_SETTINGS.items():
         row = rows.get(key)
         mapping[key] = _serialize_setting_item(
+            setting_type=(row.type or SettingType.SYSTEM) if row else SettingType.SYSTEM,
             value=row.value if row else default.get("value"),
             description=default.get("description"),
             updated_by=row.updated_by if row else None,
@@ -87,6 +94,7 @@ def load_settings_cache(*, session: Session) -> None:
     for key, row in rows.items():
         if key not in mapping:
             mapping[key] = _serialize_setting_item(
+                setting_type=row.type or SettingType.SYSTEM,
                 value=row.value,
                 description=row.description,
                 updated_by=row.updated_by,
@@ -103,6 +111,7 @@ def cache_set(*, session: Session, key: str, setting: Any) -> None:
     if not cache_get_all():
         load_settings_cache(session=session)
     raw = _serialize_setting_item(
+        setting_type=setting.type or SettingType.SYSTEM,
         value=setting.value,
         description=setting.description,
         updated_by=setting.updated_by,

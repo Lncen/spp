@@ -1,11 +1,11 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
-import { UsersService } from "@/client"
 import { ImageCategories } from "../../components/Admin/ImageCategories/ImageCategories"
+import { getCurrentUserQueryOptions } from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/_layout/categories")({
   component: RouteComponent,
-  beforeLoad: async () => {
-    const user = await UsersService.readUserMe()
+  beforeLoad: async ({ context }) => {
+    const user = await context.queryClient.ensureQueryData(getCurrentUserQueryOptions())
     if (!user.is_superuser) {
       throw redirect({
         to: "/",

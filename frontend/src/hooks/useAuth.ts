@@ -15,14 +15,19 @@ const isLoggedIn = () => {
   return localStorage.getItem("access_token") !== null
 }
 
+const getCurrentUserQueryOptions = () => ({
+  queryKey: ["currentUser"],
+  queryFn: UsersService.readUserMe,
+  staleTime: 5 * 60 * 1000,
+})
+
 const useAuth = () => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { showErrorToast } = useCustomToast()
 
   const { data: user } = useQuery<UserPublic | null, Error>({
-    queryKey: ["currentUser"],
-    queryFn: UsersService.readUserMe,
+    ...getCurrentUserQueryOptions(),
     enabled: isLoggedIn(),
   })
 
@@ -66,5 +71,5 @@ const useAuth = () => {
   }
 }
 
-export { isLoggedIn }
+export { getCurrentUserQueryOptions, isLoggedIn }
 export default useAuth

@@ -32,13 +32,13 @@ backend/app/modules/setting/
 │   └── setting_update.py             # update_setting（upsert + 缓存刷新）
 ├── domain/                           # 领域逻辑：默认值与常量定义
 │   ├── __init__.py
-│   └── constants.py                  # AUTOMATION_TASK_RETENTION_DAYS、DEFAULT_SETTINGS、get_default_setting
+│   └── constants.py                  # SettingType 设置类型枚举、AUTOMATION_TASK_RETENTION_DAYS、DEFAULT_SETTINGS、get_default_setting
 ├── infrastructure/                   # 基础设施：Redis 缓存读写
 │   ├── __init__.py
 │   └── cache.py                      # SETTINGS_CACHE_KEY、缓存序列化 / 读取 / 懒加载 / 更新
 ├── models/                           # 数据模型
 │   ├── __init__.py                   # 导出 AppSetting（app/models.py import 路径不变）
-│   └── setting.py                    # AppSetting（key-value 表模型）
+│   └── setting.py                    # AppSetting（key / type / value 表模型）
 ├── repositories/                     # 数据访问：封装 ORM 操作
 │   ├── __init__.py
 │   └── setting.py                    # get_all_settings / 按 key 查询 / upsert / 默认值兜底
@@ -53,10 +53,10 @@ backend/app/modules/setting/
 | --- | --- | --- |
 | api | 权限验证、接收请求、参数校验、调用 Application、返回响应 | /settings 列表读取与更新路由 |
 | application | 编排业务流程、控制事务 | 设置读取（缓存 → DB → 默认值）、更新（upsert + 提交 + 缓存刷新） |
-| domain | 核心业务规则、领域约束 | 内置设置默认值与说明 |
+| domain | 核心业务规则、领域约束 | 设置类型枚举（按模块名区分设置归属）、内置设置默认值与说明 |
 | infrastructure | 外部系统交互 | Redis 缓存读写与懒加载 |
 | repositories | 数据查询、数据持久化 | app_setting 表访问与 upsert |
-| models | 数据模型 | AppSetting 表模型 |
+| models | 数据模型 | AppSetting 表模型（key / type / value） |
 | schemas | 数据传输对象 | 请求 / 响应 DTO |
 
 ## 四、API 路由
@@ -72,6 +72,7 @@ backend/app/modules/setting/
 2. **缓存一致性**：更新设置先落库提交，再刷新 Redis 缓存并重置 TTL；缓存未初始化时先全量懒加载。
 3. **默认值兜底**：未落库的内置设置（如 `order_enabled`）按 `DEFAULT_SETTINGS` 返回，保证新增设置无需迁移即可生效。
 4. **对外接口不变**：`app.modules.setting.models` / `app.modules.setting.schemas` / `app.modules.setting.api` 的 import 路径通过包 `__init__` 保持兼容；`get_setting` 迁移至 `application/setting_query.py`，外部引用已同步更新。
+5. **设置类型**：`type` 字段用 `SettingType` 枚举按模块名标识设置归属（如 `system`、`order`）；已存在的 `app_setting` 表新增该列需生成迁移并回填存量行为 `system`。
 
 ## 六、重构记录
 

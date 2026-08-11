@@ -26,6 +26,7 @@ SALABLE_PRODUCT_STATUSES = frozenset({ProductStatus.APPROVED})
 
 # 存在时禁止同商品同参数重复下单的订单状态
 ACTIVE_ORDER_STATUSES = (
+    OrderStatus.CREATE,
     OrderStatus.PAID,
     OrderStatus.PENDING,
     OrderStatus.PROCESSING,
@@ -39,12 +40,11 @@ ACTIVE_ORDER_STATUSES = (
 # 可同步上游状态的订单状态（终态订单无需再查询）
 SYNCABLE_ORDER_STATUSES = frozenset(
     {
-        OrderStatus.PAID,
-        OrderStatus.PENDING,
-        OrderStatus.PROCESSING,
-        OrderStatus.SUPPLEMENTING,
-        OrderStatus.REFUNDING,
-        OrderStatus.EXCEPTION,
-        OrderStatus.APPLYING_AFTER_SALE,
+        OrderStatus.PAID,     # 已付款
+        OrderStatus.PENDING,     # 待处理
+        OrderStatus.PROCESSING,     # 处理中
+        OrderStatus.SUPPLEMENTING,     # 补单中
+        OrderStatus.REFUNDING,     # 退单中
+        OrderStatus.EXCEPTION,     # 有异常
     }
 )

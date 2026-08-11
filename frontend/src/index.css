@@ -121,4 +121,21 @@
   [role="button"] {
     cursor: pointer;
   }
+
+  /* 滚动条：轨道背景透明，滑块使用边框色保持可辨识 */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: var(--border);
+  }
 }

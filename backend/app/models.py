@@ -17,6 +17,10 @@ from app.modules.automation.models import (
 from app.modules.image.models import Image, ImageCategory
 from app.modules.item.models import Item
 from app.modules.level.models import UserLevel
+from app.modules.notification.models import (
+    Notification,
+    NotificationDelivery,
+)
 from app.modules.order.models import Order, OrderParam
 from app.modules.price_template.models import PriceTemplate, PriceTemplateRule
 from app.modules.product.category.models import ProductCategory
@@ -41,6 +45,8 @@ __all__ = [
     "AutomationEvent",
     "AutomationRule",
     "UserLevel",
+    "Notification",
+    "NotificationDelivery",
     "Item",
     "User",
     "Image",

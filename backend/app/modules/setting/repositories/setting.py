@@ -5,7 +5,11 @@ from typing import Any
 
 from sqlmodel import Session, col, select
 
-from app.modules.setting.domain.constants import DEFAULT_SETTINGS, get_default_setting
+from app.modules.setting.domain.constants import (
+    DEFAULT_SETTINGS,
+    SettingType,
+    get_default_setting,
+)
 from app.modules.setting.models import AppSetting
 
 
@@ -33,6 +37,7 @@ def get_setting_items_from_db(*, session: Session) -> list[dict[str, Any]]:
         result.append(
             {
                 "key": key,
+                "type": (row.type or SettingType.SYSTEM) if row else SettingType.SYSTEM,
                 "value": row.value if row else default.get("value"),
                 "description": default.get("description"),
                 "updated_by": row.updated_by if row else None,
@@ -47,6 +52,7 @@ def upsert_setting(
     session: Session,
     key: str,
     value: Any,
+    type: SettingType = SettingType.SYSTEM,
     user_id: uuid.UUID,
 ) -> AppSetting:
     """新增或更新设置项（upsert），不提交事务，由调用方控制"""
@@ -57,12 +63,14 @@ def upsert_setting(
     if setting is None:
         setting = AppSetting(
             key=key,
+            type=type,
             value=value,
             description=default.get("description"),
             updated_by=user_id,
         )
         session.add(setting)
     else:
+        setting.type = type
         setting.value = value
         setting.updated_by = user_id
     session.flush()

@@ -2,10 +2,11 @@
 
 from typing import Any
 
-from sqlalchemy import JSON
+from sqlalchemy import JSON, String
 from sqlmodel import Field, SQLModel
 
 from app.core.mixin.models import AuditUserMixin, BaseModelMixin
+from app.modules.setting.domain.constants import SettingType
 
 
 class AppSetting(BaseModelMixin, AuditUserMixin, SQLModel, table=True):
@@ -20,6 +21,14 @@ class AppSetting(BaseModelMixin, AuditUserMixin, SQLModel, table=True):
         nullable=False,
         title="设置键",
         description="全局唯一，如 maintenance_mode、order_enabled",
+    )
+    type: SettingType = Field(
+        default=SettingType.SYSTEM,
+        sa_type=String(50),
+        index=True,
+        nullable=False,
+        title="设置类型",
+        description="设置归属模块名，见 SettingType",
     )
     value: Any = Field(
         default=None,

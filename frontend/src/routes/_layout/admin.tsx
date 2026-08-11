@@ -8,6 +8,7 @@ import PendingUsers from "@/components/Admin/Pending/PendingUsers"
 import AddUser from "@/components/Admin/Users/AddUser"
 import { columns, type UserTableData } from "@/components/Admin/Users/columns"
 import { DataTable } from "@/components/Common/DataTable"
+import { getCurrentUserQueryOptions } from "@/hooks/useAuth"
 import useAuth from "@/hooks/useAuth"
 
 function getUsersQueryOptions(pagination: PaginationState) {
@@ -23,8 +24,8 @@ function getUsersQueryOptions(pagination: PaginationState) {
 
 export const Route = createFileRoute("/_layout/admin")({
   component: Admin,
-  beforeLoad: async () => {
-    const user = await UsersService.readUserMe()
+  beforeLoad: async ({ context }) => {
+    const user = await context.queryClient.ensureQueryData(getCurrentUserQueryOptions())
     if (!user.is_superuser) {
       throw redirect({
         to: "/",

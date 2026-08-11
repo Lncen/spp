@@ -1,12 +1,12 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
 
-import { UsersService } from "@/client"
 import { GlobalSettings } from "@/components/Admin/GlobalSettings/GlobalSettings"
+import { getCurrentUserQueryOptions } from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/_layout/global-settings")({
   component: RouteComponent,
-  beforeLoad: async () => {
-    const user = await UsersService.readUserMe()
+  beforeLoad: async ({ context }) => {
+    const user = await context.queryClient.ensureQueryData(getCurrentUserQueryOptions())
     if (!user.is_superuser) {
       throw redirect({
         to: "/",

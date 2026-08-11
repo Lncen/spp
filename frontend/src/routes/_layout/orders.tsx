@@ -1,8 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
 import { z } from "zod"
 
-import { UsersService } from "@/client"
 import { Orders } from "@/components/Admin/Orders/Orders"
+import { getCurrentUserQueryOptions } from "@/hooks/useAuth"
 
 const ordersSearchSchema = z.object({
   user_id: z.string().optional().catch(undefined),
@@ -11,8 +11,8 @@ const ordersSearchSchema = z.object({
 export const Route = createFileRoute("/_layout/orders")({
   component: RouteComponent,
   validateSearch: ordersSearchSchema,
-  beforeLoad: async () => {
-    const user = await UsersService.readUserMe()
+  beforeLoad: async ({ context }) => {
+    const user = await context.queryClient.ensureQueryData(getCurrentUserQueryOptions())
     if (!user.is_superuser) {
       throw redirect({
         to: "/",

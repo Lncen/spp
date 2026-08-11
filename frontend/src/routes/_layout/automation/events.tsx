@@ -1,12 +1,12 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
 
-import { UsersService } from "@/client"
 import { EventsSection } from "@/components/Admin/Automation/events"
+import { getCurrentUserQueryOptions } from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/_layout/automation/events")({
   component: Events,
-  beforeLoad: async () => {
-    const user = await UsersService.readUserMe()
+  beforeLoad: async ({ context }) => {
+    const user = await context.queryClient.ensureQueryData(getCurrentUserQueryOptions())
     if (!user.is_superuser) {
       throw redirect({
         to: "/",

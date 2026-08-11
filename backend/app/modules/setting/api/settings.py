@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.api.deps import CurrentUser, SessionDep, get_current_user
 from app.modules.setting.application.setting_query import get_setting_items
 from app.modules.setting.application.setting_update import update_setting
+from app.modules.setting.domain.constants import SettingType
 from app.modules.setting.schemas import (
     SettingRead,
     SettingsRead,
@@ -49,6 +50,7 @@ def update_setting_endpoint(
     )
     return SettingRead(
         key=setting.key,
+        type=setting.type or SettingType.SYSTEM,
         value=setting.value,
         description=setting.description,
         updated_by=setting.updated_by,

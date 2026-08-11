@@ -342,7 +342,7 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
               成本价：{product.pricing?.cost_price}
             </DialogDescription>
           </DialogHeader>
-          <div className="max-h-[70vh] space-y-5 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
+          <div className="max-h-[70vh] space-y-5 overflow-y-auto pr-1">
             <Tabs
               value={mode}
               onValueChange={(value) => {
@@ -507,7 +507,7 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
                     失败 {result.failure_count}
                   </Badge>
                 </div>
-                <div className="max-h-56 space-y-2 overflow-y-auto [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
+                <div className="max-h-56 space-y-2 overflow-y-auto">
                   {result.results.map((item) => {
                     const submittedOrder = submittedOrders[item.index - 1]
                     const params = submittedOrder?.params ?? {}

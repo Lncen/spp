@@ -22,6 +22,7 @@ def update_setting(
         session=session,
         key=key,
         value=setting_in.value,
+        type=setting_in.type,
         user_id=user_id,
     )
     session.commit()

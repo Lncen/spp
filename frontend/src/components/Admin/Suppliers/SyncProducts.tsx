@@ -487,7 +487,7 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
                 />
               </div>
             </SidebarHeader>
-            <SidebarContent className="[scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar-track]:bg-transparent">
+            <SidebarContent>
               <SidebarGroup>
                 <SidebarGroupLabel>
                   <FolderTree />
@@ -583,7 +583,7 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
               </div>
             </header>
 
-            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4 [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar-track]:bg-transparent">
+            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
               <div className="flex items-center gap-2 md:hidden">
                 <span className="shrink-0 text-sm text-muted-foreground">
                   分类
@@ -697,7 +697,7 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
                     </span>
                   </div>
                   {result.failed && result.failed.length > 0 && (
-                    <ul className="mt-2 max-h-24 space-y-1 overflow-y-auto text-xs text-muted-foreground [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar-track]:bg-transparent">
+                    <ul className="mt-2 max-h-24 space-y-1 overflow-y-auto text-xs text-muted-foreground">
                       {result.failed.map((item) => (
                         <li key={item.product_id}>
                           ID {item.product_id}：{item.error}

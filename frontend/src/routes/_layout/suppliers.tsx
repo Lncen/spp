@@ -4,11 +4,11 @@ import type { PaginationState } from "@tanstack/react-table"
 import { Suspense, useState } from "react"
 
 import type { SupplierPublic } from "@/client"
-import { UsersService } from "@/client"
 import Pending from "@/components/Admin/Pending/PendingItems"
 import AddSupplier from "@/components/Admin/Suppliers/AddSupplier"
 import { columns } from "@/components/Admin/Suppliers/columns"
 import { DataTable } from "@/components/Common/DataTable"
+import { getCurrentUserQueryOptions } from "@/hooks/useAuth"
 
 function getSuppliersQueryOptions(pagination: PaginationState) {
   return {
@@ -25,8 +25,8 @@ function getSuppliersQueryOptions(pagination: PaginationState) {
 
 export const Route = createFileRoute("/_layout/suppliers")({
   component: Suppliers,
-  beforeLoad: async () => {
-    const user = await UsersService.readUserMe()
+  beforeLoad: async ({ context }) => {
+    const user = await context.queryClient.ensureQueryData(getCurrentUserQueryOptions())
     if (!user.is_superuser) {
       throw redirect({
         to: "/",

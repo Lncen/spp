@@ -12,11 +12,11 @@ init_tasks = {
     # 商品状态同步 —— 每 30 分钟执行一次
     "订单_同步订单状态": {
         "task": "app.modules.order.tasks.sync_order_status_periodic",
-        "schedule": timedelta(seconds=333),
+        "schedule": timedelta(hours=1),
     },
     "商品_同步本地商品状态": {
         "task": "app.modules.product.tasks.sync_product_status",
-        "schedule": timedelta(minutes=30),
+        "schedule": timedelta(hours=1),
     },
     # 数据清理 —— 每天凌晨 5:30 执行
     "清理_过期数据": {

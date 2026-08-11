@@ -240,7 +240,7 @@ export const OrderDetailDialog = ({
             </DialogDescription>
           </div>
         </DialogHeader>
-        <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
+        <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto pr-1">
           {isLoading || !order ? (
             <div className="flex flex-col gap-4">
               <Skeleton className="h-5 w-40" />

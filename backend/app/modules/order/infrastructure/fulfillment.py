@@ -63,7 +63,7 @@ def _fulfill_api_item(*, session: Session, db_order: Order) -> None:
                 "上游下单成功但未返回订单号，需人工确认"
             )
         db_order.supplier_order_id = supplier_order_id
-        db_order.status = OrderStatus.PENDING
+        db_order.status = OrderStatus.PROCESSING
         session.add(db_order)
     finally:
         client.close()
