@@ -471,7 +471,11 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
           className="overflow-hidden"
           style={{ minHeight: 0, height: "min(680px, 78vh)" }}
         >
-          <Sidebar collapsible="none" className="hidden border-r md:flex">
+          <Sidebar
+            collapsible="none"
+            className="hidden border-r md:flex"
+            style={{ backgroundColor: "transparent" }}
+          >
             <SidebarHeader>
               <div className="relative">
                 <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
@@ -483,7 +487,7 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
                 />
               </div>
             </SidebarHeader>
-            <SidebarContent>
+            <SidebarContent className="[scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar-track]:bg-transparent">
               <SidebarGroup>
                 <SidebarGroupLabel>
                   <FolderTree />
@@ -579,7 +583,7 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
               </div>
             </header>
 
-            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4 [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar-track]:bg-transparent">
               <div className="flex items-center gap-2 md:hidden">
                 <span className="shrink-0 text-sm text-muted-foreground">
                   分类
@@ -693,7 +697,7 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
                     </span>
                   </div>
                   {result.failed && result.failed.length > 0 && (
-                    <ul className="mt-2 max-h-24 space-y-1 overflow-y-auto text-xs text-muted-foreground">
+                    <ul className="mt-2 max-h-24 space-y-1 overflow-y-auto text-xs text-muted-foreground [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar-track]:bg-transparent">
                       {result.failed.map((item) => (
                         <li key={item.product_id}>
                           ID {item.product_id}：{item.error}
@@ -703,7 +707,7 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
                   )}
                 </div>
               )}
-              
+
               <DialogClose asChild>
                 <Button variant="outline" disabled={mutation.isPending}>
                   取消
