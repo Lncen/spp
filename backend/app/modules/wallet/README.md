@@ -60,6 +60,7 @@ backend/app/modules/wallet/
 | GET | /wallets/{wallet_id} | 按 ID 获取钱包（仅超管） |
 | GET | /wallets/{wallet_id}/transactions | 获取指定钱包流水（仅超管） |
 | POST | /wallets/{wallet_id}/adjust | 管理员调账：正数入账、负数扣款（仅超管） |
+| PATCH | /wallets/{wallet_id} | 更新钱包启用状态（仅超管） |
 
 ## 五、关键设计
 

@@ -2,9 +2,12 @@
 import uuid
 
 from fastapi.testclient import TestClient
+from sqlmodel import Session
 
 from app.core.config import settings
+from app.modules.image.models import Image
 from tests.utils.image import create_test_image_bytes
+from tests.utils.user import create_random_user
 
 
 def test_upload_image(
@@ -108,6 +111,30 @@ def test_read_images(
         assert "id" in img
 
 
+def test_read_images_include_system_images_for_normal_user(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    normal_user_token_headers: dict[str, str],
+) -> None:
+    """普通用户应能看到超管上传的系统默认图片"""
+    image_bytes = create_test_image_bytes()
+    upload_resp = client.post(
+        f"{settings.API_V1_STR}/images/upload",
+        headers=superuser_token_headers,
+        files={"file": ("system_avatar.jpg", image_bytes, "image/jpeg")},
+    )
+    assert upload_resp.status_code == 200
+    system_image_id = upload_resp.json()["id"]
+
+    response = client.get(
+        f"{settings.API_V1_STR}/images/",
+        headers=normal_user_token_headers,
+    )
+    assert response.status_code == 200
+    ids = [img["id"] for img in response.json()["data"]]
+    assert system_image_id in ids
+
+
 def test_read_image(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
@@ -131,6 +158,30 @@ def test_read_image(
     assert "url" in content
 
 
+def test_read_image_system_image_for_normal_user(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    normal_user_token_headers: dict[str, str],
+) -> None:
+    """普通用户可通过 ID 查看系统默认图片"""
+    image_bytes = create_test_image_bytes()
+    upload_resp = client.post(
+        f"{settings.API_V1_STR}/images/upload",
+        headers=superuser_token_headers,
+        files={"file": ("system_get.jpg", image_bytes, "image/jpeg")},
+    )
+    assert upload_resp.status_code == 200
+    system_image_id = upload_resp.json()["id"]
+
+    response = client.get(
+        f"{settings.API_V1_STR}/images/{system_image_id}",
+        headers=normal_user_token_headers,
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["id"] == system_image_id
+
+
 def test_read_image_not_found(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
@@ -145,20 +196,27 @@ def test_read_image_not_found(
 
 
 def test_read_image_not_enough_permissions(
-    client: TestClient, superuser_token_headers: dict[str, str],
+    client: TestClient,
     normal_user_token_headers: dict[str, str],
+    db: Session,
 ) -> None:
-    """普通用户访问他人的图片应返回 403"""
-    image_bytes = create_test_image_bytes()
-    upload_resp = client.post(
-        f"{settings.API_V1_STR}/images/upload",
-        headers=superuser_token_headers,
-        files={"file": ("owner_test.jpg", image_bytes, "image/jpeg")},
+    """普通用户访问其他普通用户的图片应返回 403"""
+    other_user = create_random_user(db)
+    other_image = Image(
+        owner_id=other_user.id,
+        file_hash=uuid.uuid4().hex,
+        filename="owner_test.jpg",
+        file_size=100,
+        width=100,
+        height=100,
+        file_path="images/test/owner_test.jpg",
     )
-    image_id = upload_resp.json()["id"]
+    db.add(other_image)
+    db.commit()
+    db.refresh(other_image)
 
     response = client.get(
-        f"{settings.API_V1_STR}/images/{image_id}",
+        f"{settings.API_V1_STR}/images/{other_image.id}",
         headers=normal_user_token_headers,
     )
     assert response.status_code == 403

@@ -8,6 +8,7 @@ from sqlmodel import Session, col, delete, func, select
 from app.modules.item.models import Item
 from app.modules.user.models import User
 from app.modules.user.schemas import UserCreate
+from app.modules.wallet.models import Wallet
 
 
 def count_users(*, session: Session) -> int:
@@ -38,6 +39,16 @@ def get_user_by_username(*, session: Session, username: str) -> User | None:
     """按用户名获取用户"""
     statement = select(User).where(User.username == username)
     return session.exec(statement).first()
+
+
+def list_wallets_by_user_ids(
+    *, session: Session, user_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, Wallet]:
+    """按用户 ID 批量查询钱包，返回 {user_id: wallet}"""
+    if not user_ids:
+        return {}
+    statement = select(Wallet).where(col(Wallet.user_id).in_(user_ids))
+    return {wallet.user_id: wallet for wallet in session.exec(statement).all()}
 
 
 def create_user_record(

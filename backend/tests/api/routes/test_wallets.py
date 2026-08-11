@@ -159,3 +159,97 @@ def test_read_wallets_superuser(
     content = response.json()
     assert content["count"] >= 1
     assert any(wallet["id"] == wallet_id for wallet in content["data"])
+
+
+def test_read_wallet_by_user_id_superuser(
+    client: TestClient, db: Session, superuser_token_headers: dict[str, str]
+) -> None:
+    headers, user = _create_wallet_user(client, db)
+    wallet_id = _read_wallet_id(client, headers)
+    response = client.get(
+        f"{settings.API_V1_STR}/wallets/user/{user.id}",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["id"] == wallet_id
+    assert content["user_id"] == str(user.id)
+    assert Decimal(content["balance"]) == Decimal("0.00")
+
+
+def test_read_wallet_by_user_id_creates_wallet(
+    client: TestClient, db: Session, superuser_token_headers: dict[str, str]
+) -> None:
+    user = create_random_user(db)
+    response = client.get(
+        f"{settings.API_V1_STR}/wallets/user/{user.id}",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["user_id"] == str(user.id)
+
+
+def test_read_wallet_by_user_id_not_found(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    response = client.get(
+        f"{settings.API_V1_STR}/wallets/user/{uuid.uuid4()}",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "用户不存在"
+
+
+def test_read_wallet_by_user_id_requires_superuser(
+    client: TestClient, db: Session, normal_user_token_headers: dict[str, str]
+) -> None:
+    user = create_random_user(db)
+    response = client.get(
+        f"{settings.API_V1_STR}/wallets/user/{user.id}",
+        headers=normal_user_token_headers,
+    )
+    assert response.status_code == 403
+
+
+def test_update_wallet_status_superuser(
+    client: TestClient, db: Session, superuser_token_headers: dict[str, str]
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    wallet_id = _read_wallet_id(client, headers)
+    response = client.patch(
+        f"{settings.API_V1_STR}/wallets/{wallet_id}",
+        headers=superuser_token_headers,
+        json={"is_active": False},
+    )
+    assert response.status_code == 200
+    assert response.json()["is_active"] is False
+
+    wallet_response = client.get(
+        f"{settings.API_V1_STR}/wallets/me", headers=headers
+    )
+    assert wallet_response.json()["is_active"] is False
+
+
+def test_update_wallet_status_requires_superuser(
+    client: TestClient, db: Session, normal_user_token_headers: dict[str, str]
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    wallet_id = _read_wallet_id(client, headers)
+    response = client.patch(
+        f"{settings.API_V1_STR}/wallets/{wallet_id}",
+        headers=normal_user_token_headers,
+        json={"is_active": False},
+    )
+    assert response.status_code == 403
+
+
+def test_update_wallet_status_not_found(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    response = client.patch(
+        f"{settings.API_V1_STR}/wallets/{uuid.uuid4()}",
+        headers=superuser_token_headers,
+        json={"is_active": False},
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "钱包不存在"

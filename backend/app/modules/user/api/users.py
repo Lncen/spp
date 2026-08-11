@@ -3,7 +3,7 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.deps import (
     CurrentUser,
@@ -11,6 +11,7 @@ from app.api.deps import (
     get_current_active_superuser,
 )
 from app.common.models import Message
+from app.modules.setting.application.setting_query import get_setting
 from app.modules.user.application.user_create import (
     create_user as create_user_service,
 )
@@ -25,6 +26,7 @@ from app.modules.user.application.user_delete import (
 )
 from app.modules.user.application.user_query import (
     get_user_by_id,
+    get_user_detail,
     get_users_page,
 )
 from app.modules.user.application.user_update import (
@@ -39,9 +41,10 @@ from app.modules.user.application.user_update import (
 from app.modules.user.schemas import (
     UpdatePassword,
     UserCreate,
+    UserDetailPublic,
+    UserListPublic,
     UserPublic,
     UserRegister,
-    UsersPublic,
     UserUpdate,
     UserUpdateMe,
 )
@@ -53,15 +56,16 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.get(
     "/",
     dependencies=[Depends(get_current_active_superuser)],
-    response_model=UsersPublic,
+    response_model=UserListPublic,
 )
-def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
+def read_users(
+    session: SessionDep,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=100),
+) -> Any:
     """获取用户列表（仅超级管理员可用）"""
     count, users = get_users_page(session=session, skip=skip, limit=limit)
-    return UsersPublic(
-        data=[UserPublic.model_validate(u) for u in users],
-        count=count,
-    )
+    return UserListPublic(data=users, count=count)
 
 
 @router.post(
@@ -103,9 +107,11 @@ def read_user_me(current_user: CurrentUser) -> Any:
 
 @router.delete("/me", response_model=Message)
 def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
-    """删除当前用户（超级管理员不允许删除自己）"""
+    """删除当前用户（超级管理员不允许删除自己，需系统设置开启）"""
     if current_user.is_superuser:
         raise HTTPException(status_code=403, detail="超级管理员不允许删除自己")
+    if not get_setting(session=session, key="allow_delete_account"):
+        raise HTTPException(status_code=403, detail="当前不允许删除账号")
     delete_current_user_service(session=session, current_user=current_user)
     return Message(message="用户已删除")
 
@@ -116,16 +122,16 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
     return register_user_service(session=session, user_in=user_in)
 
 
-@router.get("/{user_id}", response_model=UserPublic)
+@router.get(
+    "/{user_id}",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=UserDetailPublic,
+)
 def read_user_by_id(
-    user_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
+    user_id: uuid.UUID, session: SessionDep
 ) -> Any:
-    """根据 ID 获取用户"""
-    user = get_user_by_id(session=session, user_id=user_id)
-    if user == current_user:
-        return user
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="权限不足")
+    """根据 ID 获取用户详情（仅超级管理员可用）"""
+    user = get_user_detail(session=session, user_id=user_id)
     if user is None:
         raise HTTPException(status_code=404, detail="用户不存在")
     return user

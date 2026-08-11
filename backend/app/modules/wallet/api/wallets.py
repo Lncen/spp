@@ -18,6 +18,9 @@ from app.modules.wallet.application.wallet_query import (
     get_wallet_transactions_page,
     get_wallets_page,
 )
+from app.modules.wallet.application.wallet_update import (
+    update_wallet_status as update_wallet_status_service,
+)
 from app.modules.wallet.domain.constants import WalletTxType
 from app.modules.wallet.schemas import (
     WalletAdjust,
@@ -25,6 +28,7 @@ from app.modules.wallet.schemas import (
     WalletsPublic,
     WalletTransactionPublic,
     WalletTransactionsPublic,
+    WalletUpdate,
 )
 
 router = APIRouter(prefix="/wallets", tags=["wallets"])
@@ -143,4 +147,19 @@ def adjust_wallet_balance(
         tx_type=WalletTxType.ADJUST,
         remark=body.remark,
         operator_id=current_user.id,
+    )
+
+
+@router.patch(
+    "/{wallet_id}",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=WalletPublic,
+)
+def update_wallet_status(
+    *, session: SessionDep, wallet_id: uuid.UUID, body: WalletUpdate
+) -> Any:
+    """更新钱包启用状态（仅超级管理员可用）"""
+    wallet = get_wallet_by_id(session=session, wallet_id=wallet_id)
+    return update_wallet_status_service(
+        session=session, wallet=wallet, is_active=body.is_active
     )

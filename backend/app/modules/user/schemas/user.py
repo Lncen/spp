@@ -1,6 +1,7 @@
 """用户模块：API 请求与响应模型"""
 import uuid
 from datetime import datetime
+from decimal import Decimal
 
 from pydantic import BaseModel, EmailStr
 from sqlmodel import Field, SQLModel
@@ -109,6 +110,29 @@ class UsersPublic(SQLModel):
     """用户列表响应"""
 
     data: list[UserPublic]
+    count: int
+
+
+class UserDetailPublic(UserPublic):
+    """用户详情响应（管理端）"""
+
+    level_name: str | None = Field(default=None, title="用户等级名称")
+
+
+class UserListItemPublic(SQLModel):
+    """用户列表项（管理端）"""
+
+    id: uuid.UUID
+    username: str
+    balance: Decimal = Field(title="余额")
+    is_superuser: bool
+    is_active: bool
+
+
+class UserListPublic(SQLModel):
+    """用户列表响应（管理端）"""
+
+    data: list[UserListItemPublic]
     count: int
 
 

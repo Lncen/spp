@@ -23,6 +23,10 @@ DEFAULT_SETTINGS: dict[str, dict[str, Any]] = {
         "value": 15,
         "description": "登录失败锁定分钟数，到期后自动解锁",
     },
+    "allow_delete_account": {
+        "value": False,
+        "description": "是否允许用户自助删除账号，默认关闭",
+    },
     AUTOMATION_TASK_RETENTION_DAYS: {
         "value": 3,
         "description": "自动化任务归档数据保留天数，到期后物理删除",

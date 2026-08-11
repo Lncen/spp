@@ -6,11 +6,13 @@ from app.modules.wallet.schemas.wallet import (
     WalletsPublic,
     WalletTransactionPublic,
     WalletTransactionsPublic,
+    WalletUpdate,
 )
 
 __all__ = [
     "WalletAdjust",
     "WalletPublic",
+    "WalletUpdate",
     "WalletsPublic",
     "WalletTransactionPublic",
     "WalletTransactionsPublic",

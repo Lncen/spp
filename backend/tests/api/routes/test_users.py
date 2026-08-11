@@ -6,10 +6,12 @@ from sqlmodel import Session, select
 
 from app.core.config import settings
 from app.core.security import verify_password
+from app.modules.image.models import Image
 from app.modules.user.application.user_create import create_user
 from app.modules.user.application.user_query import get_user_by_email
 from app.modules.user.models import User
 from app.modules.user.schemas import UserCreate
+from tests.utils.image import create_test_image_bytes
 from tests.utils.user import create_random_user
 from tests.utils.utils import random_email, random_lower_string
 
@@ -76,6 +78,8 @@ def test_get_existing_user_as_superuser(
     existing_user = get_user_by_email(session=db, email=username)
     assert existing_user
     assert existing_user.email == api_user["email"]
+    assert "level_name" in api_user
+    assert "level_id" in api_user
 
 
 def test_get_non_existing_user_as_superuser(
@@ -89,7 +93,10 @@ def test_get_non_existing_user_as_superuser(
     assert r.json() == {"detail": "用户不存在"}
 
 
-def test_get_existing_user_current_user(client: TestClient, db: Session) -> None:
+def test_get_own_user_as_normal_user_forbidden(
+    client: TestClient, db: Session
+) -> None:
+    """普通用户不能通过详情接口查看自己（仅超管可用）"""
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
@@ -109,11 +116,8 @@ def test_get_existing_user_current_user(client: TestClient, db: Session) -> None
         f"{settings.API_V1_STR}/users/{user_id}",
         headers=headers,
     )
-    assert 200 <= r.status_code < 300
-    api_user = r.json()
-    existing_user = get_user_by_email(session=db, email=username)
-    assert existing_user
-    assert existing_user.email == api_user["email"]
+    assert r.status_code == 403
+    assert r.json() == {"detail": "权限不足"}
 
 
 def test_get_existing_user_permissions_error(
@@ -197,7 +201,12 @@ def test_retrieve_users(
     assert len(all_users["data"]) > 1
     assert "count" in all_users
     for item in all_users["data"]:
-        assert "email" in item
+        assert "id" in item
+        assert "username" in item
+        assert "balance" in item
+        assert "is_superuser" in item
+        assert "is_active" in item
+        assert "email" not in item
 
 
 def test_update_user_me(
@@ -263,6 +272,56 @@ def test_update_user_me_username_exists(
     )
     assert r.status_code == 409
     assert r.json()["detail"] == "该用户名已被其他用户使用"
+
+
+def test_update_user_me_avatar_system_image(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    normal_user_token_headers: dict[str, str],
+) -> None:
+    """普通用户可选择系统默认（超管上传）图片作为头像"""
+    image_bytes = create_test_image_bytes()
+    upload_resp = client.post(
+        f"{settings.API_V1_STR}/images/upload",
+        headers=superuser_token_headers,
+        files={"file": ("system_avatar.jpg", image_bytes, "image/jpeg")},
+    )
+    assert upload_resp.status_code == 200
+    system_image_id = upload_resp.json()["id"]
+
+    r = client.patch(
+        f"{settings.API_V1_STR}/users/me",
+        headers=normal_user_token_headers,
+        json={"avatar_id": system_image_id},
+    )
+    assert r.status_code == 200
+    assert r.json()["avatar_id"] == system_image_id
+
+
+def test_update_user_me_avatar_other_user_image_forbidden(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+) -> None:
+    """普通用户不能使用其他普通用户上传的图片作为头像"""
+    other_user = create_random_user(db)
+    other_image = Image(
+        owner_id=other_user.id,
+        file_hash=uuid.uuid4().hex,
+        filename="other.jpg",
+        file_size=100,
+        width=100,
+        height=100,
+        file_path="images/test/other.jpg",
+    )
+    db.add(other_image)
+    db.commit()
+    db.refresh(other_image)
+
+    r = client.patch(
+        f"{settings.API_V1_STR}/users/me",
+        headers=normal_user_token_headers,
+        json={"avatar_id": str(other_image.id)},
+    )
+    assert r.status_code == 403
 
 
 def test_update_password_me(
@@ -501,7 +560,33 @@ def test_update_user_email_exists(
     assert r.json()["detail"] == "该邮箱已被其他用户使用"
 
 
-def test_delete_user_me(client: TestClient, db: Session) -> None:
+def test_delete_user_me_disabled_by_default(
+    client: TestClient, db: Session
+) -> None:
+    """删除账号设置默认关闭时返回 403"""
+    username = random_email()
+    password = random_lower_string()
+    user_in = UserCreate(email=username, password=password)
+    create_user(session=db, user_create=user_in)
+
+    login_data = {
+        "username": username,
+        "password": password,
+    }
+    r = client.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
+    tokens = r.json()
+    headers = {"Authorization": f"Bearer {tokens['access_token']}"}
+
+    r = client.delete(
+        f"{settings.API_V1_STR}/users/me",
+        headers=headers,
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"] == "当前不允许删除账号"
+
+
+def test_delete_user_me_when_enabled(client: TestClient, db: Session) -> None:
+    """删除账号设置开启后，普通用户可以删除自己"""
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
@@ -517,10 +602,11 @@ def test_delete_user_me(client: TestClient, db: Session) -> None:
     a_token = tokens["access_token"]
     headers = {"Authorization": f"Bearer {a_token}"}
 
-    r = client.delete(
-        f"{settings.API_V1_STR}/users/me",
-        headers=headers,
-    )
+    with patch("app.modules.user.api.users.get_setting", return_value=True):
+        r = client.delete(
+            f"{settings.API_V1_STR}/users/me",
+            headers=headers,
+        )
     assert r.status_code == 200
     deleted_user = r.json()
     assert deleted_user["message"] == "用户已删除"

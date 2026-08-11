@@ -1,48 +1,36 @@
 import type { ColumnDef } from "@tanstack/react-table"
 
-import type { UserPublic } from "@/client"
+import type { UserListItemPublic } from "@/client"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { UserActionsMenu } from "./UserActionsMenu"
 
-export type UserTableData = UserPublic & {
+export type UserTableData = UserListItemPublic & {
   isCurrentUser: boolean
 }
 
 export const columns: ColumnDef<UserTableData>[] = [
   {
-    accessorKey: "full_name",
-    header: "姓名",
-    cell: ({ row }) => {
-      const fullName = row.original.full_name
-      return (
-        <div className="flex items-center gap-2">
-          <span
-            className={cn("font-medium", !fullName && "text-muted-foreground")}
-          >
-            {fullName || "未填写"}
-          </span>
-          {row.original.isCurrentUser && (
-            <Badge variant="outline" className="text-xs">
-              你
-            </Badge>
-          )}
-        </div>
-      )
-    },
-  },
-  {
     accessorKey: "username",
     header: "用户名",
     cell: ({ row }) => (
-      <span className="text-muted-foreground">{row.original.username}</span>
+      <div className="flex items-center gap-2">
+        <span className="font-medium">{row.original.username}</span>
+        {row.original.isCurrentUser && (
+          <Badge variant="outline" className="text-xs">
+            你
+          </Badge>
+        )}
+      </div>
     ),
   },
   {
-    accessorKey: "email",
-    header: "邮箱",
+    accessorKey: "balance",
+    header: "余额",
     cell: ({ row }) => (
-      <span className="text-muted-foreground">{row.original.email}</span>
+      <span className="text-muted-foreground">
+        {Number(row.original.balance).toFixed(2)}
+      </span>
     ),
   },
   {

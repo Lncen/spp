@@ -4,7 +4,7 @@ import uuid
 from fastapi.testclient import TestClient
 
 from app.core.config import settings
-from app.modules.image.service import get_category_by_name
+from app.modules.image.repositories.category import get_category_by_name
 from tests.utils.image import create_test_image_bytes
 
 
@@ -48,7 +48,7 @@ class TestReadCategories:
     ) -> None:
         """未认证用户无法获取分类列表"""
         response = client.get(_list_categories_url())
-        assert response.status_code == 403
+        assert response.status_code == 401
 
 
 class TestReadCategoryOptions:

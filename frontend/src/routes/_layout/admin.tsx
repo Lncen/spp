@@ -3,7 +3,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router"
 import type { PaginationState } from "@tanstack/react-table"
 import { Suspense, useState } from "react"
 
-import { type UserPublic, UsersService } from "@/client"
+import { type UserListItemPublic, UsersService } from "@/client"
 import PendingUsers from "@/components/Admin/Pending/PendingUsers"
 import AddUser from "@/components/Admin/Users/AddUser"
 import { columns, type UserTableData } from "@/components/Admin/Users/columns"
@@ -48,10 +48,12 @@ function UsersTableContent() {
   })
   const { data: users } = useSuspenseQuery(getUsersQueryOptions(pagination))
 
-  const tableData: UserTableData[] = users.data.map((user: UserPublic) => ({
-    ...user,
-    isCurrentUser: currentUser?.id === user.id,
-  }))
+  const tableData: UserTableData[] = users.data.map(
+    (user: UserListItemPublic) => ({
+      ...user,
+      isCurrentUser: currentUser?.id === user.id,
+    }),
+  )
 
   return (
     <DataTable

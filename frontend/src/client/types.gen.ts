@@ -1538,6 +1538,50 @@ export type UserCreate = {
 };
 
 /**
+ * 用户详情响应（管理端）
+ */
+export type UserDetailPublic = {
+    username: string;
+    email: string;
+    is_active?: boolean;
+    is_superuser?: boolean;
+    can_order?: boolean;
+    full_name?: (string | null);
+    /**
+     * 管理员对用户的备注，仅管理员可修改
+     */
+    remark?: (string | null);
+    /**
+     * 用户个人简介，由用户自己维护
+     */
+    bio?: (string | null);
+    id: string;
+    level_id?: (string | null);
+    avatar_id?: (string | null);
+    created_at?: (string | null);
+    level_name?: (string | null);
+};
+
+/**
+ * 用户列表项（管理端）
+ */
+export type UserListItemPublic = {
+    id: string;
+    username: string;
+    balance: string;
+    is_superuser: boolean;
+    is_active: boolean;
+};
+
+/**
+ * 用户列表响应（管理端）
+ */
+export type UserListPublic = {
+    data: Array<UserListItemPublic>;
+    count: number;
+};
+
+/**
  * 用户公开响应
  */
 export type UserPublic = {
@@ -1572,14 +1616,6 @@ export type UserRegister = {
     email: string;
     password: string;
     full_name?: (string | null);
-};
-
-/**
- * 用户列表响应
- */
-export type UsersPublic = {
-    data: Array<UserPublic>;
-    count: number;
 };
 
 /**
@@ -1677,6 +1713,16 @@ export type WalletTransactionPublic = {
 export type WalletTransactionsPublic = {
     data: Array<WalletTransactionPublic>;
     count: number;
+};
+
+/**
+ * 钱包更新请求（仅管理端使用）
+ */
+export type WalletUpdate = {
+    /**
+     * 是否启用钱包
+     */
+    is_active: boolean;
 };
 
 export type AutomationReadAutomationTasksData = {
@@ -2255,7 +2301,7 @@ export type UsersReadUsersData = {
     skip?: number;
 };
 
-export type UsersReadUsersResponse = (UsersPublic);
+export type UsersReadUsersResponse = (UserListPublic);
 
 export type UsersCreateUserData = {
     requestBody: UserCreate;
@@ -2289,7 +2335,7 @@ export type UsersReadUserByIdData = {
     userId: string;
 };
 
-export type UsersReadUserByIdResponse = (UserPublic);
+export type UsersReadUserByIdResponse = (UserDetailPublic);
 
 export type UsersUpdateUserData = {
     requestBody: UserUpdate;
@@ -2340,6 +2386,13 @@ export type WalletsReadWalletByIdData = {
 };
 
 export type WalletsReadWalletByIdResponse = (WalletPublic);
+
+export type WalletsUpdateWalletStatusData = {
+    requestBody: WalletUpdate;
+    walletId: string;
+};
+
+export type WalletsUpdateWalletStatusResponse = (WalletPublic);
 
 export type WalletsReadWalletTransactionsData = {
     limit?: number;

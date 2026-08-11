@@ -5274,6 +5274,181 @@ export const UserCreateSchema = {
     description: '创建用户请求'
 } as const;
 
+export const UserDetailPublicSchema = {
+    properties: {
+        username: {
+            type: 'string',
+            title: 'Username'
+        },
+        email: {
+            type: 'string',
+            maxLength: 255,
+            format: 'email',
+            title: 'Email'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active',
+            default: true
+        },
+        is_superuser: {
+            type: 'boolean',
+            title: 'Is Superuser',
+            default: false
+        },
+        can_order: {
+            type: 'boolean',
+            title: 'Can Order',
+            default: true
+        },
+        full_name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Full Name'
+        },
+        remark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '备注',
+            description: '管理员对用户的备注，仅管理员可修改'
+        },
+        bio: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '简介',
+            description: '用户个人简介，由用户自己维护'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        level_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '用户等级'
+        },
+        avatar_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '头像图片 ID'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        level_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '用户等级名称'
+        }
+    },
+    type: 'object',
+    required: ['username', 'email', 'id'],
+    title: 'UserDetailPublic',
+    description: '用户详情响应（管理端）'
+} as const;
+
+export const UserListItemPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        username: {
+            type: 'string',
+            title: 'Username'
+        },
+        balance: {
+            type: 'string',
+            pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+            title: '余额'
+        },
+        is_superuser: {
+            type: 'boolean',
+            title: 'Is Superuser'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active'
+        }
+    },
+    type: 'object',
+    required: ['id', 'username', 'balance', 'is_superuser', 'is_active'],
+    title: 'UserListItemPublic',
+    description: '用户列表项（管理端）'
+} as const;
+
+export const UserListPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/UserListItemPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'UserListPublic',
+    description: '用户列表响应（管理端）'
+} as const;
+
 export const UserPublicSchema = {
     properties: {
         username: {
@@ -5641,26 +5816,6 @@ export const UserUpdateMeSchema = {
     description: '当前用户更新个人信息请求'
 } as const;
 
-export const UsersPublicSchema = {
-    properties: {
-        data: {
-            items: {
-                '$ref': '#/components/schemas/UserPublic'
-            },
-            type: 'array',
-            title: 'Data'
-        },
-        count: {
-            type: 'integer',
-            title: 'Count'
-        }
-    },
-    type: 'object',
-    required: ['data', 'count'],
-    title: 'UsersPublic',
-    description: '用户列表响应'
-} as const;
-
 export const ValidationErrorSchema = {
     properties: {
         loc: {
@@ -5893,6 +6048,20 @@ export const WalletTransactionsPublicSchema = {
     required: ['data', 'count'],
     title: 'WalletTransactionsPublic',
     description: '钱包交易流水列表响应'
+} as const;
+
+export const WalletUpdateSchema = {
+    properties: {
+        is_active: {
+            type: 'boolean',
+            title: '钱包状态',
+            description: '是否启用钱包'
+        }
+    },
+    type: 'object',
+    required: ['is_active'],
+    title: 'WalletUpdate',
+    description: '钱包更新请求（仅管理端使用）'
 } as const;
 
 export const WalletsPublicSchema = {

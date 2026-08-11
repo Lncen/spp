@@ -24,6 +24,15 @@ class WalletAdjust(SQLModel):
     )
 
 
+class WalletUpdate(SQLModel):
+    """钱包更新请求（仅管理端使用）"""
+
+    is_active: bool = Field(
+        title="钱包状态",
+        description="是否启用钱包",
+    )
+
+
 class WalletPublic(SQLModel):
     """钱包公开响应"""
 

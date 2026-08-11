@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from sqlmodel import Session
 
 from app.core.security import get_password_hash, verify_password
+from app.modules.image.domain import can_use_as_avatar
 from app.modules.image.models import Image
 from app.modules.level.models import UserLevel
 from app.modules.user.models import User
@@ -106,14 +107,20 @@ def _check_avatar(
     avatar_id: uuid.UUID | None,
     owner_id: uuid.UUID | None = None,
 ) -> None:
-    """校验头像图片存在；用户本人设置时还需校验归属"""
+    """校验头像图片存在；用户本人设置时需为自己的图片或系统默认图片（超管上传）"""
     if avatar_id is None:
         return
     image = session.get(Image, avatar_id)
     if image is None:
         raise HTTPException(status_code=404, detail="头像图片不存在")
-    if owner_id is not None and image.owner_id != owner_id:
-        raise HTTPException(status_code=403, detail="无权使用该图片作为头像")
+    if owner_id is not None:
+        owner_is_superuser = image.owner.is_superuser if image.owner else False
+        if not can_use_as_avatar(
+            image_owner_id=image.owner_id,
+            owner_is_superuser=owner_is_superuser,
+            user_id=owner_id,
+        ):
+            raise HTTPException(status_code=403, detail="无权使用该图片作为头像")
 
 
 def _check_level(*, session: Session, level_id: uuid.UUID | None) -> None:

@@ -161,14 +161,16 @@ def _upsert_rules(
     """仅覆盖传入等级的折扣，其他等级保留原折扣"""
     levels = list({rule.level for rule in rules})
     level_ids = _resolve_level_ids(session=session, levels=levels)
+    existing_rules = session.exec(
+        select(PriceTemplateRule).where(
+            PriceTemplateRule.price_template_id == template.id,
+            PriceTemplateRule.level_id.in_(level_ids.values()),
+        )
+    ).all()
+    existing_by_level = {rule.level_id: rule for rule in existing_rules}
     for rule_in in rules:
         level_id = level_ids[rule_in.level]
-        existing = session.exec(
-            select(PriceTemplateRule).where(
-                PriceTemplateRule.price_template_id == template.id,
-                PriceTemplateRule.level_id == level_id,
-            )
-        ).first()
+        existing = existing_by_level.get(level_id)
         if existing:
             existing.discount_rate = rule_in.discount_rate
             session.add(existing)

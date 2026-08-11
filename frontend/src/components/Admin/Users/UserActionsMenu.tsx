@@ -2,7 +2,7 @@ import { Link as RouterLink } from "@tanstack/react-router"
 import { EllipsisVertical, ReceiptText } from "lucide-react"
 import { useState } from "react"
 
-import type { UserPublic } from "@/client"
+import type { UserListItemPublic } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -15,7 +15,7 @@ import DeleteUser from "./DeleteUser"
 import EditUser from "./EditUser"
 
 interface UserActionsMenuProps {
-  user: UserPublic
+  user: UserListItemPublic
 }
 
 export const UserActionsMenu = ({ user }: UserActionsMenuProps) => {

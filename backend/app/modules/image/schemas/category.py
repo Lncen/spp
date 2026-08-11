@@ -1,10 +1,14 @@
-"""图片模块：API 请求与响应模型"""
-from enum import StrEnum
+"""图片模块：分类请求与响应模型"""
+import re
 import uuid
 from datetime import datetime
+from enum import StrEnum
 
 from pydantic import field_validator
 from sqlmodel import Field, SQLModel
+
+
+_CATEGORY_NAME_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
 class ImageCategory(StrEnum):
@@ -12,39 +16,6 @@ class ImageCategory(StrEnum):
     AVATAR = "avatar"
     PRODUCT = "product"
     PRODUCT_DETAIL = "product_detail"
-
-
-# ===================== Image (原有) =====================
-
-
-class ImageBase(SQLModel):
-    """图片基础属性"""
-    filename: str = Field(max_length=255)
-    file_size: int
-    width: int
-    height: int
-    category: str | None = Field(default=None, max_length=32, title="分类")
-
-
-
-class ImageUpdate(SQLModel):
-    """更新图片请求"""
-    category: str | None = Field(default=None, max_length=32, title="分类")
-class ImagePublic(ImageBase):
-    """图片公开响应"""
-    id: uuid.UUID
-    owner_id: uuid.UUID
-    created_at: datetime | None = None
-    url: str
-
-
-class ImagesPublic(SQLModel):
-    """图片列表响应"""
-    data: list[ImagePublic]
-    count: int
-
-
-# ===================== ImageCategory (分类管理) =====================
 
 
 class ImageCategoryBase(SQLModel):
@@ -59,10 +30,16 @@ class ImageCategoryCreate(ImageCategoryBase):
     name: str = Field(
         min_length=1,
         max_length=32,
-        regex=r"^[a-z][a-z0-9_]*$",
         title="分类标识",
         description="小写英文字母开头，仅允许小写字母、数字、下划线"
     )
+
+    @field_validator("name")
+    @classmethod
+    def _validate_name_pattern(cls, value: str) -> str:
+        if not _CATEGORY_NAME_PATTERN.match(value):
+            raise ValueError("分类标识需以小写字母开头，仅允许小写字母、数字、下划线")
+        return value
 
 
 class ImageCategoryUpdate(SQLModel):

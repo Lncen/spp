@@ -7,9 +7,9 @@ from sqlmodel import Session, select
 from app.modules.image.models import ImageCategory
 
 CATEGORIES_DATA = [
-    {"name": "头像", "description": "用户头像图片", "sort_order": 1, "icon": "user"},
-    {"name": "商品", "description": "商品主图", "sort_order": 2, "icon": "package"},
-    {"name": "商品详情", "description": "商品详情页配图", "sort_order": 3, "icon": "file-image"},
+    {"name": "avatar", "description": "用户头像图片", "sort_order": 1, "icon": "user"},
+    {"name": "product", "description": "商品主图", "sort_order": 2, "icon": "package"},
+    {"name": "product_detail", "description": "商品详情页配图", "sort_order": 3, "icon": "file-image"},
 ]
 
 
