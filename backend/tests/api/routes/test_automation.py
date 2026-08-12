@@ -441,3 +441,126 @@ def test_rule_disabled_skips_task_creation(
     with Session(engine) as session:
         tasks = session.exec(select(AutomationTask)).all()
         assert len(tasks) == 0
+
+
+def test_register_executor_requires_idempotent_declaration() -> None:
+    """执行器注册强制校验：未显式声明 idempotent 时注册即报错。"""
+    from app.modules.automation.infrastructure.executors.base import (
+        BaseExecutor,
+        register_executor,
+    )
+
+    with pytest.raises(TypeError):
+
+        @register_executor("__test_missing_idempotent__")
+        class _MissingIdempotentExecutor(BaseExecutor):
+            def execute(self, *, task: AutomationTask) -> None:
+                pass
+
+
+def test_scan_skips_execute_when_already_done(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    """幂等预检查命中时，任务池直接标记成功归档，不调用 execute。"""
+    from app.modules.automation.infrastructure.executors.base import (
+        EXECUTORS,
+        BaseExecutor,
+        register_executor,
+    )
+
+    executed: list[str] = []
+
+    @register_executor("__test_done_executor__")
+    class DoneExecutor(BaseExecutor):
+        idempotent = True
+
+        def check_already_done(self, *, task: AutomationTask) -> bool:
+            return True
+
+        def execute(self, *, task: AutomationTask) -> None:
+            executed.append(str(task.id))
+
+    try:
+        r = client.post(
+            TASK_URL,
+            headers=superuser_token_headers,
+            json={"task_type": "__test_done_executor__"},
+        )
+        assert r.status_code == 200
+        task_id = r.json()["id"]
+
+        stats = automation_task_scan()
+        assert stats["success"] == 1
+        assert executed == []
+        with Session(engine) as session:
+            assert session.get(AutomationTask, uuid.UUID(task_id)) is None
+            archived = session.get(AutomationTaskArchive, uuid.UUID(task_id))
+            assert archived is not None
+            assert archived.status == AutomationTaskStatus.SUCCESS
+    finally:
+        EXECUTORS.pop("__test_done_executor__", None)
+
+
+def test_submit_supplier_order_idempotency_check(db: Session) -> None:
+    """订单履约幂等判定：已生成上游单号 / 非 API 履约 / 订单不存在视为已完成。"""
+    from decimal import Decimal
+
+    from app.modules.automation.infrastructure.executors.order_submit import (
+        SubmitSupplierOrderExecutor,
+    )
+    from app.modules.order.domain.constants import OrderStatus
+    from app.modules.order.models import Order
+    from app.modules.product.constants import RedeemType
+    from app.modules.user.models import User
+    from tests.utils.utils import random_lower_string
+
+    user = db.exec(select(User)).first()
+    assert user is not None
+
+    def _make_order(*, fulfillment_type: RedeemType) -> Order:
+        order = Order(
+            order_no=random_lower_string(),
+            user_id=user.id,
+            status=OrderStatus.PAID,
+            product_name="幂等测试商品",
+            quantity=1,
+            unit_price=Decimal("1.00"),
+            subtotal=Decimal("1.00"),
+            fulfillment_type=fulfillment_type,
+        )
+        db.add(order)
+        db.commit()
+        db.refresh(order)
+        return order
+
+    executor = SubmitSupplierOrderExecutor()
+
+    # API 履约、已付款、未生成上游单号：需要履约
+    order = _make_order(fulfillment_type=RedeemType.AUTO_API)
+    task = AutomationTask(
+        task_type="submit_supplier_order",
+        payload={"order_id": str(order.id)},
+    )
+    assert executor.check_already_done(task=task) is False
+
+    # 已生成上游单号：目标已达成
+    order.supplier_order_id = "upstream-001"
+    db.add(order)
+    db.commit()
+    assert executor.check_already_done(task=task) is True
+
+    # 非 API 履约：无需处理
+    manual_order = _make_order(fulfillment_type=RedeemType.MANUAL)
+    manual_task = AutomationTask(
+        task_type="submit_supplier_order",
+        payload={"order_id": str(manual_order.id)},
+    )
+    assert executor.check_already_done(task=manual_task) is True
+
+    # 订单不存在：视为完成
+    missing_task = AutomationTask(
+        task_type="submit_supplier_order",
+        payload={"order_id": str(uuid.uuid4())},
+    )
+    assert executor.check_already_done(task=missing_task) is True

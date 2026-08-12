@@ -9,7 +9,8 @@ from typing import Any
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
-from app.core.event_bus import publish as publish_event
+from app.core.event_bus import create_event_in_session, dispatch_event
+from app.modules.automation.models import AutomationEvent
 from app.modules.order.application.query import to_order_public
 from app.modules.order.domain.constants import OrderStatus
 from app.modules.order.domain.pricing import calc_unit_price, money
@@ -34,19 +35,26 @@ from app.modules.setting.application.setting_query import get_setting
 from app.modules.user.models import User
 from app.modules.wallet.application.wallet_adjust import adjust_balance
 from app.modules.wallet.application.wallet_query import get_wallet_by_user_id
+from app.modules.wallet.models import Wallet
 
 logger = logging.getLogger(__name__)
 
 
-def _publish_order_paid(db_order: Order) -> None:
-    """订单创建成功（已付款）后发布事件，失败仅记录日志，不影响下单结果。"""
+def _queue_order_paid_event(*, session: Session, db_order: Order) -> AutomationEvent:
+    """在订单事务内登记 order.paid 事件，随订单一起提交，避免事件丢失"""
+    return create_event_in_session(
+        session=session,
+        event_type="order.paid",
+        payload={"order_id": str(db_order.id)},
+    )
+
+
+def _dispatch_order_paid_event(event: AutomationEvent) -> None:
+    """订单提交后分发 order.paid；失败仅记录日志，事件已在库中可追溯补发"""
     try:
-        publish_event(
-            event_type="order.paid",
-            payload={"order_id": str(db_order.id)},
-        )
+        dispatch_event(event)
     except Exception:  # noqa: BLE001
-        logger.exception("订单 %s 发布 order.paid 事件失败", db_order.order_no)
+        logger.exception("order.paid 事件分发失败 event_id=%s", event.id)
 
 
 def build_order_data(
@@ -116,82 +124,103 @@ def build_order(
     )
 
 
-def create_order(*, session: Session, user: User, order_in: OrderCreate) -> Order:
-    """创建单张订单：校验用户、钱包、商品与供应商，扣库存并原子扣款
+def _create_order_core(
+    *,
+    session: Session,
+    user: User,
+    order_in: OrderCreate,
+    wallet: Wallet | None,
+) -> Order:
+    """公共下单流水线：普通下单与管理员代下共享，避免两套校验逐渐不一致
 
+    两者都执行：can_order、order_enabled、商品/价格、库存、防重复、
+    构造订单落库、order.paid 事件；wallet 非 None 时额外做余额校验与扣款。
     顺序执行的简单流水线（多步校验与落库），按 AGENTS.md 放宽至 60 行。
     """
     if not user.can_order:
         raise HTTPException(status_code=400, detail="暂无下单权限")
     if not get_setting(session=session, key="order_enabled"):
         raise HTTPException(status_code=403, detail="当前暂停下单，请稍后再试")
-    wallet = get_wallet_by_user_id(session=session, user_id=user.id)
-    if not wallet:
-        raise HTTPException(status_code=400, detail="钱包不存在")
-    if not wallet.is_active:
-        raise HTTPException(status_code=400, detail="钱包已禁用")
 
+    # 校验单张订单并计算总额
     total, data = build_order_data(
         session=session,
         user=user,
         order_in=order_in,
     )
+
+    # 校验余额（仅钱包下单）
+    if wallet is not None and wallet.balance < total:
+        raise HTTPException(status_code=400, detail="余额不足")
+
+    # 扣库存：先锁库存行，串行化同一商品的下单事务
+    deduct_stock(
+        session=session,
+        inventory=data["inventory"],
+        quantity=data["quantity"],
+    )
+    # 校验无重复下单（在库存行锁内执行，并发下可看到已提交订单）
     ensure_no_duplicate_active_order(
         session=session,
         user_id=user.id,
         product_id=data["product"].id,
         params=data["params"],
     )
-    deduct_stock(
-        session=session,
-        inventory=data["inventory"],
-        quantity=data["quantity"],
-    )
-    if wallet.balance < total:
-        raise HTTPException(status_code=400, detail="余额不足")
 
+    # 构造订单模型
     db_order = build_order(
         user_id=user.id,
         total=total,
         data=data,
         remark=order_in.remark,
     )
+    # 提交订单
     session.add(db_order)
     session.flush()
+    # 展开订单参数写入 order_params
     sync_order_params(session=session, db_order=db_order)
-    adjust_balance(
-        session=session,
-        wallet=wallet,
-        amount=-total,
-        tx_type="consume",
-        ref_type="order",
-        ref_id=db_order.id,
-        remark=f"订单 {db_order.order_no} 消费",
-        operator_id=user.id,
-        commit=False,
-    )
+    # 事件随订单事务落库，提交后统一分发
+    event = _queue_order_paid_event(session=session, db_order=db_order)
+    # 扣款（仅钱包下单）
+    if wallet is not None:
+        adjust_balance(
+            session=session,
+            wallet=wallet,
+            amount=-total,
+            tx_type="consume",
+            ref_type="order",
+            ref_id=db_order.id,
+            remark=f"订单 {db_order.order_no} 消费",
+            operator_id=user.id,
+            commit=False,
+        )
+    # 提交事务
     session.commit()
+    # 刷新订单数据
     session.refresh(db_order)
-    _publish_order_paid(db_order)
+    _dispatch_order_paid_event(event)
     return db_order
 
 
-def create_orders(
+def _create_orders_batch(
     *,
     session: Session,
     user: User,
     body: AdminOrdersCreate,
+    wallet: Wallet | None,
 ) -> AdminOrdersPublic:
-    """批量创建用户订单，逐单独立提交，单张失败不影响其他订单
-
-    顺序执行的简单流水线（逐单创建与结果汇总），按 AGENTS.md 放宽至 60 行。
-    """
+    """批量下单公共循环：逐单独立提交，单张失败不影响其他订单"""
     results: list[AdminOrderResult] = []
     success_count = 0
     failure_count = 0
     for index, order_in in enumerate(body.orders, start=1):
         try:
-            db_order = create_order(session=session, user=user, order_in=order_in)
+            db_order = _create_order_core(
+                session=session,
+                user=user,
+                order_in=order_in,
+                wallet=wallet,
+            )
         except HTTPException as exc:
             failure_count += 1
             session.rollback()
@@ -206,7 +235,7 @@ def create_orders(
         except Exception as exc:  # noqa: BLE001
             failure_count += 1
             session.rollback()
-            logger.exception("用户下单异常，订单序号 %s", index, exc_info=exc)
+            logger.exception("下单异常，订单序号 %s", index, exc_info=exc)
             results.append(
                 AdminOrderResult(
                     index=index,
@@ -226,45 +255,41 @@ def create_orders(
     )
 
 
-def create_admin_order(
+def create_orders(
+    *,
+    session: Session,
+    user: User,
+    body: AdminOrdersCreate,
+) -> AdminOrdersPublic:
+    """批量创建用户订单：校验钱包并逐单扣款，逐单独立提交"""
+    wallet = get_wallet_by_user_id(session=session, user_id=user.id)
+    if not wallet:
+        raise HTTPException(status_code=400, detail="钱包不存在")
+    if not wallet.is_active:
+        raise HTTPException(status_code=400, detail="钱包已禁用")
+    return _create_orders_batch(
+        session=session,
+        user=user,
+        body=body,
+        wallet=wallet,
+    )
+
+
+def create_admin_orders(
     *,
     session: Session,
     operator: User,
-    order_in: OrderCreate,
-) -> Order:
-    """创建管理员订单：跳过钱包与余额校验，仍校验商品、供应商与重复下单
-
-    顺序执行的简单流水线（多步校验与落库），按 AGENTS.md 放宽至 60 行。
+    body: AdminOrdersCreate,
+) -> AdminOrdersPublic:
+    """批量创建管理员订单：跳过钱包校验与扣款，
+    其余校验（下单权限、下单开关、商品、库存、防重复）与普通下单一致
     """
-    total, data = build_order_data(
+    return _create_orders_batch(
         session=session,
         user=operator,
-        order_in=order_in,
+        body=body,
+        wallet=None,
     )
-    ensure_no_duplicate_active_order(
-        session=session,
-        user_id=operator.id,
-        product_id=data["product"].id,
-        params=data["params"],
-    )
-    deduct_stock(
-        session=session,
-        inventory=data["inventory"],
-        quantity=data["quantity"],
-    )
-    db_order = build_order(
-        user_id=operator.id,
-        total=total,
-        data=data,
-        remark=order_in.remark,
-    )
-    session.add(db_order)
-    session.flush()
-    sync_order_params(session=session, db_order=db_order)
-    session.commit()
-    session.refresh(db_order)
-    _publish_order_paid(db_order)
-    return db_order
 
 
 def preview_admin_orders(
@@ -297,63 +322,4 @@ def preview_admin_orders(
         total=len(body.orders),
         total_amount=money(total_amount),
         items=preview_items,
-    )
-
-
-def create_admin_orders(
-    *,
-    session: Session,
-    operator: User,
-    body: AdminOrdersCreate,
-) -> AdminOrdersPublic:
-    """批量创建管理员订单，逐单独立提交，失败原因不泄露供应商信息
-
-    顺序执行的简单流水线（逐单创建与结果汇总），按 AGENTS.md 放宽至 60 行。
-    """
-    results: list[AdminOrderResult] = []
-    success_count = 0
-    failure_count = 0
-    for index, order_in in enumerate(body.orders, start=1):
-        try:
-            db_order = create_admin_order(
-                session=session,
-                operator=operator,
-                order_in=order_in,
-            )
-        except HTTPException as exc:
-            failure_count += 1
-            session.rollback()
-            detail = exc.detail if isinstance(exc.detail, str) else None
-            results.append(
-                AdminOrderResult(
-                    index=index,
-                    success=False,
-                    detail=detail or "订单创建失败，请稍后重试",
-                )
-            )
-        except Exception as exc:  # noqa: BLE001
-            failure_count += 1
-            session.rollback()
-            logger.exception("管理员下单异常，订单序号 %s", index, exc_info=exc)
-            results.append(
-                AdminOrderResult(
-                    index=index,
-                    success=False,
-                    detail="订单创建失败，请稍后重试",
-                )
-            )
-        else:
-            success_count += 1
-            results.append(
-                AdminOrderResult(
-                    index=index,
-                    success=True,
-                    order=to_order_public(session=session, orders=[db_order])[0],
-                )
-            )
-    return AdminOrdersPublic(
-        total=len(body.orders),
-        success_count=success_count,
-        failure_count=failure_count,
-        results=results,
     )

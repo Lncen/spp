@@ -86,12 +86,66 @@ class DingTalkChannel(BaseChannel):
 
 然后在 `infrastructure/channels/loader.py` 的 `load_channels()` 中导入即可生效。
 
-## 四、数据模型
+## 四、API 介绍
+
+所有接口均需登录访问（`CurrentUser`），路由前缀 `/notifications`，由 `api/notifications.py` 提供：
+
+### 1. 查询我的通知
+
+`GET /notifications`
+
+| 参数 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `skip` | int | 0 | 分页偏移 |
+| `limit` | int | 50 | 每页条数，范围 1-100 |
+| `unread_only` | bool | false | 仅返回未读通知 |
+
+响应 `NotificationsPublic`：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `data` | list[NotificationPublic] | 通知列表（最新在前） |
+| `count` | int | 当前筛选条件下的通知总数 |
+| `unread_count` | int | 当前用户未读通知总数 |
+
+### 2. 查询未读数
+
+`GET /notifications/unread-count`
+
+响应 `UnreadCount`：`unread_count`（当前用户未读通知数）。
+
+### 3. 标记单条已读
+
+`POST /notifications/{notification_id}/read`
+
+路径参数 `notification_id`（UUID）。仅可操作本人通知，不存在或非本人时返回 404。
+
+响应 `NotificationPublic`（标记后的通知）。
+
+### 4. 全部标记已读
+
+`POST /notifications/read-all`
+
+将当前用户全部未读通知标记为已读，响应 `Message`：`message`（返回已标记条数文案）。
+
+### 通知对象结构（NotificationPublic）
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `id` | uuid | 通知 ID |
+| `title` | str | 通知标题 |
+| `content` | str | 通知内容 |
+| `event_type` | str | 触发事件类型 |
+| `payload_snapshot` | dict | 事件载荷快照 |
+| `created_at` | datetime | 创建时间 |
+| `read_at` | datetime \| null | 已读时间，未读为 null |
+
+## 五、数据模型
 
 - `notifications`：通知实例（接收人、标题、内容、事件载荷快照、已读时间）；
 - `notification_deliveries`：渠道投递记录（状态机 `pending -> sending -> sent / failed / canceled`，失败自动重试，`attempt_count >= max_attempts` 进入 `failed` 终态）。
 
-## 五、当前内置规则
+## 六、当前内置规则
 
 | 事件类型 | 接收人 | 渠道 | 邮件模板 |
 |---|---|---|---|

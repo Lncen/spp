@@ -45,6 +45,9 @@ logger = logging.getLogger(__name__)
 class SubmitSupplierOrderExecutor(BaseExecutor):
     """提交供应商订单执行器"""
 
+    # 幂等约束：必须显式声明，有外部副作用时必须实现 check_already_done
+    idempotent = True
+
     def execute(self, *, task: AutomationTask) -> None:
         order_id = task.payload["order_id"]
         logger.info("提交供应商订单 order_id=%s", order_id)
@@ -62,6 +65,22 @@ from app.modules.automation.infrastructure.executors import (
 注册后 `POST /automation/tasks` 才能使用该 `task_type`。
 
 内置已注册执行器：`log`（通用占位）与 `submit_supplier_order`（订单向上游履约）。
+
+#### 执行器幂等约束（强制）
+
+任务池是 **at-least-once 语义**：业务副作用与任务终态不在同一事务，worker 崩溃后任务会被恢复重跑，
+因此每个执行器必须显式声明 `idempotent`，未声明时应用/worker 启动注册即报错：
+
+| 类型 | 要求 | 示例 |
+| --- | --- | --- |
+| 天然幂等（无外部副作用） | 声明 `idempotent = True`，无需钩子 | `log` |
+| 外部副作用型 | 声明 `idempotent = True`，必须实现 `check_already_done` 先查后写，并提供重复执行幂等测试 | `submit_supplier_order` |
+| 无法保证幂等 | 声明 `idempotent = False`，必须在类 docstring 标注风险 | 暂无 |
+
+`check_already_done` 在 `execute` 之前被任务池调用：返回 `True` 表示业务目标已达成，
+任务池直接标记成功并归档，不再调用 `execute`。判定必须基于业务唯一标识（订单号 / 外部单号等）
+先查后写，例如订单履约以 `supplier_order_id` 是否已生成为准；并发防重由业务原子操作
+（如 `claim_order` 的 `PAID → PROCESSING` 原子更新）兜底。
 
 ### 2. 创建自动化任务（一次性执行）
 
@@ -294,6 +313,7 @@ backend/app/modules/automation/
 6. **事件驱动链路**：业务模块 `event_bus.publish` 落库事件 → 自动化监听器按启用规则生成任务 → 任务池执行；payload 合并规则为 `事件载荷 + 规则配置（配置优先）`。
 7. **终态即归档**：`mark_success` / `mark_failed`（重试耗尽或业务终态）/ `cancel_task` 在同一事务内将任务移入 `automation_task_archives`（保留原 ID，追加 `archived_at`），主表保持精简；失败任务可经 `retry` 接口从归档恢复重新入队（重试计数清零）。
 8. **保留期可配置**：保留天数由全局设置 `automation_task_retention_days` 控制（默认 3 天），每天 04:00 的 `cleanup_automation_task_archives` 批量归档遗留终态任务，并同步物理清理超期归档与事件数据。
+9. **执行器幂等强制**：任务池为 at-least-once 语义，所有执行器必须显式声明 `idempotent`（注册时校验），外部副作用型执行器必须实现 `check_already_done` 预执行判定（业务目标已达成则直接成功归档），崩溃重跑不会重复产生副作用；详见「二、使用方法 1」的幂等约束说明。
 
 ## 七、演进方向（未实现）
 
@@ -303,24 +323,3 @@ backend/app/modules/automation/
 - 业务模块接入真实事件：如库存预警、支付回调、用户通知等；
 - 场景扩展：商品自动上下架、订单状态轮询、用户通知、财务报表、数据维护等。
 
-## 八、重构记录
-
-2026-08-10：修复并发认领竞态（`claim_due_tasks` 改用 `UPDATE ... RETURNING`，多 worker 并发不再重复认领同一任务）；新增 `ExecutorTerminalError`，订单已转人工确认等业务终态直接失败归档；手动重试统一为重试计数清零、重新获得完整重试预算。
-
-2026-08-10：新增归档查询接口 `GET /automation/tasks/archive` 与前端「归档」页签（列表 / 状态过滤 / 详情 / 失败重试）。
-
-2026-08-10：新增前端「自动化管理」页 `/automation`（任务池 / 归档 / 规则 / 事件四个独立子页面路由，计划任务由独立 `/schedules` 页面管理）；
-新增 `GET /automation/tasks/task-options` 端点供前端任务类型下拉使用。
-
-2026-08-10：新增 `submit_supplier_order` 执行器；订单模块创建成功后发布 `order.paid` 事件；取消 `fulfill_paid_orders_periodic` 轮询扫描。
-
-2026-08-10：终态任务完成即归档至 `automation_task_archives`；失败任务支持从归档恢复重新进入队列；新增每日清理定时任务，保留期由全局设置 `automation_task_retention_days` 控制（默认 3 天）。
-
-2026-08-10：由扁平结构（`api.py` / `schemas.py` / `service.py` / `tasks.py`）按 DDD Lite 约定拆分至当前分层，行为不变。
-
-| 原文件 | 迁移目标 |
-| --- | --- |
-| `api.py` | `api/schedules.py` |
-| `tasks.py` | `api/tasks.py` |
-| `schemas.py` | `schemas/schedule.py`（枚举迁至 `domain/constants.py`） |
-| `service.py` | `application/` 各动作文件 + `infrastructure/celery.py` + `repositories/schedule.py` |

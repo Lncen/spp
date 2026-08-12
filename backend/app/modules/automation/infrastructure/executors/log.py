@@ -13,7 +13,9 @@ logger = logging.getLogger(__name__)
 
 @register_executor("log")
 class LogExecutor(BaseExecutor):
-    """记录日志执行器：仅输出任务参数，用于链路验证与通用占位。"""
+    """记录日志执行器：仅输出任务参数，无外部副作用，重复执行安全。"""
+
+    idempotent = True
 
     def execute(self, *, task: AutomationTask) -> None:
         logger.info(

@@ -3,7 +3,7 @@
 import uuid
 
 from fastapi import HTTPException
-from sqlmodel import Session, update
+from sqlmodel import Session, select, update
 
 from app.modules.product.product.models import ProductInventory
 
@@ -11,13 +11,25 @@ from app.modules.product.product.models import ProductInventory
 def deduct_stock(
     *, session: Session, inventory: ProductInventory, quantity: int
 ) -> None:
-    """条件扣减库存，库存不足时抛错；无限库存直接跳过"""
-    if inventory.stock == -1:
+    """锁定库存行并条件扣减；库存不足时抛错；无限库存直接跳过
+
+    先对库存行 SELECT ... FOR UPDATE：同一商品的所有下单事务
+    在库存行上串行，为后续防重复下单检查提供串行点（并发下可
+    看到已提交的订单），锁保持到事务结束。
+    """
+    locked = session.exec(
+        select(ProductInventory)
+        .where(ProductInventory.id == inventory.id)
+        .with_for_update()
+    ).first()
+    if locked is None:
+        raise HTTPException(status_code=400, detail="库存记录不存在")
+    if locked.stock == -1:
         return
     result = session.exec(
         update(ProductInventory)
         .where(
-            ProductInventory.id == inventory.id,
+            ProductInventory.id == locked.id,
             ProductInventory.stock >= quantity,
         )
         .values(stock=ProductInventory.stock - quantity)

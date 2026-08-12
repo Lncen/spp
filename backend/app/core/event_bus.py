@@ -31,29 +31,65 @@ def listen(event_type: str):
     return decorator
 
 
-def publish(
+def create_event_in_session(
     *,
+    session: Session,
     event_type: str,
     payload: dict[str, Any] | None = None,
 ) -> AutomationEvent:
-    """发布业务事件：先落库（审计），再同步分发监听器。"""
-    with Session(engine) as session:
-        event = create_event(
-            session=session,
-            event_type=event_type,
-            payload=payload or {},
-        )
-        session.commit()
-        session.refresh(event)
-    for listener in _listeners_for(event_type):
+    """在调用方事务内创建事件记录，随业务事务一起提交（不立即分发）。
+
+    用于与业务数据同事务落库的场景（如订单创建），事件不因提交后发布失败而丢失；
+    事务提交后需调用 dispatch_event 分发监听器。
+    """
+    return create_event(
+        session=session,
+        event_type=event_type,
+        payload=payload or {},
+    )
+
+
+def dispatch_event(event: AutomationEvent) -> None:
+    """分发事件给监听器（事件须已随业务事务提交）。
+
+    单个监听器失败不影响其他监听器，仅记录日志；
+    事件记录已在库中，可追溯并按需补发。
+    """
+    for listener in _listeners_for(event.event_type):
         try:
             listener(event)
         except Exception:  # noqa: BLE001
             logger.exception(
                 "事件监听器执行失败 event_type=%s event_id=%s",
-                event_type,
+                event.event_type,
                 event.id,
             )
+
+
+def publish(
+    *,
+    event_type: str,
+    payload: dict[str, Any] | None = None,
+) -> AutomationEvent:
+    """发布业务事件：独立事务落库（审计）后，再同步分发监听器。
+
+    当前可使用的事件类型：
+
+    - ``order.paid``：订单创建成功（已付款），payload 含 ``order_id``；
+    - ``order.fulfillment_failed``：订单履约异常，payload 含 ``order_id`` / ``order_no`` / ``remark``。
+
+    另可通过 automation 模块接口（POST /automation/events，超管权限）发布任意自定义事件类型；
+    新增业务事件时请同步补充本备注。
+    """
+    with Session(engine) as session:
+        event = create_event_in_session(
+            session=session,
+            event_type=event_type,
+            payload=payload,
+        )
+        session.commit()
+        session.refresh(event)
+    dispatch_event(event)
     return event
 
 

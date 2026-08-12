@@ -77,7 +77,13 @@ def automation_task_scan() -> dict:
                 session.commit()
                 try:
                     executor_cls = get_executor(task.task_type)
-                    executor_cls().execute(task=task)
+                    executor = executor_cls()
+                    # 幂等预检查：业务目标已达成时直接标记成功，避免重复副作用
+                    if executor.check_already_done(task=task):
+                        mark_success(session=session, task=task)
+                        stats["success"] += 1
+                        continue
+                    executor.execute(task=task)
                 except Exception as exc:  # noqa: BLE001
                     session.rollback()
                     session.refresh(task)
