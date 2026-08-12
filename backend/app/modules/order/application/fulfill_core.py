@@ -41,31 +41,6 @@ def claim_order(*, session: Session, db_order: Order) -> bool:
         session.refresh(db_order)
     return claimed
 
-
-def mark_stale_claim(*, session: Session, db_order: Order, before: datetime) -> bool:
-    """认领超时订单标记异常转人工确认，不自动重新下单"""
-    result = session.exec(
-        update(Order)
-        .where(
-            Order.id == db_order.id,
-            Order.status == OrderStatus.PROCESSING,
-            Order.processing_at.is_not(None),
-            Order.processing_at < before,
-            Order.supplier_order_id.is_(None),
-        )
-        .values(
-            status=OrderStatus.EXCEPTION,
-            failed_at=datetime.now(UTC),
-        )
-    )
-    marked = result.rowcount == 1
-    session.commit()
-    if marked:
-        session.refresh(db_order)
-        notify_order_exception(db_order=db_order)
-    return marked
-
-
 def _rollback_claim_on_failure(
     *,
     session: Session,

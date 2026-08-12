@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 from sqlmodel import Session
 
-from app.modules.order.application.refund import auto_refund_order
+from app.modules.order.application.after_sale.refund import auto_refund_order
 from app.modules.order.domain.constants import SYNCABLE_ORDER_STATUSES, OrderStatus
 from app.modules.order.infrastructure.sync import (
     _resolve_supplier_id,

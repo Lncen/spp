@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from sqlalchemy import update
 from sqlmodel import Session
 
-from app.modules.order.application.refund import refund_to_wallet
+from app.modules.order.application.after_sale.refund import refund_to_wallet
 from app.modules.order.domain.constants import OrderStatus
 from app.modules.order.models import Order
 from app.modules.order.repositories.stock import restore_stock

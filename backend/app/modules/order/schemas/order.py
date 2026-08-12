@@ -66,6 +66,7 @@ class OrderPublic(SQLModel):
     fulfillment_type: RedeemType
     supplier_order_id: str | None = None
     supplier_id: uuid.UUID | None = None
+    supplier_name: str | None = None
     sku_id: str | None = None
     can_refund: bool
 

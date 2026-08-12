@@ -10,7 +10,8 @@ from app.api.deps import (
     SessionDep,
     get_current_active_superuser,
 )
-from app.modules.order.application.cancel import cancel_order
+from app.modules.order.application.after_sale.cancel import cancel_order
+from app.modules.order.application.after_sale.refund import refund_order
 from app.modules.order.application.create import (
     create_admin_orders,
     create_orders,
@@ -30,7 +31,6 @@ from app.modules.order.application.query import (
     to_order_list_item,
     to_order_public,
 )
-from app.modules.order.application.refund import refund_order
 from app.modules.order.domain.constants import OrderStatus
 from app.modules.order.schemas import (
     AdminOrdersCreate,
