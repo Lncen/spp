@@ -1,20 +1,27 @@
 """自动化模块：自动化任务归档数据模型"""
 
+import uuid
 from datetime import datetime
 from typing import Any
 
 from sqlalchemy import JSON, DateTime, String
 from sqlmodel import Field, SQLModel
 
-from app.core.mixin.models import BaseModelMixin, get_datetime_utc
+from app.core.mixin.models import UUIDPrimaryKeyMixin, get_datetime_utc
 from app.modules.automation.domain.constants import AutomationTaskStatus
 
 
-class AutomationTaskArchive(BaseModelMixin, SQLModel, table=True):
+class AutomationTaskArchive(UUIDPrimaryKeyMixin, SQLModel, table=True):
     """自动化任务归档：终态任务从任务池移入，按全局设置保留期物理清理"""
 
     __tablename__ = "automation_task_archives"
 
+    task_id: uuid.UUID = Field(
+        index=True,
+        nullable=False,
+        title="原任务 ID",
+        description="归档前任务池中的任务 ID，用于恢复重新入队",
+    )
     task_type: str = Field(
         max_length=64,
         index=True,
@@ -22,12 +29,31 @@ class AutomationTaskArchive(BaseModelMixin, SQLModel, table=True):
         title="任务类型",
         description="对应 Executor 注册的任务类型",
     )
+    event_id: uuid.UUID | None = Field(
+        default=None,
+        index=True,
+        title="来源事件 ID",
+        description="生成该任务的事件 ID",
+    )
+    rule_id: uuid.UUID | None = Field(
+        default=None,
+        index=True,
+        title="来源规则 ID",
+        description="生成该任务的规则 ID",
+    )
+    payload: dict[str, Any] = Field(
+        default_factory=dict,
+        sa_type=JSON,
+        title="任务参数",
+        description="执行所需参数，JSON 存储",
+    )
     status: AutomationTaskStatus = Field(
         default=AutomationTaskStatus.SUCCESS,
         sa_type=String(20),
         index=True,
         nullable=False,
         title="任务状态",
+        description="归档时的终态（success / failed / canceled）",
     )
     priority: int = Field(
         default=0,
@@ -54,17 +80,30 @@ class AutomationTaskArchive(BaseModelMixin, SQLModel, table=True):
         title="最大重试次数",
         description="超过后任务进入失败终态",
     )
-    payload: dict[str, Any] = Field(
-        default_factory=dict,
-        sa_type=JSON,
-        title="任务参数",
-        description="执行所需参数，JSON 存储",
-    )
-    error_message: str | None = Field(
+    last_error: str | None = Field(
         default=None,
         max_length=2000,
-        title="错误信息",
+        title="最近错误",
         description="最近一次失败原因",
+    )
+    created_at: datetime = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),
+        nullable=False,
+        title="创建时间",
+        description="任务创建时间（UTC）",
+    )
+    claimed_at: datetime | None = Field(
+        default=None,
+        sa_type=DateTime(timezone=True),
+        title="认领时间",
+        description="worker 原子认领任务的时刻（UTC）",
+    )
+    started_at: datetime | None = Field(
+        default=None,
+        sa_type=DateTime(timezone=True),
+        title="开始执行时间",
+        description="Executor 开始执行的时刻（UTC）",
     )
     finished_at: datetime | None = Field(
         default=None,

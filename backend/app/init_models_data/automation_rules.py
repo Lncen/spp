@@ -18,6 +18,8 @@ AUTOMATION_RULES = [
     # 订单支付 -> 提交供应商订单
     {
         "id": ORDER_PAID_RULE_UUID,
+        "name": "订单支付 → 提交供应商订单",
+        "description": "订单创建成功（已付款）后自动向上游提交履约订单",
         "event_type": "order.paid",
         "action_type": "submit_supplier_order",
         "config": {
@@ -26,6 +28,7 @@ AUTOMATION_RULES = [
                 "max_retry": settings.ORDER_FULFILL_FAIL_LIMIT,
             }
         },
+        "priority": 0,
         "is_active": True,
     },
 ]
@@ -51,9 +54,12 @@ def seed_automation_rules(*, session: Session) -> None:
         session.add(
             AutomationRule(
                 id=data["id"],
+                name=data["name"],
+                description=data.get("description"),
                 event_type=data["event_type"],
                 action_type=data["action_type"],
                 config=data["config"],
+                priority=data.get("priority", 0),
                 is_active=data["is_active"],
             )
         )

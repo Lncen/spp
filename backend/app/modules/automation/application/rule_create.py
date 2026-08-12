@@ -19,9 +19,12 @@ def create_automation_rule(
     get_executor(rule_in.action_type)
     rule = create_rule_record(
         session=session,
+        name=rule_in.name,
+        description=rule_in.description,
         event_type=rule_in.event_type,
         action_type=rule_in.action_type,
         config=rule_in.config,
+        priority=rule_in.priority,
         is_active=rule_in.is_active,
     )
     session.commit()

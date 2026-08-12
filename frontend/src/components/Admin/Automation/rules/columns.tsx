@@ -7,6 +7,25 @@ import { RuleActionsMenu } from "./RuleActionsMenu"
 
 export const ruleColumns: ColumnDef<AutomationRulePublic>[] = [
   {
+    accessorKey: "name",
+    header: "规则名称",
+    cell: ({ row }) => (
+      <span className="text-sm font-medium">{row.original.name}</span>
+    ),
+  },
+  {
+    accessorKey: "description",
+    header: "描述",
+    cell: ({ row }) => (
+      <span
+        className="block max-w-[220px] truncate text-sm text-muted-foreground"
+        title={row.original.description ?? ""}
+      >
+        {row.original.description ?? "—"}
+      </span>
+    ),
+  },
+  {
     accessorKey: "event_type",
     header: "事件类型",
     cell: ({ row }) => (
@@ -36,6 +55,13 @@ export const ruleColumns: ColumnDef<AutomationRulePublic>[] = [
         </span>
       )
     },
+  },
+  {
+    accessorKey: "priority",
+    header: "优先级",
+    cell: ({ row }) => (
+      <span className="font-mono text-sm">{row.original.priority}</span>
+    ),
   },
   {
     accessorKey: "is_active",

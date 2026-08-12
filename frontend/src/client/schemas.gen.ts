@@ -148,6 +148,13 @@ export const AdminOrdersPublicSchema = {
     description: '管理员批量下单响应'
 } as const;
 
+export const AutomationEventStatusSchema = {
+    type: 'string',
+    enum: ['pending', 'dispatching', 'dispatched', 'failed'],
+    title: 'AutomationEventStatus',
+    description: '自动化事件状态'
+} as const;
+
 export const AutomationEventCreateSchema = {
     properties: {
         event_type: {
@@ -185,6 +192,60 @@ export const AutomationEventPublicSchema = {
             type: 'object',
             title: 'Payload'
         },
+        status: {
+            '$ref': '#/components/schemas/AutomationEventStatus'
+        },
+        dispatch_attempts: {
+            type: 'integer',
+            title: 'Dispatch Attempts'
+        },
+        last_error: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Last Error'
+        },
+        next_dispatch_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Next Dispatch At'
+        },
+        processing_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Processing At'
+        },
+        dispatched_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Dispatched At'
+        },
         created_at: {
             anyOf: [
                 {
@@ -199,7 +260,7 @@ export const AutomationEventPublicSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'event_type', 'payload', 'created_at'],
+    required: ['id', 'event_type', 'payload', 'status', 'dispatch_attempts', 'last_error', 'next_dispatch_at', 'processing_at', 'dispatched_at', 'created_at'],
     title: 'AutomationEventPublic',
     description: '自动化事件公开响应'
 } as const;
@@ -226,6 +287,25 @@ export const AutomationEventsPublicSchema = {
 
 export const AutomationRuleCreateSchema = {
     properties: {
+        name: {
+            type: 'string',
+            maxLength: 128,
+            minLength: 1,
+            title: '规则名称',
+            description: '规则的业务名称'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 500
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '规则描述'
+        },
         event_type: {
             type: 'string',
             maxLength: 64,
@@ -246,6 +326,12 @@ export const AutomationRuleCreateSchema = {
             title: '规则配置',
             description: '合并进任务 payload，可覆盖事件载荷中的同名参数'
         },
+        priority: {
+            type: 'integer',
+            title: '规则优先级',
+            description: '数值越大越优先匹配/生成任务',
+            default: 0
+        },
         is_active: {
             type: 'boolean',
             title: '是否启用',
@@ -253,7 +339,7 @@ export const AutomationRuleCreateSchema = {
         }
     },
     type: 'object',
-    required: ['event_type', 'action_type'],
+    required: ['name', 'event_type', 'action_type'],
     title: 'AutomationRuleCreate',
     description: '创建自动化规则请求'
 } as const;
@@ -264,6 +350,21 @@ export const AutomationRulePublicSchema = {
             type: 'string',
             format: 'uuid',
             title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
         },
         event_type: {
             type: 'string',
@@ -277,6 +378,10 @@ export const AutomationRulePublicSchema = {
             additionalProperties: true,
             type: 'object',
             title: 'Config'
+        },
+        priority: {
+            type: 'integer',
+            title: 'Priority'
         },
         is_active: {
             type: 'boolean',
@@ -308,13 +413,38 @@ export const AutomationRulePublicSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'event_type', 'action_type', 'config', 'is_active', 'created_at', 'updated_at'],
+    required: ['id', 'name', 'description', 'event_type', 'action_type', 'config', 'priority', 'is_active', 'created_at', 'updated_at'],
     title: 'AutomationRulePublic',
     description: '自动化规则公开响应'
 } as const;
 
 export const AutomationRuleUpdateSchema = {
     properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 128,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 500
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
         event_type: {
             anyOf: [
                 {
@@ -352,6 +482,17 @@ export const AutomationRuleUpdateSchema = {
                 }
             ],
             title: 'Config'
+        },
+        priority: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Priority'
         },
         is_active: {
             anyOf: [
@@ -397,9 +538,38 @@ export const AutomationTaskArchivePublicSchema = {
             format: 'uuid',
             title: 'Id'
         },
+        task_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Task Id'
+        },
         task_type: {
             type: 'string',
             title: 'Task Type'
+        },
+        event_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Id'
+        },
+        rule_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rule Id'
         },
         status: {
             '$ref': '#/components/schemas/AutomationTaskStatus'
@@ -426,7 +596,7 @@ export const AutomationTaskArchivePublicSchema = {
             type: 'object',
             title: 'Payload'
         },
-        error_message: {
+        last_error: {
             anyOf: [
                 {
                     type: 'string'
@@ -435,7 +605,31 @@ export const AutomationTaskArchivePublicSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Error Message'
+            title: 'Last Error'
+        },
+        claimed_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Claimed At'
+        },
+        started_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Started At'
         },
         finished_at: {
             anyOf: [
@@ -461,18 +655,6 @@ export const AutomationTaskArchivePublicSchema = {
             ],
             title: 'Created At'
         },
-        updated_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Updated At'
-        },
         archived_at: {
             type: 'string',
             format: 'date-time',
@@ -480,7 +662,7 @@ export const AutomationTaskArchivePublicSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'task_type', 'status', 'priority', 'execute_at', 'retry_count', 'max_retry', 'payload', 'error_message', 'finished_at', 'created_at', 'updated_at', 'archived_at'],
+    required: ['id', 'task_id', 'task_type', 'event_id', 'rule_id', 'status', 'priority', 'execute_at', 'retry_count', 'max_retry', 'payload', 'last_error', 'claimed_at', 'started_at', 'finished_at', 'created_at', 'archived_at'],
     title: 'AutomationTaskArchivePublic',
     description: '自动化任务归档公开响应'
 } as const;
@@ -564,6 +746,30 @@ export const AutomationTaskPublicSchema = {
             type: 'string',
             title: 'Task Type'
         },
+        event_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Id'
+        },
+        rule_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rule Id'
+        },
         status: {
             '$ref': '#/components/schemas/AutomationTaskStatus'
         },
@@ -589,7 +795,7 @@ export const AutomationTaskPublicSchema = {
             type: 'object',
             title: 'Payload'
         },
-        error_message: {
+        last_error: {
             anyOf: [
                 {
                     type: 'string'
@@ -598,7 +804,31 @@ export const AutomationTaskPublicSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Error Message'
+            title: 'Last Error'
+        },
+        claimed_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Claimed At'
+        },
+        started_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Started At'
         },
         finished_at: {
             anyOf: [
@@ -638,7 +868,7 @@ export const AutomationTaskPublicSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'task_type', 'status', 'priority', 'execute_at', 'retry_count', 'max_retry', 'payload', 'error_message', 'finished_at', 'created_at', 'updated_at'],
+    required: ['id', 'task_type', 'event_id', 'rule_id', 'status', 'priority', 'execute_at', 'retry_count', 'max_retry', 'payload', 'last_error', 'claimed_at', 'started_at', 'finished_at', 'created_at', 'updated_at'],
     title: 'AutomationTaskPublic',
     description: '自动化任务公开响应'
 } as const;

@@ -217,7 +217,7 @@ backend/app/modules/automation/
 │   └── rule_query.py               # 规则列表 / 详情查询
 ├── domain/                         # 领域逻辑：不依赖 Web 框架 / 数据库 / Celery
 │   ├── __init__.py
-│   ├── constants.py                # AutomationTaskStatus、ScheduleType、IntervalPeriod 枚举
+│   ├── constants.py                # AutomationEventStatus、AutomationTaskStatus、ScheduleType、IntervalPeriod 枚举
 │   ├── execution.py                # 任务失败重试规则
 │   └── validation.py               # crontab / interval 必填配对校验
 ├── infrastructure/                 # 基础设施：外部系统交互
@@ -231,10 +231,10 @@ backend/app/modules/automation/
 │   └── tasks.py                    # automation_task_scan：扫描任务池；cleanup_automation_task_archives：归档清理
 ├── models/                         # 数据模型（SQLModel 表模型）
 │   ├── __init__.py
-│   ├── task.py                     # AutomationTask（任务池：状态机、优先级、重试、payload）
-│   ├── archive.py                  # AutomationTaskArchive（终态任务归档，含 archived_at）
-│   ├── event.py                    # AutomationEvent（业务事件）
-│   └── rule.py                     # AutomationRule（事件 → 动作规则）
+│   ├── task.py                     # AutomationTask（任务池：状态机、优先级、重试、payload、来源事件/规则、认领/开始/完成时间线）
+│   ├── archive.py                  # AutomationTaskArchive（终态任务归档：task_id 保留原任务 ID、last_error、时间线、archived_at）
+│   ├── event.py                    # AutomationEvent（业务事件：分发状态、分发次数、最近错误、分发时间线）
+│   └── rule.py                     # AutomationRule（规则：名称/描述/优先级、事件 → 动作映射）
 ├── repositories/                   # 数据访问：封装 ORM 操作
 │   ├── __init__.py
 │   ├── schedule.py                 # PeriodicTask / CrontabSchedule / IntervalSchedule 查询与持久化
@@ -311,7 +311,7 @@ backend/app/modules/automation/
 4. **任务池执行链路**：beat 每 3 分钟触发 `automation_task_scan`，先恢复失联的 running 任务（超过 10 分钟未推进视为 worker 崩溃），再以 `UPDATE ... RETURNING` 原子认领到期 pending 任务（多 worker 并发只返回本事务真正认领的行，杜绝重复执行）→ Executor 执行 → 成功标记 / 失败按 `max_retry` 回退重试或进入 failed；业务终态（`ExecutorTerminalError`）跳过重试直接失败归档。
 5. **新增表需迁移**：`automation_tasks` 为新增表，迁移文件按项目规范另行生成。
 6. **事件驱动链路**：业务模块 `event_bus.publish` 落库事件 → 自动化监听器按启用规则生成任务 → 任务池执行；payload 合并规则为 `事件载荷 + 规则配置（配置优先）`。
-7. **终态即归档**：`mark_success` / `mark_failed`（重试耗尽或业务终态）/ `cancel_task` 在同一事务内将任务移入 `automation_task_archives`（保留原 ID，追加 `archived_at`），主表保持精简；失败任务可经 `retry` 接口从归档恢复重新入队（重试计数清零）。
+7. **终态即归档**：`mark_success` / `mark_failed`（重试耗尽或业务终态）/ `cancel_task` 在同一事务内将任务移入 `automation_task_archives`（原任务 ID 存入 `task_id`，追加 `archived_at`），主表保持精简；失败任务可经 `retry` 接口从归档恢复重新入队（重试计数清零）。
 8. **保留期可配置**：保留天数由全局设置 `automation_task_retention_days` 控制（默认 3 天），每天 04:00 的 `cleanup_automation_task_archives` 批量归档遗留终态任务，并同步物理清理超期归档与事件数据。
 9. **执行器幂等强制**：任务池为 at-least-once 语义，所有执行器必须显式声明 `idempotent`（注册时校验），外部副作用型执行器必须实现 `check_already_done` 预执行判定（业务目标已达成则直接成功归档），崩溃重跑不会重复产生副作用；详见「二、使用方法 1」的幂等约束说明。
 

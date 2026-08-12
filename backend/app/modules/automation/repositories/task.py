@@ -30,11 +30,15 @@ def create_task(
     priority: int = 0,
     execute_at: datetime | None = None,
     max_retry: int = 3,
+    event_id: uuid.UUID | None = None,
+    rule_id: uuid.UUID | None = None,
 ) -> AutomationTask:
     """创建任务记录（不提交，由调用方控制事务）。"""
     task = AutomationTask(
         task_type=task_type,
         payload=payload,
+        event_id=event_id,
+        rule_id=rule_id,
         priority=priority,
         execute_at=execute_at or datetime.now(UTC),
         max_retry=max_retry,
@@ -141,7 +145,10 @@ def claim_due_tasks(
             AutomationTask.id.in_(ids),
             AutomationTask.status == AutomationTaskStatus.PENDING,
         )
-        .values(status=AutomationTaskStatus.RUNNING)
+        .values(
+            status=AutomationTaskStatus.RUNNING,
+            claimed_at=now,
+        )
         .returning(AutomationTask.id)
     ).scalars().all()
     session.commit()
@@ -172,6 +179,8 @@ def recover_stale_running_tasks(
         .values(
             status=AutomationTaskStatus.PENDING,
             execute_at=datetime.now(UTC),
+            claimed_at=None,
+            started_at=None,
         )
     )
     session.commit()
@@ -179,21 +188,23 @@ def recover_stale_running_tasks(
 
 
 def _move_to_archive(*, session: Session, task: AutomationTask) -> None:
-    """将终态任务移入归档表并从任务池删除（同一事务，保留原任务 ID）。"""
+    """将终态任务移入归档表并从任务池删除（同一事务，原任务 ID 存入 task_id）。"""
     archive = AutomationTaskArchive(
-        id=task.id,
+        task_id=task.id,
         task_type=task.task_type,
+        event_id=task.event_id,
+        rule_id=task.rule_id,
         status=task.status,
         priority=task.priority,
         execute_at=task.execute_at,
         retry_count=task.retry_count,
         max_retry=task.max_retry,
         payload=task.payload,
-        error_message=task.error_message,
+        last_error=task.last_error,
+        claimed_at=task.claimed_at,
+        started_at=task.started_at,
         finished_at=task.finished_at,
         created_at=task.created_at,
-        updated_at=task.updated_at,
-        is_active=task.is_active,
         archived_at=datetime.now(UTC),
     )
     session.add(archive)
@@ -203,7 +214,7 @@ def _move_to_archive(*, session: Session, task: AutomationTask) -> None:
 def mark_success(*, session: Session, task: AutomationTask) -> None:
     """标记任务执行成功并立即归档。"""
     task.status = AutomationTaskStatus.SUCCESS
-    task.error_message = None
+    task.last_error = None
     task.finished_at = datetime.now(UTC)
     _move_to_archive(session=session, task=task)
     session.commit()
@@ -218,7 +229,7 @@ def mark_failed(
     terminal: bool = False,
 ) -> None:
     """标记任务执行失败：默认未达重试上限则回退 pending；terminal=True 表示业务已终态，跳过重试直接失败归档。"""
-    task.error_message = error_message[:MAX_ERROR_MESSAGE_LENGTH]
+    task.last_error = error_message[:MAX_ERROR_MESSAGE_LENGTH]
     if not terminal and should_retry(
         retry_count=task.retry_count,
         max_retry=task.max_retry,
@@ -227,6 +238,8 @@ def mark_failed(
         task.status = AutomationTaskStatus.PENDING
         task.execute_at = now
         task.finished_at = None
+        task.claimed_at = None
+        task.started_at = None
         session.add(task)
     else:
         task.status = AutomationTaskStatus.FAILED
@@ -242,7 +255,9 @@ def reset_task(*, session: Session, task: AutomationTask) -> None:
     task.status = AutomationTaskStatus.PENDING
     task.retry_count = 0
     task.execute_at = datetime.now(UTC)
-    task.error_message = None
+    task.last_error = None
+    task.claimed_at = None
+    task.started_at = None
     task.finished_at = None
     session.add(task)
     session.commit()
@@ -254,7 +269,7 @@ def cancel_task(*, session: Session, task: AutomationTask) -> None:
     if task.status != AutomationTaskStatus.PENDING:
         raise ValueError("仅待执行任务可取消")
     task.status = AutomationTaskStatus.CANCELED
-    task.error_message = None
+    task.last_error = None
     task.finished_at = datetime.now(UTC)
     _move_to_archive(session=session, task=task)
     session.commit()
@@ -273,25 +288,31 @@ def requeue_failed_task(
         reset_task(session=session, task=task)
         return task
 
-    archived = session.get(AutomationTaskArchive, task_id)
+    archived = session.exec(
+        select(AutomationTaskArchive).where(
+            AutomationTaskArchive.task_id == task_id
+        )
+    ).first()
     if archived is None:
         raise HTTPException(status_code=404, detail="自动化任务不存在或已归档")
     if archived.status != AutomationTaskStatus.FAILED:
         raise ValueError("仅失败任务可重新进入队列")
     task = AutomationTask(
-        id=archived.id,
+        id=archived.task_id,
         task_type=archived.task_type,
+        event_id=archived.event_id,
+        rule_id=archived.rule_id,
         status=AutomationTaskStatus.PENDING,
         priority=archived.priority,
         execute_at=datetime.now(UTC),
         retry_count=0,
         max_retry=archived.max_retry,
         payload=archived.payload,
-        error_message=None,
+        last_error=None,
+        claimed_at=None,
+        started_at=None,
         finished_at=None,
         created_at=archived.created_at,
-        updated_at=datetime.now(UTC),
-        is_active=archived.is_active,
     )
     session.add(task)
     session.delete(archived)

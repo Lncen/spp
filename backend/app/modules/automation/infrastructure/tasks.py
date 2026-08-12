@@ -71,7 +71,8 @@ def automation_task_scan() -> dict:
             )
             stats["claimed"] = len(tasks)
             for task in tasks:
-                # 推进心跳，防止长批次执行中任务被其他实例误判为失联
+                # 记录开始执行时间并推进心跳，防止长批次执行中任务被其他实例误判为失联
+                task.started_at = datetime.now(UTC)
                 task.updated_at = datetime.now(UTC)
                 session.add(task)
                 session.commit()

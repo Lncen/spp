@@ -6,7 +6,10 @@ from typing import Any
 
 from sqlmodel import Field, SQLModel
 
-from app.modules.automation.domain.constants import AutomationTaskStatus
+from app.modules.automation.domain.constants import (
+    AutomationEventStatus,
+    AutomationTaskStatus,
+)
 
 
 class AutomationTaskCreate(SQLModel):
@@ -46,13 +49,17 @@ class AutomationTaskPublic(SQLModel):
 
     id: uuid.UUID
     task_type: str
+    event_id: uuid.UUID | None
+    rule_id: uuid.UUID | None
     status: AutomationTaskStatus
     priority: int
     execute_at: datetime
     retry_count: int
     max_retry: int
     payload: dict[str, Any]
-    error_message: str | None
+    last_error: str | None
+    claimed_at: datetime | None
+    started_at: datetime | None
     finished_at: datetime | None
     created_at: datetime | None
     updated_at: datetime | None
@@ -65,9 +72,25 @@ class AutomationTasksPublic(SQLModel):
     count: int
 
 
-class AutomationTaskArchivePublic(AutomationTaskPublic):
+class AutomationTaskArchivePublic(SQLModel):
     """自动化任务归档公开响应"""
 
+    id: uuid.UUID
+    task_id: uuid.UUID
+    task_type: str
+    event_id: uuid.UUID | None
+    rule_id: uuid.UUID | None
+    status: AutomationTaskStatus
+    priority: int
+    execute_at: datetime
+    retry_count: int
+    max_retry: int
+    payload: dict[str, Any]
+    last_error: str | None
+    claimed_at: datetime | None
+    started_at: datetime | None
+    finished_at: datetime | None
+    created_at: datetime | None
     archived_at: datetime
 
 
@@ -99,6 +122,12 @@ class AutomationEventPublic(SQLModel):
     id: uuid.UUID
     event_type: str
     payload: dict[str, Any]
+    status: AutomationEventStatus
+    dispatch_attempts: int
+    last_error: str | None
+    next_dispatch_at: datetime | None
+    processing_at: datetime | None
+    dispatched_at: datetime | None
     created_at: datetime | None
 
 
@@ -112,6 +141,17 @@ class AutomationEventsPublic(SQLModel):
 class AutomationRuleCreate(SQLModel):
     """创建自动化规则请求"""
 
+    name: str = Field(
+        min_length=1,
+        max_length=128,
+        title="规则名称",
+        description="规则的业务名称",
+    )
+    description: str | None = Field(
+        default=None,
+        max_length=500,
+        title="规则描述",
+    )
     event_type: str = Field(
         min_length=1,
         max_length=64,
@@ -129,15 +169,23 @@ class AutomationRuleCreate(SQLModel):
         title="规则配置",
         description="合并进任务 payload，可覆盖事件载荷中的同名参数",
     )
+    priority: int = Field(
+        default=0,
+        title="规则优先级",
+        description="数值越大越优先匹配/生成任务",
+    )
     is_active: bool = Field(default=True, title="是否启用")
 
 
 class AutomationRuleUpdate(SQLModel):
     """更新自动化规则请求（全部可选）"""
 
+    name: str | None = Field(default=None, min_length=1, max_length=128)
+    description: str | None = Field(default=None, max_length=500)
     event_type: str | None = Field(default=None, min_length=1, max_length=64)
     action_type: str | None = Field(default=None, min_length=1, max_length=64)
     config: dict[str, Any] | None = None
+    priority: int | None = None
     is_active: bool | None = None
 
 
@@ -145,9 +193,12 @@ class AutomationRulePublic(SQLModel):
     """自动化规则公开响应"""
 
     id: uuid.UUID
+    name: str
+    description: str | None
     event_type: str
     action_type: str
     config: dict[str, Any]
+    priority: int
     is_active: bool
     created_at: datetime | None
     updated_at: datetime | None

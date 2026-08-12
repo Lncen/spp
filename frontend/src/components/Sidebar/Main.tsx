@@ -31,6 +31,7 @@ export type Item = {
 
 export type ItemGroup = {
   label: string
+  path?: string
   items: Item[]
   /** 分组标题可点击折叠 */
   collapsible?: boolean

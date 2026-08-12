@@ -73,6 +73,15 @@ class SubmitSupplierOrderExecutor(BaseExecutor):
             )
             return
         with Session(engine) as session:
+            # _load_order 的会话已关闭，返回的是游离对象，直接传给 claim_order
+            # 会在 session.refresh 时报错（订单已认领但履约未执行）。
+            # 这里在当前会话重新加载，确保认领/履约操作的对象处于持久化状态。
+            db_order = session.get(Order, order_id)
+            if db_order is None:
+                logger.warning(
+                    "自动化任务 %s: 订单 %s 不存在，视为完成", task.id, order_id
+                )
+                return
             # 兜底防御：check_already_done 与 execute 之间订单状态理论上不变，
             # 仍保留已完成判定，避免重复下单
             if (
@@ -85,7 +94,8 @@ class SubmitSupplierOrderExecutor(BaseExecutor):
                 raise ExecutorTerminalError(
                     f"订单 {db_order.order_no} 处于异常状态，等待人工确认"
                 )
-            # 处理中订单：超时转人工确认，正常处理中则跳过
+            # 处理中订单：超时转人工确认；未超时说明认领后尚未完成，
+            # 不能当作成功跳过（见下方抛错说明）
             if db_order.status == OrderStatus.PROCESSING:
                 if mark_stale_claim(
                     session=session,
@@ -96,7 +106,13 @@ class SubmitSupplierOrderExecutor(BaseExecutor):
                     raise ExecutorTerminalError(
                         f"订单 {db_order.order_no} 认领超时，已转人工确认"
                     )
-                return
+                # 未超时说明认领后尚未完成（可能是本任务此前认领后异常/崩溃），
+                # 不能静默返回（会被任务池归档为成功），改为可重试异常：
+                # 其他执行者完成则下一轮 check_already_done 命中成功；
+                # 一直未完成则由 mark_stale_claim 超时转人工确认。
+                raise RuntimeError(
+                    f"订单 {db_order.order_no} 仍在处理中且未超时，等待认领结果"
+                )
             # 已被其他执行者认领，跳过
             if not claim_order(session=session, db_order=db_order):
                 return

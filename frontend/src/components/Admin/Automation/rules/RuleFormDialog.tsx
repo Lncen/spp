@@ -35,9 +35,12 @@ import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
 const formSchema = z.object({
+  name: z.string().min(1, "请输入规则名称").max(128),
+  description: z.string().max(500).optional(),
   event_type: z.string().min(1, "请输入事件类型").max(64),
   action_type: z.string().min(1, "请输入动作类型").max(64),
   config: z.string(),
+  priority: z.coerce.number().int().min(-1000).max(1000),
   is_active: z.boolean().default(true),
 })
 
@@ -77,9 +80,12 @@ export const RuleFormDialog = ({ rule, onSuccess }: RuleFormDialogProps) => {
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
+      name: rule?.name ?? "",
+      description: rule?.description ?? "",
       event_type: rule?.event_type ?? "",
       action_type: rule?.action_type ?? "",
       config: rule ? JSON.stringify(rule.config, null, 2) : "{}",
+      priority: rule?.priority ?? 0,
       is_active: rule?.is_active ?? true,
     },
   })
@@ -113,9 +119,12 @@ export const RuleFormDialog = ({ rule, onSuccess }: RuleFormDialogProps) => {
       return
     }
     mutation.mutate({
+      name: data.name,
+      description: data.description || null,
       event_type: data.event_type,
       action_type: data.action_type,
       config,
+      priority: data.priority,
       is_active: data.is_active,
     })
   }
@@ -144,9 +153,12 @@ export const RuleFormDialog = ({ rule, onSuccess }: RuleFormDialogProps) => {
         setIsOpen(open)
         if (open && isEdit && rule) {
           form.reset({
+            name: rule.name,
+            description: rule.description ?? "",
             event_type: rule.event_type,
             action_type: rule.action_type,
             config: JSON.stringify(rule.config, null, 2),
+            priority: rule.priority,
             is_active: rule.is_active,
           })
         }
@@ -165,6 +177,56 @@ export const RuleFormDialog = ({ rule, onSuccess }: RuleFormDialogProps) => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid gap-4 py-2">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        规则名称 <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="如 订单支付 → 提交供应商订单"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="priority"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>优先级</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>规则描述</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        className="min-h-16 text-xs"
+                        placeholder="规则用途说明（可选）"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}

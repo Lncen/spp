@@ -47,14 +47,32 @@ export const archiveColumns: ColumnDef<AutomationTaskArchivePublic>[] = [
     ),
   },
   {
-    accessorKey: "error_message",
+    accessorKey: "claimed_at",
+    header: "认领时间",
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground">
+        {formatDateTime(row.original.claimed_at)}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "started_at",
+    header: "开始执行",
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground">
+        {formatDateTime(row.original.started_at)}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "last_error",
     header: "错误信息",
     cell: ({ row }) => (
       <span
         className="block max-w-[220px] truncate text-sm text-destructive"
-        title={row.original.error_message ?? ""}
+        title={row.original.last_error ?? ""}
       >
-        {row.original.error_message ?? "—"}
+        {row.original.last_error ?? "—"}
       </span>
     ),
   },

@@ -2,7 +2,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { RotateCcw, XCircle } from "lucide-react"
 import { useState } from "react"
 
-import type { AutomationTaskPublic } from "@/client"
+import type {
+  AutomationTaskArchivePublic,
+  AutomationTaskPublic,
+} from "@/client"
 import { AutomationService } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
@@ -20,7 +23,7 @@ import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
 interface TaskActionDialogProps {
-  task: AutomationTaskPublic
+  task: AutomationTaskPublic | AutomationTaskArchivePublic
   action: "retry" | "cancel"
   onSuccess?: () => void
 }

@@ -12,16 +12,22 @@ from app.modules.automation.models import AutomationRule
 def create_rule(
     *,
     session: Session,
+    name: str,
+    description: str | None,
     event_type: str,
     action_type: str,
     config: dict[str, Any],
+    priority: int,
     is_active: bool,
 ) -> AutomationRule:
     """创建规则记录（不提交，由调用方控制事务）。"""
     rule = AutomationRule(
+        name=name,
+        description=description,
         event_type=event_type,
         action_type=action_type,
         config=config,
+        priority=priority,
         is_active=is_active,
     )
     session.add(rule)

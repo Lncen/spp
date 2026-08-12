@@ -3,6 +3,15 @@
 from enum import StrEnum
 
 
+class AutomationEventStatus(StrEnum):
+    """自动化事件状态"""
+
+    PENDING = "pending"  # 待分发
+    DISPATCHING = "dispatching"  # 分发中
+    DISPATCHED = "dispatched"  # 已分发
+    FAILED = "failed"  # 分发失败
+
+
 class AutomationTaskStatus(StrEnum):
     """自动化任务状态"""
 

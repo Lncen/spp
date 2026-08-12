@@ -67,12 +67,13 @@ const navGroups: ItemGroup[] = [
   {
     label: "运营",
     collapsible: true,
+    path: "/automations",
     items: [
       { icon: ReceiptText, title: "订单", path: "/orders" },
       { icon: CreditCard, title: "任务池", path: "/automation/tasks" },
       {
         icon: Cpu,
-        title: "自动化",
+        title: "自动化看板",
         path: "/automation",
         items: [
           { title: "计划任务", path: "/schedules" },

@@ -1,6 +1,9 @@
 import { useState } from "react"
 
-import type { AutomationTaskPublic } from "@/client"
+import type {
+  AutomationTaskArchivePublic,
+  AutomationTaskPublic,
+} from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,7 +16,7 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { formatDateTime, TASK_STATUS_LABELS } from "./constants"
 
 interface TaskDetailDialogProps {
-  task: AutomationTaskPublic
+  task: AutomationTaskPublic | AutomationTaskArchivePublic
 }
 
 function JsonBlock({ label, value }: { label: string; value: unknown }) {
@@ -55,8 +58,38 @@ export const TaskDetailDialog = ({ task }: TaskDetailDialogProps) => {
               <div className="font-mono text-xs break-all">{task.id}</div>
             </div>
             <div>
+              <div className="text-muted-foreground">任务来源</div>
+              <div>
+                {task.event_id || task.rule_id ? "事件规则生成" : "手动创建"}
+              </div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">事件 ID</div>
+              <div className="font-mono text-xs break-all">
+                {task.event_id ?? "—"}
+              </div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">规则 ID</div>
+              <div className="font-mono text-xs break-all">
+                {task.rule_id ?? "—"}
+              </div>
+            </div>
+            <div>
               <div className="text-muted-foreground">执行时间</div>
               <div>{formatDateTime(task.execute_at)}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">认领时间</div>
+              <div>{formatDateTime(task.claimed_at)}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">开始执行</div>
+              <div>{formatDateTime(task.started_at)}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">完成时间</div>
+              <div>{formatDateTime(task.finished_at)}</div>
             </div>
             <div>
               <div className="text-muted-foreground">优先级</div>
@@ -69,11 +102,11 @@ export const TaskDetailDialog = ({ task }: TaskDetailDialogProps) => {
               </div>
             </div>
           </div>
-          {task.error_message && (
+          {task.last_error && (
             <div className="space-y-1">
               <div className="text-sm font-medium">错误信息</div>
               <pre className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs whitespace-pre-wrap break-all">
-                {task.error_message}
+                {task.last_error}
               </pre>
             </div>
           )}

@@ -79,6 +79,12 @@ export type AutomationEventPublic = {
     payload: {
         [key: string]: unknown;
     };
+    status: AutomationEventStatus;
+    dispatch_attempts: number;
+    last_error: (string | null);
+    next_dispatch_at: (string | null);
+    processing_at: (string | null);
+    dispatched_at: (string | null);
     created_at: (string | null);
 };
 
@@ -91,9 +97,19 @@ export type AutomationEventsPublic = {
 };
 
 /**
+ * 自动化事件状态
+ */
+export type AutomationEventStatus = 'pending' | 'dispatching' | 'dispatched' | 'failed';
+
+/**
  * 创建自动化规则请求
  */
 export type AutomationRuleCreate = {
+    /**
+     * 规则的业务名称
+     */
+    name: string;
+    description?: (string | null);
     /**
      * 监听的业务事件类型
      */
@@ -108,6 +124,10 @@ export type AutomationRuleCreate = {
     config?: {
         [key: string]: unknown;
     };
+    /**
+     * 数值越大越优先匹配/生成任务
+     */
+    priority?: number;
     is_active?: boolean;
 };
 
@@ -116,11 +136,14 @@ export type AutomationRuleCreate = {
  */
 export type AutomationRulePublic = {
     id: string;
+    name: string;
+    description: (string | null);
     event_type: string;
     action_type: string;
     config: {
         [key: string]: unknown;
     };
+    priority: number;
     is_active: boolean;
     created_at: (string | null);
     updated_at: (string | null);
@@ -138,11 +161,14 @@ export type AutomationRulesPublic = {
  * 更新自动化规则请求（全部可选）
  */
 export type AutomationRuleUpdate = {
+    name?: (string | null);
+    description?: (string | null);
     event_type?: (string | null);
     action_type?: (string | null);
     config?: ({
     [key: string]: unknown;
 } | null);
+    priority?: (number | null);
     is_active?: (boolean | null);
 };
 
@@ -151,7 +177,10 @@ export type AutomationRuleUpdate = {
  */
 export type AutomationTaskArchivePublic = {
     id: string;
+    task_id: string;
     task_type: string;
+    event_id: (string | null);
+    rule_id: (string | null);
     status: AutomationTaskStatus;
     priority: number;
     execute_at: string;
@@ -160,10 +189,11 @@ export type AutomationTaskArchivePublic = {
     payload: {
         [key: string]: unknown;
     };
-    error_message: (string | null);
+    last_error: (string | null);
+    claimed_at: (string | null);
+    started_at: (string | null);
     finished_at: (string | null);
     created_at: (string | null);
-    updated_at: (string | null);
     archived_at: string;
 };
 
@@ -206,6 +236,8 @@ export type AutomationTaskCreate = {
 export type AutomationTaskPublic = {
     id: string;
     task_type: string;
+    event_id: (string | null);
+    rule_id: (string | null);
     status: AutomationTaskStatus;
     priority: number;
     execute_at: string;
@@ -214,7 +246,9 @@ export type AutomationTaskPublic = {
     payload: {
         [key: string]: unknown;
     };
-    error_message: (string | null);
+    last_error: (string | null);
+    claimed_at: (string | null);
+    started_at: (string | null);
     finished_at: (string | null);
     created_at: (string | null);
     updated_at: (string | null);
