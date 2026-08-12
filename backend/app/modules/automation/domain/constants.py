@@ -3,6 +3,13 @@
 from enum import StrEnum
 
 
+# 事件类型中文展示名（用于任务来源等前端展示），未知类型回退原始事件类型
+EVENT_TYPE_LABELS: dict[str, str] = {
+    "order.paid": "订单支付",
+    "order.fulfillment_failed": "订单履约失败",
+}
+
+
 class AutomationEventStatus(StrEnum):
     """自动化事件状态"""
 

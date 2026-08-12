@@ -51,6 +51,16 @@ class AutomationTaskPublic(SQLModel):
     task_type: str
     event_id: uuid.UUID | None
     rule_id: uuid.UUID | None
+    event_type_label: str | None = Field(
+        default=None,
+        title="来源事件类型（中文展示名）",
+        description="生成该任务的事件类型中文名，未知类型回退原始事件类型；手动创建任务时为空",
+    )
+    rule_name: str | None = Field(
+        default=None,
+        title="来源规则名称",
+        description="生成该任务的 AutomationRule.name，手动创建任务时为空",
+    )
     status: AutomationTaskStatus
     priority: int
     execute_at: datetime
@@ -80,6 +90,16 @@ class AutomationTaskArchivePublic(SQLModel):
     task_type: str
     event_id: uuid.UUID | None
     rule_id: uuid.UUID | None
+    event_type_label: str | None = Field(
+        default=None,
+        title="来源事件类型（中文展示名）",
+        description="生成该任务的事件类型中文名，未知类型回退原始事件类型；手动创建任务时为空",
+    )
+    rule_name: str | None = Field(
+        default=None,
+        title="来源规则名称",
+        description="生成该任务的 AutomationRule.name，手动创建任务时为空",
+    )
     status: AutomationTaskStatus
     priority: int
     execute_at: datetime

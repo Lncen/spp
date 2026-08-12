@@ -181,6 +181,8 @@ export type AutomationTaskArchivePublic = {
     task_type: string;
     event_id: (string | null);
     rule_id: (string | null);
+    event_type_label?: (string | null);
+    rule_name?: (string | null);
     status: AutomationTaskStatus;
     priority: number;
     execute_at: string;
@@ -238,6 +240,8 @@ export type AutomationTaskPublic = {
     task_type: string;
     event_id: (string | null);
     rule_id: (string | null);
+    event_type_label?: (string | null);
+    rule_name?: (string | null);
     status: AutomationTaskStatus;
     priority: number;
     execute_at: string;

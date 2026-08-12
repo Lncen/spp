@@ -571,6 +571,28 @@ export const AutomationTaskArchivePublicSchema = {
             ],
             title: 'Rule Id'
         },
+        event_type_label: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Type Label'
+        },
+        rule_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rule Name'
+        },
         status: {
             '$ref': '#/components/schemas/AutomationTaskStatus'
         },
@@ -769,6 +791,28 @@ export const AutomationTaskPublicSchema = {
                 }
             ],
             title: 'Rule Id'
+        },
+        event_type_label: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Type Label'
+        },
+        rule_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rule Name'
         },
         status: {
             '$ref': '#/components/schemas/AutomationTaskStatus'

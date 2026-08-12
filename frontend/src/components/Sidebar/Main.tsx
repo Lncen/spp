@@ -31,6 +31,8 @@ export type Item = {
 
 export type ItemGroup = {
   label: string
+  /** 分组标题图标，可选 */
+  icon?: LucideIcon
   path?: string
   items: Item[]
   /** 分组标题可点击折叠 */
@@ -134,6 +136,7 @@ export function Main({ groups }: MainProps) {
               <Collapsible className="group/collapsible-group">
                 <SidebarGroupLabel asChild>
                   <CollapsibleTrigger className="w-full">
+                    {group.icon ? <group.icon /> : null}
                     <span>{group.label}</span>
                     <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible-group:rotate-90" />
                   </CollapsibleTrigger>
@@ -142,7 +145,10 @@ export function Main({ groups }: MainProps) {
               </Collapsible>
             ) : (
               <>
-                <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+                <SidebarGroupLabel>
+                  {group.icon ? <group.icon /> : null}
+                  {group.label}
+                </SidebarGroupLabel>
                 {menu}
               </>
             )}

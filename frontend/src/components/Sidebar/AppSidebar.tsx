@@ -16,6 +16,11 @@ import {
   Settings,
   Tags,
   Users,
+  CalendarClock,
+  ListTodo,
+  Archive,
+  Workflow,
+  Zap,
 } from "lucide-react"
 
 import { SidebarAppearance } from "@/components/Common/Appearance"
@@ -38,6 +43,15 @@ const navGroups: ItemGroup[] = [
     items: [{ icon: Home, title: "主页", path: "/" }],
   },
   {
+    label: "常用",
+    path: "/automations",
+    items: [
+      { icon: ReceiptText, title: "订单", path: "/orders" },
+
+
+    ],
+  },
+  {
     label: "用户",
     collapsible: true,
     items: [
@@ -56,32 +70,24 @@ const navGroups: ItemGroup[] = [
     ],
   },
   {
+    icon: Cpu,
+    label: "自动化",
+    collapsible: true,
+    items: [
+      { icon: ListTodo, title: "任务池", path: "/automation/tasks" },
+      { icon: Archive, title: "归档", path: "/automation/archives" },
+      { icon: Workflow, title: "规则", path: "/automation/rules" },
+      { icon: Zap, title: "事件", path: "/automation/events" },
+      { icon: CalendarClock, title: "计划任务", path: "/schedules" },
+    ],
+  },
+  {
     label: "资源",
     collapsible: true,
     items: [
       { icon: Briefcase, title: "Items", path: "/items" },
       { icon: Image, title: "图片", path: "/images" },
       { icon: Tags, title: "图片分类", path: "/categories" },
-    ],
-  },
-  {
-    label: "运营",
-    collapsible: true,
-    path: "/automations",
-    items: [
-      { icon: ReceiptText, title: "订单", path: "/orders" },
-      { icon: CreditCard, title: "任务池", path: "/automation/tasks" },
-      {
-        icon: Cpu,
-        title: "自动化看板",
-        path: "/automation",
-        items: [
-          { title: "计划任务", path: "/schedules" },
-          { title: "归档", path: "/automation/archives" },
-          { title: "规则", path: "/automation/rules" },
-          { title: "事件", path: "/automation/events" },
-        ],
-      },
     ],
   },
   {

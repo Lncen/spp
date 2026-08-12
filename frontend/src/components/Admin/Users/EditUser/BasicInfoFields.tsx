@@ -47,7 +47,7 @@ export function BasicInfoFields({
         )}
         <div className="flex flex-col items-start gap-1">
           <span className="truncate text-lg font-medium">
-            {fullName || "未填写"}
+            {fullName || "昵称未填写"}
           </span>
           {levelName && (
             <Badge variant="secondary" className="text-xs">
@@ -60,11 +60,24 @@ export function BasicInfoFields({
 
       <FormField
         control={control}
+        name="full_name"
+        render={({ field }) => (
+          <HorizontalFormItem label="昵称">
+            <FormControl>
+              <Input placeholder="昵称" type="text" {...field} />
+            </FormControl>
+            <FormMessage />
+          </HorizontalFormItem>
+        )}
+      />
+
+      <FormField
+        control={control}
         name="username"
         render={({ field }) => (
           <HorizontalFormItem label="用户名" required>
             <FormControl>
-              <Input placeholder="用户名" type="text" {...field} />
+              <Input placeholder="用户名" type="text" {...field} required />
             </FormControl>
             <FormMessage />
           </HorizontalFormItem>
@@ -77,7 +90,7 @@ export function BasicInfoFields({
         render={({ field }) => (
           <HorizontalFormItem label="邮箱">
             <FormControl>
-              <Input placeholder="邮箱" type="email" {...field} required />
+              <Input placeholder="邮箱" type="email" {...field} />
             </FormControl>
             <FormMessage />
           </HorizontalFormItem>
