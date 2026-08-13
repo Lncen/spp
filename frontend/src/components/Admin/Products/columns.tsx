@@ -7,8 +7,16 @@ import {
   productStatusLabel,
   productTypeLabel,
   sourceTypeLabel,
+  syncStatusLabel,
 } from "./constants"
 import { ProductActionsMenu } from "./ProductActionsMenu"
+
+function formatSyncTime(value?: string | null): string {
+  if (!value) return "—"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "—"
+  return date.toLocaleString("zh-CN", { hour12: false })
+}
 
 function formatPrice(product: ProductPublic) {
   const pricing = product.pricing
@@ -64,6 +72,15 @@ export const columns: ColumnDef<ProductPublic>[] = [
     ),
   },
   {
+    accessorKey: "supplier_name",
+    header: "供应商",
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground">
+        {row.original.supplier?.supplier_name || "—"}
+      </span>
+    ),
+  },
+  {
     accessorKey: "type",
     header: "类型",
     cell: ({ row }) => (
@@ -111,6 +128,24 @@ export const columns: ColumnDef<ProductPublic>[] = [
     header: "库存",
     cell: ({ row }) => (
       <span className="text-sm">{formatStock(row.original)}</span>
+    ),
+  },
+  {
+    accessorKey: "sync_status",
+    header: "同步",
+    cell: ({ row }) => (
+      <span className="text-sm">
+        {syncStatusLabel(row.original.sync_status)}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "synced_at",
+    header: "同步时间",
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground">
+        {formatSyncTime(row.original.synced_at)}
+      </span>
     ),
   },
   {

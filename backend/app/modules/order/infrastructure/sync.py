@@ -9,12 +9,12 @@ from sqlmodel import Session, select
 from app.modules.order.domain.constants import OrderStatus
 from app.modules.order.models import Order
 from app.modules.product.product.models import ProductSupplier
-from app.modules.supplier.models import Supplier
-from app.modules.supplier.service.clients.base import (
+from app.modules.supplier.infrastructure.clients.base import (
     SupplierClientBase,
     SupplierClientError,
 )
-from app.modules.supplier.service.dto import UpstreamOrder
+from app.modules.supplier.models import Supplier
+from app.modules.supplier.schemas.upstream import UpstreamOrder
 
 logger = logging.getLogger(__name__)
 

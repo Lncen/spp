@@ -135,10 +135,9 @@ class SubmitSupplierOrderExecutor(BaseExecutor):
                 )
 
             # 原子认领。
-            #
             # False 的含义必须严格定义为：
             # 订单已经被其他执行者认领/完成，而不是数据库异常。
-            if not claim_order(session=session,db_order=db_order,):
+            if not claim_order(session=session, db_order=db_order):
                 return
 
             try:

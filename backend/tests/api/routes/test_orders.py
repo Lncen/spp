@@ -16,12 +16,12 @@ from app.modules.order.application.sync import (
 )
 from app.modules.order.models import Order
 from app.modules.product.product.models import ProductSupplier
-from app.modules.supplier.service.clients.base import (
+from app.modules.supplier.infrastructure.clients.base import (
     SupplierClientError,
     SupplierClientUnknownError,
 )
-from app.modules.supplier.service.clients.ylsup import YlsupClient
-from app.modules.supplier.service.dto import UpstreamOrder
+from app.modules.supplier.infrastructure.clients.ylsup import YlsupClient
+from app.modules.supplier.schemas.upstream import UpstreamOrder
 from app.modules.user.models import User
 from app.modules.wallet.models import Wallet
 from tests.api.routes.test_products import (

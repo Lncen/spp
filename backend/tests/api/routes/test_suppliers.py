@@ -14,19 +14,28 @@ from app.modules.product.constants import (
     ProductStatus,
     ProductType,
     SourceType,
+    SyncStatus,
 )
 from app.modules.product.product.models import (
     Product,
     ProductPricing,
     ProductSupplier,
 )
+from app.modules.supplier.application.create import (
+    create_supplier as create_supplier_service,
+)
+from app.modules.supplier.application.sync import sync_upstream_product
+from app.modules.supplier.infrastructure.clients.base import (
+    SupplierClientError,
+    supplier_client,
+)
+from app.modules.supplier.infrastructure.clients.ylsup import YlsupClient
 from app.modules.supplier.models import Supplier
+from app.modules.supplier.repositories.supplier import (
+    mark_product_sync_failed,
+)
 from app.modules.supplier.schemas import PlatformEnum, SupplierCreate
-from app.modules.supplier.service import create_supplier as create_supplier_service
-from app.modules.supplier.service import supplier_client, sync_upstream_product
-from app.modules.supplier.service.clients.base import SupplierClientError
-from app.modules.supplier.service.clients.ylsup import YlsupClient
-from app.modules.supplier.service.dto import (
+from app.modules.supplier.schemas.upstream import (
     UpstreamBuyParam,
     UpstreamCategory,
     UpstreamProductDetail,
@@ -253,9 +262,7 @@ def test_ylsup_client_parses_upstream_payloads(
                 {"code": 0, "data": [{"id": 58, "name": "VIP444444444"}]}
             )
         if path.endswith("/Goods/Show"):
-            return FakeResponse(
-                {"code": 0, "data": {"id": 838, "price": 0.01296}}
-            )
+            return FakeResponse({"code": 0, "data": {"id": 838, "price": 0.01296}})
         if path.endswith("/Order/Show"):
             return FakeResponse(
                 {
@@ -525,7 +532,7 @@ def test_create_upstream_products_sync_returns_task_id(
         return FakeTask()
 
     monkeypatch.setattr(
-        "app.modules.supplier.api.celery_app.send_task",
+        "app.modules.supplier.infrastructure.tasks.celery_app.send_task",
         fake_send_task,
     )
     response = client.post(
@@ -592,3 +599,56 @@ def test_read_upstream_products_sync_status_pending(
     assert response.json()["status"] == "STARTED"
     assert response.json()["success"] is None
     assert response.json()["result"] is None
+
+
+def test_sync_product_saves_upstream_sync_fields(
+    db: Session,
+) -> None:
+    """上游同步成功后保存同步状态、同步时间与上游商品名称"""
+    supplier = create_random_supplier(db)
+    detail = UpstreamProductDetail(
+        upstream_id="838",
+        name="VIP快速)",
+        cost_price=Decimal("0.01296"),
+    )
+
+    action, product_id = sync_upstream_product(
+        session=db,
+        supplier=supplier,
+        detail=detail,
+    )
+    assert action == "created"
+    product = db.get(Product, product_id)
+    assert product is not None
+    assert product.sync_status == SyncStatus.SUCCESS
+    assert product.synced_at is not None
+    row = db.exec(
+        select(ProductSupplier).where(
+            ProductSupplier.supplier_id == supplier.id,
+            ProductSupplier.sku_id == "838",
+        )
+    ).one()
+    assert row.upstream_name == "VIP快速)"
+
+    action, _ = sync_upstream_product(
+        session=db,
+        supplier=supplier,
+        detail=detail.model_copy(update={"name": "上游改名"}),
+    )
+    assert action == "updated"
+    db.refresh(row)
+    assert row.upstream_name == "上游改名"
+    db.refresh(product)
+    assert product.sync_status == SyncStatus.SUCCESS
+    assert product.synced_at is not None
+
+
+def test_mark_product_sync_failed(db: Session) -> None:
+    """标记本地商品上游同步异常"""
+    supplier = create_random_supplier(db)
+    local_product = create_local_product(db, supplier, "58")
+
+    mark_product_sync_failed(session=db, product_id=local_product.id)
+    db.refresh(local_product)
+    assert local_product.sync_status == SyncStatus.FAILED
+    assert local_product.synced_at is not None

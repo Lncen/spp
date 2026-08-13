@@ -67,6 +67,11 @@ export const PRODUCT_STATUS_BADGE_VARIANT: Record<
   8: "secondary",
 }
 
+export const SYNC_STATUS_OPTIONS = [
+  { value: 1, label: "同步成功" },
+  { value: 2, label: "同步异常" },
+] as const
+
 export function productTypeLabel(value: number): string {
   return (
     PRODUCT_TYPE_OPTIONS.find((option) => option.value === value)?.label ??
@@ -84,6 +89,14 @@ export function productStatusLabel(value: number): string {
 export function sourceTypeLabel(value: number): string {
   return (
     SOURCE_TYPE_OPTIONS.find((option) => option.value === value)?.label ??
+    String(value)
+  )
+}
+
+export function syncStatusLabel(value: number | null | undefined): string {
+  if (value == null) return "未同步"
+  return (
+    SYNC_STATUS_OPTIONS.find((option) => option.value === value)?.label ??
     String(value)
   )
 }

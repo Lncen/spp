@@ -58,9 +58,7 @@ def _validate_category_parent(
             )
 
 
-def _validate_category_icon(
-    *, session: Session, icon_id: uuid.UUID | None
-) -> None:
+def _validate_category_icon(*, session: Session, icon_id: uuid.UUID | None) -> None:
     """校验分类图标存在"""
     if icon_id is not None and session.get(Image, icon_id) is None:
         raise HTTPException(status_code=400, detail="分类图标不存在")

@@ -58,19 +58,27 @@ def db() -> Generator[Session]:
             )
             conn.execute(
                 text(
-                    'CREATE INDEX IF NOT EXISTS ix_user_can_order '
-                    'ON "user" (can_order)'
+                    'CREATE INDEX IF NOT EXISTS ix_user_can_order ON "user" (can_order)'
                 )
             )
             conn.execute(
                 text(
-                    'ALTER TABLE price_template '
+                    "ALTER TABLE price_template "
                     "ADD COLUMN IF NOT EXISTS is_default "
                     "BOOLEAN NOT NULL DEFAULT FALSE"
                 )
             )
             for column_sql in (
                 "ALTER TABLE orders ADD COLUMN IF NOT EXISTS product_id UUID",
+                "ALTER TABLE product ADD COLUMN IF NOT EXISTS sync_status INTEGER",
+                (
+                    "ALTER TABLE product ADD COLUMN IF NOT EXISTS synced_at "
+                    "TIMESTAMP WITH TIME ZONE"
+                ),
+                (
+                    "ALTER TABLE product_supplier ADD COLUMN IF NOT EXISTS "
+                    "upstream_name VARCHAR(255)"
+                ),
                 (
                     "ALTER TABLE orders ADD COLUMN IF NOT EXISTS product_name "
                     "VARCHAR(255) NOT NULL DEFAULT ''"
@@ -119,13 +127,8 @@ def db() -> Generator[Session]:
                     "ALTER TABLE orders ADD COLUMN IF NOT EXISTS supplier_order_id "
                     "VARCHAR(255)"
                 ),
-                (
-                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS supplier_id UUID"
-                ),
-                (
-                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS sku_id "
-                    "VARCHAR(255)"
-                ),
+                ("ALTER TABLE orders ADD COLUMN IF NOT EXISTS supplier_id UUID"),
+                ("ALTER TABLE orders ADD COLUMN IF NOT EXISTS sku_id VARCHAR(255)"),
                 (
                     "ALTER TABLE orders ADD COLUMN IF NOT EXISTS can_refund "
                     "BOOLEAN NOT NULL DEFAULT FALSE"
@@ -133,7 +136,9 @@ def db() -> Generator[Session]:
             ):
                 conn.execute(text(column_sql))
             conn.execute(
-                text("CREATE INDEX IF NOT EXISTS ix_orders_product_id ON orders (product_id)")
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_orders_product_id ON orders (product_id)"
+                )
             )
             conn.execute(
                 text(
@@ -148,10 +153,7 @@ def db() -> Generator[Session]:
                 )
             )
             conn.execute(
-                text(
-                    "CREATE INDEX IF NOT EXISTS ix_orders_sku_id "
-                    "ON orders (sku_id)"
-                )
+                text("CREATE INDEX IF NOT EXISTS ix_orders_sku_id ON orders (sku_id)")
             )
         init_db(session)
         # 新模块表尚未生成迁移，测试环境单独建表；产品库由 Alembic 迁移建表

@@ -13,7 +13,7 @@ from app.modules.order.infrastructure.notification import notify_order_exception
 from app.modules.order.infrastructure.sync import query_api_orders_status
 from app.modules.order.models import Order
 from app.modules.product.constants import RedeemType
-from app.modules.supplier.service.clients.base import (
+from app.modules.supplier.infrastructure.clients.base import (
     SupplierClientError,
     SupplierClientUnknownError,
 )

@@ -23,21 +23,28 @@ class ProductType(IntEnum):
 class ProductStatus(IntEnum):
     """商品状态"""
 
-    PENDING_REVIEW = 1      # 待审核 (1)
-    REJECTED = 2        # 已驳回 (2)
-    READY = 3       # 待上架 / 已就绪 (3)
-    OFF_SHELF = 5       # 已下架 (5)
-    WITHDRAWN = 6       # 已撤回 (6)
-    APPROVED = 7        # 已上架 / 审核通过 (7)
-    SOLD_OUT = 8        # 已售罄 (8)
+    PENDING_REVIEW = 1  # 待审核 (1)
+    REJECTED = 2  # 已驳回 (2)
+    READY = 3  # 待上架 / 已就绪 (3)
+    OFF_SHELF = 5  # 已下架 (5)
+    WITHDRAWN = 6  # 已撤回 (6)
+    APPROVED = 7  # 在售
+    SOLD_OUT = 8  # 已售罄 (8)
+
+
+class SyncStatus(IntEnum):
+    """上游同步状态"""
+
+    SUCCESS = 1  # 同步成功
+    FAILED = 2  # 同步异常
 
 
 class RedeemType(IntEnum):
     """发货方式"""
 
-    AUTOMATIC = 1
-    MANUAL = 2
-    AUTO_API = 3
+    AUTOMATIC = 1  # 自动发货
+    MANUAL = 2  # 手动发货
+    AUTO_API = 3  # API发货
 
 
 class SourceType(IntEnum):

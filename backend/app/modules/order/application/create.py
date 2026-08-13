@@ -149,6 +149,14 @@ def _create_order_core(
         order_in=order_in,
     )
 
+    # 校验无重复下单（在库存行锁内执行，并发下可看到已提交订单）
+    ensure_no_duplicate_active_order(
+        session=session,
+        user_id=user.id,
+        product_id=data["product"].id,
+        params=data["params"],
+    )
+
     # 校验余额（仅钱包下单）
     if wallet is not None and wallet.balance < total:
         raise HTTPException(status_code=400, detail="余额不足")
@@ -159,13 +167,7 @@ def _create_order_core(
         inventory=data["inventory"],
         quantity=data["quantity"],
     )
-    # 校验无重复下单（在库存行锁内执行，并发下可看到已提交订单）
-    ensure_no_duplicate_active_order(
-        session=session,
-        user_id=user.id,
-        product_id=data["product"].id,
-        params=data["params"],
-    )
+
 
     # 构造订单模型
     db_order = build_order(

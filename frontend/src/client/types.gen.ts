@@ -181,7 +181,13 @@ export type AutomationTaskArchivePublic = {
     task_type: string;
     event_id: (string | null);
     rule_id: (string | null);
+    /**
+     * 生成该任务的事件类型中文名，未知类型回退原始事件类型；手动创建任务时为空
+     */
     event_type_label?: (string | null);
+    /**
+     * 生成该任务的 AutomationRule.name，手动创建任务时为空
+     */
     rule_name?: (string | null);
     status: AutomationTaskStatus;
     priority: number;
@@ -240,7 +246,13 @@ export type AutomationTaskPublic = {
     task_type: string;
     event_id: (string | null);
     rule_id: (string | null);
+    /**
+     * 生成该任务的事件类型中文名，未知类型回退原始事件类型；手动创建任务时为空
+     */
     event_type_label?: (string | null);
+    /**
+     * 生成该任务的 AutomationRule.name，手动创建任务时为空
+     */
     rule_name?: (string | null);
     status: AutomationTaskStatus;
     priority: number;
@@ -371,14 +383,7 @@ export type ImageCategoryUpdate = {
  * 图片公开响应
  */
 export type ImagePublic = {
-    filename: string;
-    file_size: number;
-    width: number;
-    height: number;
-    category?: (string | null);
     id: string;
-    owner_id: string;
-    created_at?: (string | null);
     url: string;
 };
 
@@ -520,6 +525,30 @@ export type NewPassword = {
 };
 
 /**
+ * 通知对外展示结构
+ */
+export type NotificationPublic = {
+    id: string;
+    title: string;
+    content: string;
+    event_type: string;
+    payload_snapshot: {
+        [key: string]: unknown;
+    };
+    created_at: (string | null);
+    read_at: (string | null);
+};
+
+/**
+ * 通知分页列表
+ */
+export type NotificationsPublic = {
+    data: Array<NotificationPublic>;
+    count: number;
+    unread_count: number;
+};
+
+/**
  * 创建订单请求
  */
 export type OrderCreate = {
@@ -593,6 +622,7 @@ export type OrderPublic = {
     fulfillment_type: RedeemType;
     supplier_order_id?: (string | null);
     supplier_id?: (string | null);
+    supplier_name?: (string | null);
     sku_id?: (string | null);
     can_refund: boolean;
 };
@@ -1066,6 +1096,8 @@ export type ProductPublic = {
     is_active: boolean;
     created_at?: (string | null);
     updated_at?: (string | null);
+    sync_status?: (SyncStatus | null);
+    synced_at?: (string | null);
     supplier?: (ProductSupplierPublic | null);
     pricing?: (ProductPricingPublic | null);
     inventory?: (ProductInventoryPublic | null);
@@ -1107,6 +1139,7 @@ export type ProductSupplierPublic = {
     supplier_id: (string | null);
     supplier_name?: (string | null);
     sku_id?: (string | null);
+    upstream_name?: (string | null);
 };
 
 /**
@@ -1273,6 +1306,7 @@ export type ScheduleUpdate = {
  */
 export type SettingRead = {
     key: string;
+    type: SettingType;
     value: unknown;
     description: (string | null);
     updated_by: (string | null);
@@ -1287,10 +1321,16 @@ export type SettingsRead = {
 };
 
 /**
+ * 设置类型：值对应模块名，便于识别设置归属
+ */
+export type SettingType = 'system' | 'auth' | 'automation' | 'image' | 'item' | 'level' | 'order' | 'price_template' | 'product' | 'setting' | 'supplier' | 'user' | 'wallet' | 'other';
+
+/**
  * 更新设置请求
  */
 export type SettingUpdate = {
     value: unknown;
+    type?: SettingType;
 };
 
 /**
@@ -1430,6 +1470,11 @@ export type SupplierUpdate = {
 };
 
 /**
+ * 上游同步状态
+ */
+export type SyncStatus = 1 | 2;
+
+/**
  * 可选任务项，供前端下拉选择
  */
 export type TaskOption = {
@@ -1464,6 +1509,13 @@ export type Token = {
     access_token: string;
     token_type?: string;
     refresh_token?: (string | null);
+};
+
+/**
+ * 未读通知数
+ */
+export type UnreadCount = {
+    unread_count: number;
 };
 
 /**
@@ -2010,6 +2062,24 @@ export type LoginRecoverPasswordHtmlContentData = {
 export type LoginRecoverPasswordHtmlContentResponse = (string);
 
 export type LoginTestTokenResponse = (UserPublic);
+
+export type NotificationsReadMyNotificationsData = {
+    limit?: number;
+    skip?: number;
+    unreadOnly?: boolean;
+};
+
+export type NotificationsReadMyNotificationsResponse = (NotificationsPublic);
+
+export type NotificationsReadUnreadCountResponse = (UnreadCount);
+
+export type NotificationsMarkReadData = {
+    notificationId: string;
+};
+
+export type NotificationsMarkReadResponse = (NotificationPublic);
+
+export type NotificationsMarkAllReadResponse = (Message);
 
 export type OrdersCreateUserOrdersData = {
     requestBody: AdminOrdersCreate;

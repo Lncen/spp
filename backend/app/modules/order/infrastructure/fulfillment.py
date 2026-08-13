@@ -1,18 +1,17 @@
 """订单模块：上游履约调用基础设施"""
 
-from typing import Any
 
 from sqlmodel import Session, select
 
 from app.modules.order.domain.constants import OrderStatus
 from app.modules.order.models import Order
 from app.modules.product.product.models import ProductSupplier
-from app.modules.supplier.models import Supplier
-from app.modules.supplier.service.clients.base import (
+from app.modules.supplier.infrastructure.clients.base import (
     SupplierClientBase,
     SupplierClientError,
     SupplierClientUnknownError,
 )
+from app.modules.supplier.models import Supplier
 
 
 def _fulfill_api_item(*, session: Session, db_order: Order) -> None:

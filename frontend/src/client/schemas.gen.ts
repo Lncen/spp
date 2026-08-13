@@ -148,13 +148,6 @@ export const AdminOrdersPublicSchema = {
     description: '管理员批量下单响应'
 } as const;
 
-export const AutomationEventStatusSchema = {
-    type: 'string',
-    enum: ['pending', 'dispatching', 'dispatched', 'failed'],
-    title: 'AutomationEventStatus',
-    description: '自动化事件状态'
-} as const;
-
 export const AutomationEventCreateSchema = {
     properties: {
         event_type: {
@@ -263,6 +256,13 @@ export const AutomationEventPublicSchema = {
     required: ['id', 'event_type', 'payload', 'status', 'dispatch_attempts', 'last_error', 'next_dispatch_at', 'processing_at', 'dispatched_at', 'created_at'],
     title: 'AutomationEventPublic',
     description: '自动化事件公开响应'
+} as const;
+
+export const AutomationEventStatusSchema = {
+    type: 'string',
+    enum: ['pending', 'dispatching', 'dispatched', 'failed'],
+    title: 'AutomationEventStatus',
+    description: '自动化事件状态'
 } as const;
 
 export const AutomationEventsPublicSchema = {
@@ -580,7 +580,8 @@ export const AutomationTaskArchivePublicSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Event Type Label'
+            title: '来源事件类型（中文展示名）',
+            description: '生成该任务的事件类型中文名，未知类型回退原始事件类型；手动创建任务时为空'
         },
         rule_name: {
             anyOf: [
@@ -591,7 +592,8 @@ export const AutomationTaskArchivePublicSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Rule Name'
+            title: '来源规则名称',
+            description: '生成该任务的 AutomationRule.name，手动创建任务时为空'
         },
         status: {
             '$ref': '#/components/schemas/AutomationTaskStatus'
@@ -801,7 +803,8 @@ export const AutomationTaskPublicSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Event Type Label'
+            title: '来源事件类型（中文展示名）',
+            description: '生成该任务的事件类型中文名，未知类型回退原始事件类型；手动创建任务时为空'
         },
         rule_name: {
             anyOf: [
@@ -812,7 +815,8 @@ export const AutomationTaskPublicSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Rule Name'
+            title: '来源规则名称',
+            description: '生成该任务的 AutomationRule.name，手动创建任务时为空'
         },
         status: {
             '$ref': '#/components/schemas/AutomationTaskStatus'
@@ -1326,56 +1330,10 @@ export const ImageCategoryUpdateSchema = {
 
 export const ImagePublicSchema = {
     properties: {
-        filename: {
-            type: 'string',
-            maxLength: 255,
-            title: 'Filename'
-        },
-        file_size: {
-            type: 'integer',
-            title: 'File Size'
-        },
-        width: {
-            type: 'integer',
-            title: 'Width'
-        },
-        height: {
-            type: 'integer',
-            title: 'Height'
-        },
-        category: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 32
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: '分类'
-        },
         id: {
             type: 'string',
             format: 'uuid',
             title: 'Id'
-        },
-        owner_id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Owner Id'
-        },
-        created_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Created At'
         },
         url: {
             type: 'string',
@@ -1383,7 +1341,7 @@ export const ImagePublicSchema = {
         }
     },
     type: 'object',
-    required: ['filename', 'file_size', 'width', 'height', 'id', 'owner_id', 'url'],
+    required: ['id', 'url'],
     title: 'ImagePublic',
     description: '图片公开响应'
 } as const;
@@ -1785,6 +1743,85 @@ export const NewPasswordSchema = {
     description: '重置密码请求'
 } as const;
 
+export const NotificationPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        content: {
+            type: 'string',
+            title: 'Content'
+        },
+        event_type: {
+            type: 'string',
+            title: 'Event Type'
+        },
+        payload_snapshot: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Payload Snapshot'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        read_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Read At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'title', 'content', 'event_type', 'payload_snapshot', 'created_at', 'read_at'],
+    title: 'NotificationPublic',
+    description: '通知对外展示结构'
+} as const;
+
+export const NotificationsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/NotificationPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        },
+        unread_count: {
+            type: 'integer',
+            title: 'Unread Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count', 'unread_count'],
+    title: 'NotificationsPublic',
+    description: '通知分页列表'
+} as const;
+
 export const OrderCreateSchema = {
     properties: {
         product_id: {
@@ -2123,6 +2160,17 @@ export const OrderPublicSchema = {
                 }
             ],
             title: 'Supplier Id'
+        },
+        supplier_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supplier Name'
         },
         sku_id: {
             anyOf: [
@@ -3966,6 +4014,28 @@ export const ProductPublicSchema = {
             ],
             title: 'Updated At'
         },
+        sync_status: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/SyncStatus'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        synced_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Synced At'
+        },
         supplier: {
             anyOf: [
                 {
@@ -4096,6 +4166,17 @@ export const ProductSupplierPublicSchema = {
                 }
             ],
             title: 'Sku Id'
+        },
+        upstream_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Upstream Name'
         }
     },
     type: 'object',
@@ -4708,6 +4789,9 @@ export const SettingReadSchema = {
             type: 'string',
             title: 'Key'
         },
+        type: {
+            '$ref': '#/components/schemas/SettingType'
+        },
         value: {
             title: 'Value'
         },
@@ -4748,15 +4832,26 @@ export const SettingReadSchema = {
         }
     },
     type: 'object',
-    required: ['key', 'value', 'description', 'updated_by', 'updated_at'],
+    required: ['key', 'type', 'value', 'description', 'updated_by', 'updated_at'],
     title: 'SettingRead',
     description: '设置项（登录用户可读）'
+} as const;
+
+export const SettingTypeSchema = {
+    type: 'string',
+    enum: ['system', 'auth', 'automation', 'image', 'item', 'level', 'order', 'price_template', 'product', 'setting', 'supplier', 'user', 'wallet', 'other'],
+    title: 'SettingType',
+    description: '设置类型：值对应模块名，便于识别设置归属'
 } as const;
 
 export const SettingUpdateSchema = {
     properties: {
         value: {
             title: 'Value'
+        },
+        type: {
+            '$ref': '#/components/schemas/SettingType',
+            default: 'system'
         }
     },
     type: 'object',
@@ -5160,6 +5255,13 @@ export const SuppliersPublicSchema = {
     description: '供应商列表响应'
 } as const;
 
+export const SyncStatusSchema = {
+    type: 'integer',
+    enum: [1, 2],
+    title: 'SyncStatus',
+    description: '上游同步状态'
+} as const;
+
 export const TaskOptionSchema = {
     properties: {
         value: {
@@ -5278,6 +5380,19 @@ export const TokenSchema = {
     required: ['access_token'],
     title: 'Token',
     description: '访问令牌响应（登录与刷新时返回）'
+} as const;
+
+export const UnreadCountSchema = {
+    properties: {
+        unread_count: {
+            type: 'integer',
+            title: 'Unread Count'
+        }
+    },
+    type: 'object',
+    required: ['unread_count'],
+    title: 'UnreadCount',
+    description: '未读通知数'
 } as const;
 
 export const UpdatePasswordSchema = {

@@ -7,7 +7,7 @@ import {
   RefreshCw,
   Search,
 } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useMemo, useState, type CSSProperties } from "react"
 
 import type {
   ProductCategoryTreePublic,
@@ -469,7 +469,13 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
 
         <SidebarProvider
           className="overflow-hidden"
-          style={{ minHeight: 0, height: "min(680px, 78vh)" }}
+          style={
+            {
+              "--sidebar-width": "25rem",
+              minHeight: 0,
+              height: "min(680px, 78vh)",
+            } as CSSProperties
+          }
         >
           <Sidebar
             collapsible="none"

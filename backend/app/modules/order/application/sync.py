@@ -14,11 +14,11 @@ from app.modules.order.infrastructure.sync import (
 )
 from app.modules.order.models import Order
 from app.modules.product.constants import RedeemType
-from app.modules.supplier.models import Supplier
-from app.modules.supplier.service.clients.base import (
+from app.modules.supplier.infrastructure.clients.base import (
     SupplierClientBase,
     SupplierClientError,
 )
+from app.modules.supplier.models import Supplier
 
 logger = logging.getLogger(__name__)
 

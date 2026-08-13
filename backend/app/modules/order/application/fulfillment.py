@@ -16,7 +16,7 @@ from app.modules.order.application.sync import sync_orders_status
 from app.modules.order.domain.constants import OrderStatus
 from app.modules.order.models import Order
 from app.modules.product.constants import RedeemType
-from app.modules.supplier.service.clients.base import SupplierClientError
+from app.modules.supplier.infrastructure.clients.base import SupplierClientError
 
 logger = logging.getLogger(__name__)
 

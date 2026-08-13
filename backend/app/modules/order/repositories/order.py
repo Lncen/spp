@@ -163,11 +163,8 @@ def _load_order_snapshot(
     fulfillment = session.exec(
         select(ProductFulfillment).where(ProductFulfillment.product_id == product.id)
     ).first()
-    _validate_product_sellable(
-        product=product,
-        inventory=inventory,
-        fulfillment=fulfillment,
-    )
+
+    _validate_product_sellable(product=product, inventory=inventory, fulfillment=fulfillment)
     supplier_sku = _validate_supplier_available(session=session, product=product)
     _validate_quantity(inventory=inventory, quantity=order_in.quantity)
 
