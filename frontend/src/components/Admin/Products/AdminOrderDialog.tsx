@@ -12,6 +12,7 @@ import type {
 import { OrdersService } from "@/client"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
 import {
   Dialog,
   DialogClose,
@@ -334,14 +335,30 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>管理员下单</DialogTitle>
-            <DialogDescription>
-              {product.name}：订单记录在当前管理员名下
-            </DialogDescription>
-            <DialogDescription>
-              成本价：{product.pricing?.cost_price}
-            </DialogDescription>
+            <div className="flex items-center gap-4">
+              {product.image_url ? (
+                <img
+                  src={product.image_url}
+                  alt={product.name}
+                  className="size-40 shrink-0 rounded-lg border object-cover"
+                />
+              ) : (
+                <div className="flex size-40 shrink-0 items-center justify-center rounded-lg bg-muted text-xs text-muted-foreground">
+                  无图片
+                </div>
+              )}
+              <div className="flex min-w-0 flex-col gap-4">
+                <DialogTitle className="truncate">{product.name}</DialogTitle>
+                <DialogDescription className="text-foreground">
+                  成本价：
+                  <span className="font-mono font-medium">
+                    {product.pricing?.cost_price ?? "—"}
+                  </span>
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
+           <Separator />
           <div className="max-h-[70vh] space-y-5 overflow-y-auto pr-1">
             <Tabs
               value={mode}
@@ -351,11 +368,10 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
                 setResult(null)
               }}
             >
-              <TabsList>
-                <TabsTrigger value="normal">普通下单</TabsTrigger>
+              <TabsList className="gap-3">
+                <TabsTrigger value="normal">下单-可多链接</TabsTrigger>
                 {isBatch && (
                   <>
-                    <TabsTrigger value="batch">批量下单</TabsTrigger>
                     <TabsTrigger value="random">随机数量</TabsTrigger>
                   </>
                 )}
@@ -433,9 +449,6 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
                 <h3 className="text-sm font-semibold">下单参数</h3>
                 <div className="grid gap-4 ">
                   {visibleParams.map((param) => {
-                    const isMultiLine =
-                      param.input_type === LINK_EXTRACT_INPUT_TYPE ||
-                      (mode !== "normal" && param.is_edit)
                     const sharedProps = {
                       id: `admin-param-${param.key}`,
                       value: resolveParamValue(param),
@@ -450,7 +463,6 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
                             <span className="text-destructive"> *</span>
                           )}
                         </Label>
-                        {isMultiLine ? (
                           <Textarea
                             {...sharedProps}
                             rows={4}
@@ -461,17 +473,7 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
                               }))
                             }
                           />
-                        ) : (
-                          <Input
-                            {...sharedProps}
-                            onChange={(event) =>
-                              setParamValues((current) => ({
-                                ...current,
-                                [param.key]: event.target.value,
-                              }))
-                            }
-                          />
-                        )}
+                    
                       </div>
                     )
                   })}

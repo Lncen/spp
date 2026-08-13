@@ -15,7 +15,7 @@ export const PRODUCT_STATUS_OPTIONS = [
   { value: 3, label: "待上架" },
   { value: 5, label: "下架" },
   { value: 6, label: "撤回" },
-  { value: 7, label: "上架" },
+  { value: 7, label: "在售" },
   { value: 8, label: "已售罄" },
 ] as const
 
@@ -33,7 +33,7 @@ export const SOURCE_TYPE_OPTIONS = [
 export const REDEEM_TYPE_OPTIONS = [
   { value: 1, label: "自动发货" },
   { value: 2, label: "手动发货" },
-  { value: 3, label: "API 自动" },
+  { value: 3, label: "API" },
 ] as const
 
 export const INPUT_TYPE_OPTIONS = [
@@ -56,20 +56,26 @@ export const INPUT_TYPE_OPTIONS = [
 
 export const PRODUCT_STATUS_BADGE_VARIANT: Record<
   number,
-  "default" | "secondary" | "destructive" | "outline"
+  | "default"
+  | "secondary"
+  | "destructive"
+  | "outline"
+  | "success"
+  | "warning"
+  | "info"
 > = {
-  1: "secondary",
+  1: "warning",
   2: "destructive",
-  3: "default",
+  3: "info",
   5: "outline",
-  6: "outline",
-  7: "default",
-  8: "secondary",
+  6: "secondary",
+  7: "success",
+  8: "default",
 }
 
 export const SYNC_STATUS_OPTIONS = [
-  { value: 1, label: "同步成功" },
-  { value: 2, label: "同步异常" },
+  { value: 1, label: "正常" },
+  { value: 2, label: "异常" },
 ] as const
 
 export function productTypeLabel(value: number): string {
