@@ -15,18 +15,6 @@ from app.modules.supplier.service.clients.base import (
 )
 
 
-def _extract_supplier_order_id(result: Any) -> str | None:
-    """从上游下单返回中提取供应商订单号"""
-    if not isinstance(result, dict):
-        return None
-    payload = result.get("data") if isinstance(result.get("data"), dict) else result
-    for key in ("order_id", "orderId", "id"):
-        value = payload.get(key)
-        if value is not None:
-            return str(value)
-    return None
-
-
 def _fulfill_api_item(*, session: Session, db_order: Order) -> None:
     """调用供应商 API 下单，写入供应商订单号"""
     supplier_id, sku_id = db_order.supplier_id, db_order.sku_id
@@ -51,13 +39,13 @@ def _fulfill_api_item(*, session: Session, db_order: Order) -> None:
     try:
         upstream_params = dict(db_order.params or {})
         upstream_params.pop("customer_order_id", None)
-        result = client.create_order(
+        supplier_order_id = client.create_order(
             product_id=sku_id,
             quantity=db_order.quantity,
             customer_order_id=db_order.order_no,
             **upstream_params,
         )
-        supplier_order_id = _extract_supplier_order_id(result)
+
         if supplier_order_id is None:
             raise SupplierClientUnknownError(
                 "上游下单成功但未返回订单号，需人工确认"

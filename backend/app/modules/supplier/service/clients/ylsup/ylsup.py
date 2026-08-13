@@ -130,15 +130,12 @@ class YlsupClient(SupplierClientBase):
         product_id: str,
         quantity: int,
         **kwargs: Any,
-    ) -> dict[str, Any]:
+    ) -> int|None:
         """向上游下单（遵循基类契约，product_id 为供应商 SKU）"""
         buy_params = {str(key): str(value) for key, value in (kwargs or {}).items()}
-        try:
-            goods_id = int(product_id)
-        except (TypeError, ValueError):
-            raise SupplierClientError(f"上游商品 ID 非法: {product_id}") from None
+
         body = {
-            "goods_id": goods_id,
+            "goods_id": product_id,
             "buy_number": quantity,
             "buy_params": buy_params,
         }
@@ -148,7 +145,9 @@ class YlsupClient(SupplierClientBase):
 
         payload = self.post("/openapi/customer/Goods/Buy", json=body).json()
         data = self._data(payload)
-        return data if isinstance(data, dict) else {}
+        if data is None or not isinstance(data, dict):
+            raise SupplierClientError(f"上游下单返回格式错误: 期望 dict: 值是{data}")
+        return data.get("id")
 
     def query_order(self, order_ids: list[int]) -> list[UpstreamOrder]:
         """查询订单（归一化为 UpstreamOrder 列表，可能包含多个订单）"""

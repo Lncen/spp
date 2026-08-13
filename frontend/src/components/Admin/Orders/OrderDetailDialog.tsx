@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ArrowRight, Check, Copy, RefreshCw } from "lucide-react"
 import { Fragment, type ReactNode } from "react"
 
@@ -14,9 +14,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { LoadingButton } from "@/components/ui/loading-button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard"
-import { cn } from "@/lib/utils"
+import useCustomToast from "@/hooks/useCustomToast"
+import { handleError } from "@/utils"
 import { ORDER_STATUS_BADGE_VARIANT, orderStatusLabel } from "./constants"
 
 const REDEEM_TYPE_LABELS: Record<number, string> = {
@@ -207,12 +209,21 @@ export const OrderDetailDialog = ({
   const {
     data: order,
     isLoading,
-    isFetching,
-    refetch,
   } = useQuery({
     queryKey: ["orders", "detail", orderId],
     queryFn: () => OrdersService.readOrder({ orderId }),
     enabled: open,
+  })
+  const queryClient = useQueryClient()
+  const { showErrorToast } = useCustomToast()
+
+  const syncMutation = useMutation({
+    mutationFn: () => OrdersService.syncOrderStatusApi({ orderId }),
+    onSuccess: (updatedOrder) => {
+      queryClient.setQueryData(["orders", "detail", orderId], updatedOrder)
+      queryClient.invalidateQueries({ queryKey: ["orders"] })
+    },
+    onError: handleError.bind(showErrorToast),
   })
 
   return (
@@ -222,18 +233,16 @@ export const OrderDetailDialog = ({
           <div className="flex items-center justify-between gap-4 pr-8">
             <DialogTitle>订单详情</DialogTitle>
             <div className="flex items-center gap-2">
-              <Button
+              <LoadingButton
                 variant="ghost"
                 size="icon"
                 className="size-8"
                 aria-label="刷新订单"
-                disabled={isFetching}
-                onClick={() => refetch()}
+                loading={syncMutation.isPending}
+                onClick={() => syncMutation.mutate()}
               >
-                <RefreshCw
-                  className={cn("size-4", isFetching && "animate-spin")}
-                />
-              </Button>
+                {!syncMutation.isPending && <RefreshCw className="size-4" />}
+              </LoadingButton>
               {order && (
                 <Badge
                   variant={

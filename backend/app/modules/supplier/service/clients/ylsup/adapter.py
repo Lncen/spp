@@ -184,3 +184,5 @@ def yl_order_adapter(raw: dict[str, Any]) -> UpstreamOrder:
         card_code_ids=_parse_int_list(raw.get("card_code_ids")),
         status_changes=_parse_status_changes(raw.get("status_changes")),
     )
+
+

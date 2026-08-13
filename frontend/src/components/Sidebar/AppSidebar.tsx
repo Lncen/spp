@@ -1,7 +1,6 @@
 import {
   Briefcase,
   Cpu,
-  CreditCard,
   FolderTree,
   Frame,
   Home,
