@@ -1,4 +1,4 @@
-"""数据清理定时任务"""
+"""自动化模块：过期数据清理定时任务"""
 
 from datetime import datetime
 from pathlib import Path
@@ -9,7 +9,11 @@ from sqlmodel import Session
 from app.core.config import settings
 from app.core.db import engine
 
-@shared_task(ignore_result=False)
+
+@shared_task(
+    ignore_result=False,
+    name="app.tasks.cleanup.cleanup_expired_data",
+)
 def cleanup_expired_data() -> dict:
     """清理过期数据
 

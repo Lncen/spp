@@ -8,16 +8,16 @@ from sqlalchemy import update
 from sqlmodel import Session
 
 from app.core.db import engine
-from app.modules.automation.application.order_fulfillment import (
-    FulfillmentUnknownError,
-    fulfill_claimed_order,
-)
 from app.modules.automation.infrastructure.executors.base import (
     BaseExecutor,
     ExecutorTerminalError,
     register_executor,
 )
 from app.modules.automation.models import AutomationTask
+from app.modules.order.application.fulfillment import (
+    FulfillmentUnknownError,
+    fulfill_claimed_order,
+)
 from app.modules.order.application.order_state import claim_order
 from app.modules.order.domain.constants import OrderStatus
 from app.modules.order.infrastructure.notification import notify_order_exception

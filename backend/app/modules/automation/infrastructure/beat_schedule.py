@@ -1,3 +1,9 @@
+"""自动化模块：Celery beat 初始调度配置
+
+由 celery_app 启动时写入，作为数据库计划任务的初始种子；
+任务名字符串与历史保持一致，兼容既有 beat 配置与数据库计划任务。
+"""
+
 # 注册初始任务
 from datetime import timedelta
 

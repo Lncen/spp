@@ -9,11 +9,11 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from app.core.config import settings
-from app.modules.automation.application.order_status_sync import (
+from app.modules.level.models import UserLevel
+from app.modules.order.application.sync import (
     apply_refund_applications,
     sync_orders_status,
 )
-from app.modules.level.models import UserLevel
 from app.modules.order.models import Order
 from app.modules.product.product.models import ProductSupplier
 from app.modules.supplier.infrastructure.clients.base import (

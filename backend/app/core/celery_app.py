@@ -3,7 +3,7 @@
 from celery import Celery  # type: ignore[import-untyped]
 
 from app.core.config import settings
-from app.tasks import init_tasks
+from app.modules.automation.infrastructure.beat_schedule import init_tasks
 
 celery_app = Celery(
     "spp",
@@ -34,8 +34,8 @@ def discover_tasks() -> None:
     import app.modules.auth.tasks  # noqa: F401
     import app.modules.automation.infrastructure.event_listeners  # noqa: F401
     import app.modules.automation.infrastructure.tasks  # noqa: F401
+    import app.modules.automation.infrastructure.tasks.expired_data  # noqa: F401
     import app.modules.notification.infrastructure.event_listeners  # noqa: F401
     import app.modules.notification.infrastructure.tasks  # noqa: F401
     import app.modules.product.tasks  # noqa: F401
     import app.modules.supplier.infrastructure.tasks  # noqa: F401
-    import app.tasks.cleanup  # noqa: F401

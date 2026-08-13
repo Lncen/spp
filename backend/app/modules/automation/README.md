@@ -65,7 +65,7 @@ from app.modules.automation.infrastructure.executors import (
 注册后 `POST /automation/tasks` 才能使用该 `task_type`。
 
 内置已注册执行器：`log`（通用占位）与 `submit_supplier_order`（订单向上游履约）。
-`submit_supplier_order` 的执行体委托 `application/order_fulfillment.py` 的履约编排服务，
+`submit_supplier_order` 的执行体委托 `order.application.fulfillment` 的履约编排服务，
 执行器只负责幂等预检查、认领超时兜底与任务终态处理。
 
 #### 执行器幂等约束（强制）
@@ -212,8 +212,6 @@ backend/app/modules/automation/
 │   ├── event_publish.py            # 发布业务事件
 │   ├── event_query.py              # 事件列表查询
 │   ├── event_dispatch.py           # 按规则为事件生成自动化任务
-│   ├── order_fulfillment.py        # 订单履约编排（认领 → 上游下单 → 失败分流）
-│   ├── order_status_sync.py        # 上游订单状态同步 / 退单申请编排
 │   ├── rule_create.py              # 创建规则
 │   ├── rule_update.py              # 更新规则
 │   ├── rule_toggle.py              # 启用 / 停用规则
@@ -227,12 +225,18 @@ backend/app/modules/automation/
 ├── infrastructure/                 # 基础设施：外部系统交互
 │   ├── __init__.py
 │   ├── celery.py                   # Celery 任务发现、立即执行、状态查询、TASK_LABELS
+│   ├── beat_schedule.py            # Celery beat 初始调度配置（init_tasks）
 │   ├── event_listeners.py          # 全局事件监听器（@listen("*")，按规则生成任务）
 │   ├── executors/                  # 任务执行器（注册机制）
 │   │   ├── __init__.py             # 导入内置执行器，导出 EXECUTORS 注册表
 │   │   ├── base.py                 # BaseExecutor 基类 + register_executor + get_executor
 │   │   └── log.py                  # log 执行器（通用占位）
-│   └── tasks.py                    # automation_task_scan：扫描任务池；cleanup_automation_task_archives：归档清理
+│   └── tasks/                      # Celery 定时任务（按职责拆分）
+│       ├── __init__.py             # 导出 4 个任务，保持旧导入路径兼容
+│       ├── scan.py                 # automation_task_scan：扫描任务池并执行
+│       ├── cleanup.py              # cleanup_automation_task_archives：归档/事件清理
+│       ├── order_status.py         # sync_order_status_periodic：订单状态同步
+│       └── expired_data.py         # cleanup_expired_data：过期数据/临时文件清理
 ├── models/                         # 数据模型（SQLModel 表模型）
 │   ├── __init__.py
 │   ├── task.py                     # AutomationTask（任务池：状态机、优先级、重试、payload、来源事件/规则、认领/开始/完成时间线）
@@ -309,7 +313,7 @@ backend/app/modules/automation/
 
 ## 六、关键设计
 
-1. **职责归位**：业务动作按文件拆分在 `application/`；Celery 交互（`discover_tasks`、`celery_app.tasks`、`AsyncResult`、`send_task`）在 `infrastructure/celery.py`；表操作与孤儿调度清理在 `repositories/schedule.py`；枚举与配对约束在 `domain/`。
+1. **职责归位**：业务动作按文件拆分在 `application/`；Celery 交互（`discover_tasks`、`celery_app.tasks`、`AsyncResult`、`send_task`）在 `infrastructure/celery.py`，beat 初始配置在 `infrastructure/beat_schedule.py`；表操作与孤儿调度清理在 `repositories/schedule.py`；枚举与配对约束在 `domain/`。
 2. **依赖方向**：API → Application → Domain / Infrastructure → Repository，保持单向。
 3. **对外接口不变**：原 schedules 路由路径、响应模型、字段名与重构前一致；新增 /automation/tasks 管理面。
 4. **任务池执行链路**：beat 每 3 分钟触发 `automation_task_scan`，先恢复失联的 running 任务（超过 10 分钟未推进视为 worker 崩溃），再以 `UPDATE ... RETURNING` 原子认领到期 pending 任务（多 worker 并发只返回本事务真正认领的行，杜绝重复执行）→ Executor 执行 → 成功标记 / 失败按 `max_retry` 回退重试或进入 failed；业务终态（`ExecutorTerminalError`）跳过重试直接失败归档。
@@ -318,7 +322,7 @@ backend/app/modules/automation/
 7. **终态即归档**：`mark_success` / `mark_failed`（重试耗尽或业务终态）/ `cancel_task` 在同一事务内将任务移入 `automation_task_archives`（原任务 ID 存入 `task_id`，追加 `archived_at`），主表保持精简；失败任务可经 `retry` 接口从归档恢复重新入队（重试计数清零）。
 8. **保留期可配置**：保留天数由全局设置 `automation_task_retention_days` 控制（默认 3 天），每天 04:00 的 `cleanup_automation_task_archives` 批量归档遗留终态任务，并同步物理清理超期归档与事件数据。
 9. **执行器幂等强制**：任务池为 at-least-once 语义，所有执行器必须显式声明 `idempotent`（注册时校验），外部副作用型执行器必须实现 `check_already_done` 预执行判定（业务目标已达成则直接成功归档），崩溃重跑不会重复产生副作用；详见「二、使用方法 1」的幂等约束说明。
-10. **履约编排归属**：订单履约与状态同步的流程编排在 automation（`application/order_fulfillment.py`、`order_status_sync.py`）；订单状态转换规则保留在 order 模块，上游调用走 supplier 能力服务（`supplier.application.upstream_order`）。`sync_order_status_periodic` 定时任务实现迁入本模块，任务名保持不变，兼容既有 beat 配置与数据库计划任务。
+10. **业务编排归属**：订单履约与状态同步的流程编排在 order 模块（`application/fulfillment.py`、`application/sync.py`）；automation 只负责调度触发——执行器 `submit_supplier_order` 调用履约编排，`sync_order_status_periodic` 定时任务调用状态同步编排。订单状态转换规则保留在 order 模块，上游调用走 supplier 能力服务（`supplier.application.upstream_order`）；任务名保持不变，兼容既有 beat 配置与数据库计划任务。
 
 ## 七、演进方向（未实现）
 
