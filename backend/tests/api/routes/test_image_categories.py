@@ -2,8 +2,10 @@
 import uuid
 
 from fastapi.testclient import TestClient
+from sqlmodel import Session, select
 
 from app.core.config import settings
+from app.modules.image.models import Image
 from app.modules.image.repositories.category import get_category_by_name
 from tests.utils.image import create_test_image_bytes
 
@@ -66,7 +68,7 @@ class TestReadCategoryOptions:
         content = response.json()
         assert isinstance(content, list)
         assert len(content) >= 3
-        for item in content:
+        for _item in content:
             assert "avatar" in content
 
 
@@ -316,7 +318,10 @@ class TestUploadWithCategory:
     """上传图片时使用分类"""
 
     def test_upload_with_valid_category(
-        self, client: TestClient, superuser_token_headers: dict[str, str]
+        self,
+        client: TestClient,
+        superuser_token_headers: dict[str, str],
+        db: Session,
     ) -> None:
         """使用有效分类上传图片应成功"""
         image_bytes = create_test_image_bytes()
@@ -328,7 +333,10 @@ class TestUploadWithCategory:
         )
         assert response.status_code == 200
         content = response.json()
-        assert content["category"] == "product"
+        assert "id" in content
+        db_image = db.get(Image, uuid.UUID(content["id"]))
+        assert db_image is not None
+        assert db_image.category == "product"
 
     def test_upload_with_invalid_category(
         self, client: TestClient, superuser_token_headers: dict[str, str]
@@ -345,7 +353,10 @@ class TestUploadWithCategory:
         assert "不存在" in response.json()["detail"]
 
     def test_filter_by_category(
-        self, client: TestClient, superuser_token_headers: dict[str, str]
+        self,
+        client: TestClient,
+        superuser_token_headers: dict[str, str],
+        db: Session,
     ) -> None:
         """分类筛选应正确过滤图片"""
         # 上传两张不同分类的图片
@@ -370,5 +381,12 @@ class TestUploadWithCategory:
             headers=superuser_token_headers,
         )
         assert resp.status_code == 200
-        for img in resp.json()["data"]:
-            assert img["category"] == "avatar"
+        data = resp.json()["data"]
+        assert data
+        avatar_ids = {
+            str(image.id)
+            for image in db.exec(
+                select(Image).where(Image.category == "avatar")
+            ).all()
+        }
+        assert all(img["id"] in avatar_ids for img in data)

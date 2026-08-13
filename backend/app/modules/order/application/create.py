@@ -130,17 +130,24 @@ def _create_order_core(
     user: User,
     order_in: OrderCreate,
     wallet: Wallet | None,
+    require_wallet: bool = False,
 ) -> Order:
     """公共下单流水线：普通下单与管理员代下共享，避免两套校验逐渐不一致
 
     两者都执行：can_order、order_enabled、商品/价格、库存、防重复、
-    构造订单落库、order.paid 事件；wallet 非 None 时额外做余额校验与扣款。
+    构造订单落库、order.paid 事件；require_wallet 时校验钱包存在与启用，
+    wallet 非 None 时额外做余额校验与扣款。
     顺序执行的简单流水线（多步校验与落库），按 AGENTS.md 放宽至 60 行。
     """
     if not user.can_order:
         raise HTTPException(status_code=400, detail="暂无下单权限")
     if not get_setting(session=session, key="order_enabled"):
         raise HTTPException(status_code=403, detail="当前暂停下单，请稍后再试")
+    if require_wallet:
+        if wallet is None:
+            raise HTTPException(status_code=400, detail="钱包不存在")
+        if not wallet.is_active:
+            raise HTTPException(status_code=400, detail="钱包已禁用")
 
     # 校验单张订单并计算总额
     total, data = build_order_data(
@@ -210,6 +217,7 @@ def _create_orders_batch(
     user: User,
     body: AdminOrdersCreate,
     wallet: Wallet | None,
+    require_wallet: bool = False,
 ) -> AdminOrdersPublic:
     """批量下单公共循环：逐单独立提交，单张失败不影响其他订单"""
     results: list[AdminOrderResult] = []
@@ -222,6 +230,7 @@ def _create_orders_batch(
                 user=user,
                 order_in=order_in,
                 wallet=wallet,
+                require_wallet=require_wallet,
             )
         except HTTPException as exc:
             failure_count += 1
@@ -263,17 +272,14 @@ def create_orders(
     user: User,
     body: AdminOrdersCreate,
 ) -> AdminOrdersPublic:
-    """批量创建用户订单：校验钱包并逐单扣款，逐单独立提交"""
+    """批量创建用户订单：逐单校验钱包并扣款，逐单独立返回创建状态"""
     wallet = get_wallet_by_user_id(session=session, user_id=user.id)
-    if not wallet:
-        raise HTTPException(status_code=400, detail="钱包不存在")
-    if not wallet.is_active:
-        raise HTTPException(status_code=400, detail="钱包已禁用")
     return _create_orders_batch(
         session=session,
         user=user,
         body=body,
         wallet=wallet,
+        require_wallet=True,
     )
 
 

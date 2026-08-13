@@ -36,7 +36,6 @@ def discover_tasks() -> None:
     import app.modules.automation.infrastructure.tasks  # noqa: F401
     import app.modules.notification.infrastructure.event_listeners  # noqa: F401
     import app.modules.notification.infrastructure.tasks  # noqa: F401
-    import app.modules.order.infrastructure.tasks  # noqa: F401
     import app.modules.product.tasks  # noqa: F401
     import app.modules.supplier.infrastructure.tasks  # noqa: F401
     import app.tasks.cleanup  # noqa: F401

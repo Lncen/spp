@@ -40,6 +40,15 @@ def _clean_automation_tables() -> None:
         session.commit()
 
 
+def _get_archive(*, session: Session, task_id: uuid.UUID) -> AutomationTaskArchive | None:
+    """按原任务 ID 查询归档记录（task_id 为归档表独立列，非主键）"""
+    return session.exec(
+        select(AutomationTaskArchive).where(
+            AutomationTaskArchive.task_id == task_id
+        )
+    ).first()
+
+
 def test_create_and_list_task(
     client: TestClient,
     superuser_token_headers: dict[str, str],
@@ -108,7 +117,7 @@ def test_scan_claims_and_executes_task(
     with Session(engine) as session:
         task = session.get(AutomationTask, uuid.UUID(task_id))
         assert task is None
-        archived = session.get(AutomationTaskArchive, uuid.UUID(task_id))
+        archived = _get_archive(session=session, task_id=uuid.UUID(task_id))
         assert archived is not None
         assert archived.status == AutomationTaskStatus.SUCCESS
 
@@ -145,7 +154,7 @@ def test_task_pool_retry_then_failed() -> None:
         assert len(claimed) == 1
         mark_failed(session=session, task=claimed[0], error_message="e2", now=now)
         assert session.get(AutomationTask, task_id) is None
-        archived = session.get(AutomationTaskArchive, task_id)
+        archived = _get_archive(session=session, task_id=task_id)
         assert archived is not None
         assert archived.status == AutomationTaskStatus.FAILED
         assert archived.retry_count == 1
@@ -173,7 +182,7 @@ def test_read_task_archives(
             now=datetime.now(UTC),
         )
         assert session.get(AutomationTask, task_id) is None
-        assert session.get(AutomationTaskArchive, task_id) is not None
+        assert _get_archive(session=session, task_id=task_id) is not None
 
     r = client.get(
         f"{TASK_URL}/archive",
@@ -183,9 +192,11 @@ def test_read_task_archives(
     assert r.status_code == 200
     body = r.json()
     assert body["count"] >= 1
-    archived = next(item for item in body["data"] if item["id"] == str(task_id))
+    archived = next(
+        item for item in body["data"] if item["task_id"] == str(task_id)
+    )
     assert archived["status"] == "failed"
-    assert archived["error_message"] == "boom"
+    assert archived["last_error"] == "boom"
     assert "archived_at" in archived
 
     # 状态过滤
@@ -228,7 +239,7 @@ def test_retry_and_cancel_task(
             now=datetime.now(UTC),
         )
         assert session.get(AutomationTask, task_id) is None
-        archived = session.get(AutomationTaskArchive, task_id)
+        archived = _get_archive(session=session, task_id=task_id)
         assert archived is not None
         assert archived.status == AutomationTaskStatus.FAILED
         assert archived.retry_count == 1
@@ -242,7 +253,7 @@ def test_retry_and_cancel_task(
     assert r.json()["retry_count"] == 0
     with Session(engine) as session:
         assert session.get(AutomationTask, task_id) is not None
-        assert session.get(AutomationTaskArchive, task_id) is None
+        assert _get_archive(session=session, task_id=task_id) is None
 
     r = client.post(
         f"{TASK_URL}/{task_id}/cancel",
@@ -252,7 +263,7 @@ def test_retry_and_cancel_task(
     assert r.json()["status"] == "canceled"
     with Session(engine) as session:
         assert session.get(AutomationTask, task_id) is None
-        assert session.get(AutomationTaskArchive, task_id) is not None
+        assert _get_archive(session=session, task_id=task_id) is not None
 
     r = client.post(
         f"{TASK_URL}/{task_id}/cancel",
@@ -287,7 +298,7 @@ def test_terminal_failure_archives_without_retry() -> None:
             terminal=True,
         )
         assert session.get(AutomationTask, task_id) is None
-        archived = session.get(AutomationTaskArchive, task_id)
+        archived = _get_archive(session=session, task_id=task_id)
         assert archived is not None
         assert archived.status == AutomationTaskStatus.FAILED
         assert archived.retry_count == 0
@@ -333,6 +344,7 @@ def test_rule_crud_and_validation(
         RULE_URL,
         headers=superuser_token_headers,
         json={
+            "name": "规则-测试",
             "event_type": "order.paid",
             "action_type": "log",
             "config": {"source": "test"},
@@ -345,7 +357,7 @@ def test_rule_crud_and_validation(
     r = client.post(
         RULE_URL,
         headers=superuser_token_headers,
-        json={"event_type": "x", "action_type": "not_exist"},
+        json={"name": "规则-非法动作", "event_type": "x", "action_type": "not_exist"},
     )
     assert r.status_code == 422
 
@@ -386,6 +398,7 @@ def test_event_publish_generates_task(
         RULE_URL,
         headers=superuser_token_headers,
         json={
+            "name": "规则-事件生成任务",
             "event_type": "order.paid",
             "action_type": "log",
             "config": {"source": "rule"},
@@ -420,6 +433,7 @@ def test_rule_disabled_skips_task_creation(
         RULE_URL,
         headers=superuser_token_headers,
         json={
+            "name": "规则-停用",
             "event_type": "order.paid",
             "action_type": "log",
             "config": {},
@@ -495,7 +509,9 @@ def test_scan_skips_execute_when_already_done(
         assert executed == []
         with Session(engine) as session:
             assert session.get(AutomationTask, uuid.UUID(task_id)) is None
-            archived = session.get(AutomationTaskArchive, uuid.UUID(task_id))
+            archived = _get_archive(
+                session=session, task_id=uuid.UUID(task_id)
+            )
             assert archived is not None
             assert archived.status == AutomationTaskStatus.SUCCESS
     finally:

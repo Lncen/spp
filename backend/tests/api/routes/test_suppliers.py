@@ -321,7 +321,7 @@ def test_ylsup_client_parses_upstream_payloads(
     )
     assert calls[2] == ("post", {"json": {"goods_id": "838"}})
     assert calls[3][1]["json"] == {
-        "goods_id": 1,
+        "goods_id": "1",
         "buy_number": 1,
         "buy_params": {"Parameter_1": "11"},
     }

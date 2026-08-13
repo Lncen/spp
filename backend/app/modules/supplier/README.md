@@ -10,6 +10,8 @@
 - **供应商主数据**：`Supplier` 表保存平台、API 凭证（响应脱敏）、连接状态、余额等；
 - **上游接入抽象**：`SupplierClientBase` + `ClientMeta` 注册表按 `platform` 自动路由到具体平台客户端，
   各平台 client 必须把上游原始 dict 转换为 `schemas/upstream.py` 定义的共享契约，业务层不接触上游字段名；
+- **上游订单能力服务**：`application/upstream_order.py` 封装上游下单/查单/退单调用，
+  order 与 automation 只消费该能力服务，不直接触碰客户端；异常语义与 client 一致（明确失败 vs 结果未知）；
 - **上游商品同步**：`POST /suppliers/{id}/upstream-products/sync` 提交 Celery 任务，
   逐个拉取上游商品详情并创建/更新本地商品（未匹配则创建完整商品，匹配则仅更新成本价与分类）；
 - **实时余额**：查询上游账户余额后写回 `Supplier.balance`（保留 7 位小数，不可手动修改）。
@@ -39,6 +41,7 @@ backend/app/modules/supplier/
 │   ├── query.py                    # 列表/详情/平台选项 + app_secret 脱敏转换
 │   ├── balance.py                  # 查询上游余额并写回数据库
 │   ├── upstream.py                 # 上游商品/分类列表、创建同步任务
+│   ├── upstream_order.py           # 上游订单能力服务：下单/查单/退单（无业务规则）
 │   └── sync.py                     # 单商品同步编排（创建/更新本地商品）
 ├── domain/                         # 领域逻辑：纯规则，不依赖 Web / 数据库 / Celery
 │   ├── __init__.py
@@ -68,7 +71,7 @@ backend/app/modules/supplier/
 | 层 | 职责 | 本模块内容 |
 | --- | --- | --- |
 | api | 权限验证、接收请求、参数校验、调用 Application、返回响应 | /suppliers 全部路由，上游异常映射 502 |
-| application | 编排业务流程、控制事务 | 供应商 CRUD、余额刷新、上游查询、同步编排、任务创建 |
+| application | 编排业务流程、控制事务 | 供应商 CRUD、余额刷新、上游查询、上游订单能力、同步编排、任务创建 |
 | domain | 核心业务规则、领域约束 | PlatformEnum、上游参数 input_type 61→LINK_EXTRACT 映射、数量边界规范化 |
 | infrastructure | 外部系统交互、消息队列 | 平台 API 客户端（httpx）、Celery 任务定义与分发 |
 | repositories | 数据查询、数据持久化 | Supplier 与 ProductSupplier/Product/Pricing/Inventory/Fulfillment 等数据访问 |
@@ -97,7 +100,8 @@ backend/app/modules/supplier/
    `repositories/supplier.py`；平台差异在 `infrastructure/clients/` 内收敛。
 2. **依赖方向单向**：API → Application → Domain / Infrastructure → Repository。
 3. **上游契约统一**：各平台 client 必须把上游原始数据转为 `schemas/upstream.py` 契约，
-   业务层与 order 模块只消费契约类型；订单履约、状态同步直接复用 `SupplierClientBase`。
+   业务层只消费契约类型；订单履约、状态同步通过 `application/upstream_order.py` 能力服务访问，
+   不直接复用 `SupplierClientBase`。
 4. **客户端自动注册**：`ClientMeta` 元类按 `code` 注册具体平台 client，
    `supplier_client` 上下文管理器按供应商 `platform` 路由并保证退出时关闭连接池。
 5. **对外接口与任务名不变**：API 路径、响应字段与重构前一致；Celery 任务显式

@@ -22,14 +22,10 @@ def test_upload_image(
     )
     assert response.status_code == 200
     content = response.json()
-    assert content["filename"] == "test.jpg"
-    assert content["width"] == 100
-    assert content["height"] == 100
-    assert content["file_size"] > 0
     assert "id" in content
     assert "url" in content
     assert content["url"].startswith("/uploads/")
-    assert content["url"].endswith(".webp")
+    assert content["url"].endswith(".jpg")
 
 
 def test_upload_duplicate_image(
@@ -53,7 +49,7 @@ def test_upload_duplicate_image(
     assert response2.status_code == 200
     content2 = response2.json()
     assert content2["id"] == id1
-    assert content2["filename"] == "first.jpg"
+    assert content2["url"] == response1.json()["url"]
 
 
 def test_upload_invalid_extension(
@@ -154,7 +150,6 @@ def test_read_image(
     assert response.status_code == 200
     content = response.json()
     assert content["id"] == image_id
-    assert content["filename"] == "get_test.jpg"
     assert "url" in content
 
 

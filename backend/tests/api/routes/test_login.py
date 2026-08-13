@@ -7,6 +7,7 @@ from sqlmodel import Session
 from app.core.config import settings
 from app.core.redis import get_redis, run_redis_sync
 from app.core.security import get_password_hash, verify_password
+from app.modules.setting.application.setting_query import get_setting
 from app.modules.user.application.user_create import create_user
 from app.modules.user.models import User
 from app.modules.user.schemas import UserCreate
@@ -212,15 +213,18 @@ def test_login_with_argon2_password_keeps_hash(client: TestClient, db: Session) 
     assert user.hashed_password.startswith("$argon2")
 
 
-def test_login_locked_after_too_many_failures(client: TestClient) -> None:
+def test_login_locked_after_too_many_failures(
+    client: TestClient, db: Session
+) -> None:
     """连续登录失败达到上限后，账号被锁定返回 429，清理后恢复"""
     login_data = {
         "username": settings.FIRST_SUPERUSER,
         "password": "incorrect",
     }
     fail_key = f"login:fail:{settings.FIRST_SUPERUSER.lower()}"
+    fail_limit = int(get_setting(session=db, key="login_fail_limit"))
     try:
-        for _ in range(5):
+        for _ in range(fail_limit):
             r = client.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
             assert r.status_code == 400
         r = client.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)

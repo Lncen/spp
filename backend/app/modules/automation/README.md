@@ -65,6 +65,8 @@ from app.modules.automation.infrastructure.executors import (
 注册后 `POST /automation/tasks` 才能使用该 `task_type`。
 
 内置已注册执行器：`log`（通用占位）与 `submit_supplier_order`（订单向上游履约）。
+`submit_supplier_order` 的执行体委托 `application/order_fulfillment.py` 的履约编排服务，
+执行器只负责幂等预检查、认领超时兜底与任务终态处理。
 
 #### 执行器幂等约束（强制）
 
@@ -210,6 +212,8 @@ backend/app/modules/automation/
 │   ├── event_publish.py            # 发布业务事件
 │   ├── event_query.py              # 事件列表查询
 │   ├── event_dispatch.py           # 按规则为事件生成自动化任务
+│   ├── order_fulfillment.py        # 订单履约编排（认领 → 上游下单 → 失败分流）
+│   ├── order_status_sync.py        # 上游订单状态同步 / 退单申请编排
 │   ├── rule_create.py              # 创建规则
 │   ├── rule_update.py              # 更新规则
 │   ├── rule_toggle.py              # 启用 / 停用规则
@@ -254,7 +258,7 @@ backend/app/modules/automation/
 | 层 | 职责 | 本模块内容 |
 | --- | --- | --- |
 | api | 权限验证、接收请求、参数校验、调用 Application、返回响应 | 计划任务、任务池、事件、规则路由 |
-| application | 编排业务流程、控制事务 | 计划任务 CRUD / 启停 / 立即执行 / 查询，任务池与规则、事件编排 |
+| application | 编排业务流程、控制事务 | 计划任务 CRUD / 启停 / 立即执行 / 查询，任务池与规则、事件编排，订单履约/状态同步编排 |
 | domain | 核心业务规则、领域约束 | 调度类型枚举、crontab / interval 配对校验、重试规则 |
 | infrastructure | 外部系统交互 | Celery 任务发现、发送、状态查询，执行器注册与扫描执行 |
 | repositories | 数据查询、数据持久化 | PeriodicTask 等表访问、任务池原子认领、事件与规则存取 |
@@ -314,6 +318,7 @@ backend/app/modules/automation/
 7. **终态即归档**：`mark_success` / `mark_failed`（重试耗尽或业务终态）/ `cancel_task` 在同一事务内将任务移入 `automation_task_archives`（原任务 ID 存入 `task_id`，追加 `archived_at`），主表保持精简；失败任务可经 `retry` 接口从归档恢复重新入队（重试计数清零）。
 8. **保留期可配置**：保留天数由全局设置 `automation_task_retention_days` 控制（默认 3 天），每天 04:00 的 `cleanup_automation_task_archives` 批量归档遗留终态任务，并同步物理清理超期归档与事件数据。
 9. **执行器幂等强制**：任务池为 at-least-once 语义，所有执行器必须显式声明 `idempotent`（注册时校验），外部副作用型执行器必须实现 `check_already_done` 预执行判定（业务目标已达成则直接成功归档），崩溃重跑不会重复产生副作用；详见「二、使用方法 1」的幂等约束说明。
+10. **履约编排归属**：订单履约与状态同步的流程编排在 automation（`application/order_fulfillment.py`、`order_status_sync.py`）；订单状态转换规则保留在 order 模块，上游调用走 supplier 能力服务（`supplier.application.upstream_order`）。`sync_order_status_periodic` 定时任务实现迁入本模块，任务名保持不变，兼容既有 beat 配置与数据库计划任务。
 
 ## 七、演进方向（未实现）
 
@@ -321,5 +326,5 @@ backend/app/modules/automation/
 
 - 具体业务 Executor：如 `sync_product_stock`、`sync_payment_status`、`send_email` 等；
 - 业务模块接入真实事件：如库存预警、支付回调、用户通知等；
-- 场景扩展：商品自动上下架、订单状态轮询、用户通知、财务报表、数据维护等。
+- 场景扩展：商品自动上下架、用户通知、财务报表、数据维护等。
 

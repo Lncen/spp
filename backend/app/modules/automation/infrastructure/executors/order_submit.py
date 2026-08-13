@@ -4,22 +4,23 @@ import logging
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from sqlmodel import Session
 from sqlalchemy import update
+from sqlmodel import Session
+
 from app.core.db import engine
-from app.modules.order.infrastructure.notification import notify_order_exception
+from app.modules.automation.application.order_fulfillment import (
+    FulfillmentUnknownError,
+    fulfill_claimed_order,
+)
 from app.modules.automation.infrastructure.executors.base import (
     BaseExecutor,
     ExecutorTerminalError,
     register_executor,
 )
 from app.modules.automation.models import AutomationTask
-from app.modules.order.application.fulfill_core import (
-    FulfillmentUnknownError,
-    claim_order,
-    fulfill_claimed_order,
-)
+from app.modules.order.application.order_state import claim_order
 from app.modules.order.domain.constants import OrderStatus
+from app.modules.order.infrastructure.notification import notify_order_exception
 from app.modules.order.models import Order
 from app.modules.product.constants import RedeemType
 
@@ -122,9 +123,9 @@ class SubmitSupplierOrderExecutor(BaseExecutor):
             # 如果认领已经超时，则转人工；否则等待原执行者完成。
             if db_order.status == OrderStatus.PROCESSING:
                 if self._mark_stale_claim(
-                                    session=session,
-                                    db_order=db_order,
-                                    before=datetime.now(UTC) - timedelta(minutes=CLAIM_STALE_MINUTES),
+                    session=session,
+                    db_order=db_order,
+                    before=datetime.now(UTC) - timedelta(minutes=CLAIM_STALE_MINUTES),
                 ):
                     raise ExecutorTerminalError(
                         f"订单 {db_order.order_no} 认领超时，已转人工确认"
@@ -141,7 +142,7 @@ class SubmitSupplierOrderExecutor(BaseExecutor):
                 return
 
             try:
-                fulfill_claimed_order(session=session,db_order=db_order)
+                fulfill_claimed_order(session=session, db_order=db_order)
             except FulfillmentUnknownError as exc:
                 # 请求结果未知：
                 # 不能自动重试，否则可能导致上游重复下单。

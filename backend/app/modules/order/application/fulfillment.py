@@ -1,24 +1,25 @@
-"""订单模块：履约与状态管理"""
+"""订单模块：履约与状态管理（手动接口薄适配，编排在 automation）
 
-import logging
+向上游下单/查单/退单的流程编排在 automation 模块，
+本文件仅保留订单侧校验与 HTTP 异常映射，保证 /orders/* 路由语义不变。
+"""
+
 import uuid
 from datetime import UTC, datetime
 
 from fastapi import HTTPException
 from sqlmodel import Session
 
-from app.modules.order.application.fulfill_core import (
-    FulfillmentUnknownError,
-    claim_order,
-    fulfill_claimed_order,
+from app.modules.automation.application.order_fulfillment import (
+    fulfill_order as orchestrate_fulfill_order,
 )
-from app.modules.order.application.sync import sync_orders_status
+from app.modules.automation.application.order_status_sync import (
+    sync_orders_status,
+)
 from app.modules.order.domain.constants import OrderStatus
 from app.modules.order.models import Order
 from app.modules.product.constants import RedeemType
 from app.modules.supplier.infrastructure.clients.base import SupplierClientError
-
-logger = logging.getLogger(__name__)
 
 
 def fulfill_order(
@@ -28,18 +29,12 @@ def fulfill_order(
     operator_id: uuid.UUID | None = None,  # noqa: ARG001
     fail_limit: int | None = None,
 ) -> Order:
-    """履约订单：先原子认领再执行，防止并发重复履约
-
-    明确失败回滚重试；结果未知（超时/断连）转人工确认。
-    """
-    if not claim_order(session=session, db_order=db_order):
-        raise HTTPException(status_code=400, detail="当前状态不可履约")
-    try:
-        return fulfill_claimed_order(
-            session=session, db_order=db_order, fail_limit=fail_limit
-        )
-    except FulfillmentUnknownError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    """履约订单（同步）：编排在 automation，异常已映射为 HTTP 语义"""
+    return orchestrate_fulfill_order(
+        session=session,
+        db_order=db_order,
+        fail_limit=fail_limit,
+    )
 
 
 def record_supplier_order_id(

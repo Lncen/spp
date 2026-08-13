@@ -16,19 +16,19 @@ export const ORDER_STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
 
 export const ORDER_STATUS_BADGE_VARIANT: Record<
   OrderStatus,
-  "default" | "secondary" | "destructive" | "outline"
+  "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info"
 > = {
   0: "secondary",
-  1: "default",
-  2: "secondary",
-  3: "outline",
-  4: "outline",
-  5: "secondary",
-  6: "default",
+  1: "info",
+  2: "warning",
+  3: "info",
+  4: "warning",
+  5: "warning",
+  6: "success",
   7: "secondary",
   8: "secondary",
   9: "destructive",
-  10: "outline",
+  10: "warning",
 }
 
 export function orderStatusLabel(value: OrderStatus): string {

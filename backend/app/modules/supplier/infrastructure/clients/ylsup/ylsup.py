@@ -145,7 +145,7 @@ class YlsupClient(SupplierClientBase):
         data = self._data(payload)
         if data is None or not isinstance(data, dict):
             raise SupplierClientError(f"上游下单返回格式错误: 期望 dict: 值是{data}")
-        return data.get("id")
+        return data
 
     def query_order(self, order_ids: list[int]) -> list[UpstreamOrder]:
         """查询订单（归一化为 UpstreamOrder 列表，可能包含多个订单）"""

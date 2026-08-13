@@ -9,11 +9,11 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from app.core.config import settings
-from app.modules.level.models import UserLevel
-from app.modules.order.application.sync import (
+from app.modules.automation.application.order_status_sync import (
     apply_refund_applications,
     sync_orders_status,
 )
+from app.modules.level.models import UserLevel
 from app.modules.order.models import Order
 from app.modules.product.product.models import ProductSupplier
 from app.modules.supplier.infrastructure.clients.base import (
@@ -546,12 +546,14 @@ def test_create_order_rejects_reorder_while_after_sale_pending(
     monkeypatch.setattr(
         YlsupClient,
         "create_order",
-        lambda self, **kwargs: {"order_id": "10086"},
+        lambda self, **kwargs: "10086",
     )
     monkeypatch.setattr(
         YlsupClient,
         "query_order",
-        lambda self, order_ids: {"status": 3},
+        lambda self, order_ids: [
+            UpstreamOrder(upstream_id="10086", status=3)
+        ],
     )
 
     first = client.post(
@@ -635,7 +637,7 @@ def test_cancel_unfulfilled_api_order_locally_refunds(
     monkeypatch.setattr(
         YlsupClient,
         "create_order",
-        lambda self, **kwargs: {"order_id": "10086"},
+        lambda self, **kwargs: "10086",
     )
 
     order_response = client.post(
@@ -1002,12 +1004,14 @@ def test_api_refund_application_auto_refunds_on_upstream_refunded(
     monkeypatch.setattr(
         YlsupClient,
         "create_order",
-        lambda self, **kwargs: {"order_id": "10086"},
+        lambda self, **kwargs: "10086",
     )
     monkeypatch.setattr(
         YlsupClient,
         "query_order",
-        lambda self, order_ids: {"status": 3},
+        lambda self, order_ids: [
+            UpstreamOrder(upstream_id="10086", status=3)
+        ],
     )
     monkeypatch.setattr(
         YlsupClient,
@@ -1046,7 +1050,11 @@ def test_api_refund_application_auto_refunds_on_upstream_refunded(
     monkeypatch.setattr(
         YlsupClient,
         "query_order",
-        lambda self, order_ids: {"status": 8},
+        lambda self, order_ids: [
+            UpstreamOrder(
+                upstream_id="10086", status=8, start_num=2, current_num=2
+            )
+        ],
     )
     sync = client.post(
         f"{settings.API_V1_STR}/orders/{order_id}/sync-status",
@@ -1076,12 +1084,14 @@ def test_sync_updates_quantities_and_refund_by_formula(
     monkeypatch.setattr(
         YlsupClient,
         "create_order",
-        lambda self, **kwargs: {"order_id": "10086"},
+        lambda self, **kwargs: "10086",
     )
     monkeypatch.setattr(
         YlsupClient,
         "query_order",
-        lambda self, order_ids: {"status": 3},
+        lambda self, order_ids: [
+            UpstreamOrder(upstream_id="10086", status=3)
+        ],
     )
 
     order_response = client.post(
@@ -1154,12 +1164,14 @@ def test_fulfill_api_order_syncs_upstream_status(
     monkeypatch.setattr(
         YlsupClient,
         "create_order",
-        lambda self, **kwargs: {"order_id": "10086"},
+        lambda self, **kwargs: "10086",
     )
     monkeypatch.setattr(
         YlsupClient,
         "query_order",
-        lambda self, order_ids: {"status": 3},
+        lambda self, order_ids: [
+            UpstreamOrder(upstream_id="10086", status=3)
+        ],
     )
 
     order = client.post(
@@ -1183,7 +1195,9 @@ def test_fulfill_api_order_syncs_upstream_status(
     monkeypatch.setattr(
         YlsupClient,
         "query_order",
-        lambda self, order_ids: {"status": 6},
+        lambda self, order_ids: [
+            UpstreamOrder(upstream_id="10086", status=6)
+        ],
     )
     sync = client.post(
         f"{settings.API_V1_STR}/orders/{_first_order_result(order)['id']}/sync-status",
