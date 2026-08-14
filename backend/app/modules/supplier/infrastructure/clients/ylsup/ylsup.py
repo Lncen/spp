@@ -8,6 +8,8 @@ from typing import Any
 from app.modules.supplier.infrastructure.clients.base import (
     SupplierClientBase,
     SupplierClientError,
+    SupplierClientRejectedError,
+    SupplierClientUnknownError,
 )
 from app.modules.supplier.schemas.upstream import (
     UpstreamCategory,
@@ -46,7 +48,7 @@ class YlsupClient(SupplierClientBase):
         """提取上游 data，失败时抛出带上游信息的异常"""
         if payload.get("code") != 0:
             detail = payload.get("message") or payload.get("msg") or "上游接口调用失败"
-            raise SupplierClientError(detail)
+            raise SupplierClientRejectedError(detail)
         data = payload.get("data")
         if data is None:
             detail = payload.get("message") or payload.get("msg") or "上游返回数据缺失 data 字段"
@@ -128,8 +130,13 @@ class YlsupClient(SupplierClientBase):
         product_id: str,
         quantity: int,
         **kwargs: Any,
-    ) -> int | None:
-        """向上游下单（遵循基类契约，product_id 为供应商 SKU）"""
+    ) -> dict[str, Any]:
+        """向上游下单（遵循基类契约，product_id 为供应商 SKU）
+
+        code != 0 视为上游明确业务性拒绝；HTTP 成功但响应缺 data / 非 dict 时，
+        上游可能已受理订单，按结果未知处理（抛 SupplierClientUnknownError），
+        避免上层按明确失败自动重试导致重复下单。
+        """
         buy_params = {str(key): str(value) for key, value in (kwargs or {}).items()}
 
         body = {
@@ -142,9 +149,14 @@ class YlsupClient(SupplierClientBase):
             body["customer_order_id"] = customer_order_id
 
         payload = self.post("/openapi/customer/Goods/Buy", json=body).json()
-        data = self._data(payload)
-        if data is None or not isinstance(data, dict):
-            raise SupplierClientError(f"上游下单返回格式错误: 期望 dict: 值是{data}")
+        if payload.get("code") != 0:
+            detail = payload.get("message") or payload.get("msg") or "上游接口调用失败"
+            raise SupplierClientRejectedError(detail)
+        data = payload.get("data")
+        if not isinstance(data, dict):
+            raise SupplierClientUnknownError(
+                "上游下单成功但未返回订单号，需人工确认"
+            )
         return data
 
     def query_order(self, order_ids: list[int]) -> list[UpstreamOrder]:
@@ -167,4 +179,4 @@ class YlsupClient(SupplierClientBase):
         }
         payload = self.post("/openapi/customer/Order/StatusHandle", json=body).json()
         data = self._data(payload)
-        return data if isinstance(data, dict) else {}
+        return data

@@ -425,6 +425,36 @@ def test_event_publish_generates_task(
     assert r.json()["count"] == 1
 
 
+def test_event_dispatch_honors_rule_delay_seconds(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    """规则 task_options.delay_seconds 使生成任务的 execute_at 延后"""
+    r = client.post(
+        RULE_URL,
+        headers=superuser_token_headers,
+        json={
+            "name": "规则-延时执行",
+            "event_type": "order.paid",
+            "action_type": "log",
+            "config": {"task_options": {"delay_seconds": 120}},
+        },
+    )
+    assert r.status_code == 200
+
+    r = client.post(
+        EVENT_URL,
+        headers=superuser_token_headers,
+        json={"event_type": "order.paid", "payload": {"order_id": "10003"}},
+    )
+    assert r.status_code == 200
+
+    with Session(engine) as session:
+        task = session.exec(select(AutomationTask)).one()
+        delta = task.execute_at - datetime.now(UTC)
+        assert timedelta(seconds=110) <= delta <= timedelta(seconds=130)
+
+
 def test_rule_disabled_skips_task_creation(
     client: TestClient,
     superuser_token_headers: dict[str, str],

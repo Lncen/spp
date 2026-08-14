@@ -26,6 +26,10 @@ class SupplierClientUnknownError(SupplierClientError):
     """供应商 API 结果未知（超时/网络错误），上游可能已产生副作用"""
 
 
+class SupplierClientRejectedError(SupplierClientError):
+    """上游明确业务性拒绝（如 code!=0 的响应），重试无意义，需人工介入"""
+
+
 # ================= 1. 元类：仅负责自动注册 =================
 class ClientMeta(ABCMeta):
     _registry: dict[str, type[SupplierClientBase]] = {}

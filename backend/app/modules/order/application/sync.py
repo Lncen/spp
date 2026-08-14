@@ -2,9 +2,9 @@
 
 流程编排在本模块；状态映射/退款规则在 order 模块，
 上游能力调用在 supplier.application.upstream_order。
+退单申请由 automation 事件触发（apply_supplier_refund 执行器调用本服务）。
 """
 
-import logging
 import uuid
 from datetime import UTC, datetime
 
@@ -26,8 +26,6 @@ from app.modules.supplier.application.upstream_order import (
 from app.modules.supplier.infrastructure.clients.base import SupplierClientError
 from app.modules.supplier.models import Supplier
 from app.modules.supplier.schemas.upstream import UpstreamOrder
-
-logger = logging.getLogger(__name__)
 
 
 def _syncable_orders(db_orders: list[Order]) -> list[Order]:
@@ -145,34 +143,35 @@ def sync_orders_status(*, session: Session, db_orders: list[Order]) -> list[Orde
     return syncable
 
 
-def apply_refund_applications(*, session: Session, db_orders: list[Order]) -> None:
-    """对已申请退单的 API 订单调用上游退单申请，成功后状态转为退单中"""
-    for db_order in db_orders:
-        upstream_order_id = db_order.supplier_order_id or ""
-        if (
-            db_order.status != OrderStatus.APPLYING_AFTER_SALE
-            or not db_order.can_refund
-            or db_order.fulfillment_type != RedeemType.AUTO_API
-            or not upstream_order_id
-        ):
-            continue
-        supplier_id = resolve_supplier_id(session=session, db_order=db_order)
-        if supplier_id is None:
-            logger.warning("订单 %s 未配置供应商，跳过上游退单申请", db_order.order_no)
-            continue
-        supplier = session.get(Supplier, supplier_id)
-        if not supplier:
-            logger.warning("订单 %s 供应商不存在，跳过上游退单申请", db_order.order_no)
-            continue
-        try:
-            apply_upstream_refund(
-                session=session,
-                supplier_id=supplier_id,
-                upstream_order_id=upstream_order_id,
-            )
-        except SupplierClientError as exc:
-            logger.warning("订单 %s 上游退单申请失败: %s", db_order.order_no, exc)
-            continue
-        db_order.status = OrderStatus.REFUNDING
-        session.add(db_order)
+def apply_refund_application(*, session: Session, db_order: Order) -> None:
+    """对已申请退单的 API 订单调用上游退单申请，成功后状态转为退单中
+
+    由 automation 执行器（apply_supplier_refund）调用；条件不成立时直接返回，
+    上游调用以 (supplier_id, upstream_order_id) 定位，避免多供应商同上游订单号歧义；
+    供应商缺失或上游调用失败抛 SupplierClientError，订单保持 APPLYING_AFTER_SALE，
+    由任务池按 max_retry 重试；上游明确业务性拒绝抛 SupplierClientRejectedError，
+    由执行器直接转为失败终态供人工处理。
+    """
+    upstream_order_id = db_order.supplier_order_id or ""
+    if (
+        db_order.status != OrderStatus.APPLYING_AFTER_SALE
+        or not db_order.can_refund
+        or db_order.fulfillment_type != RedeemType.AUTO_API
+        or not upstream_order_id
+    ):
+        return
+    supplier_id = resolve_supplier_id(session=session, db_order=db_order)
+    if supplier_id is None:
+        raise SupplierClientError(f"订单 {db_order.order_no} 商品未配置供应商")
+    supplier = session.get(Supplier, supplier_id)
+    if not supplier:
+        raise SupplierClientError(f"订单 {db_order.order_no} 供应商不存在")
+    apply_upstream_refund(
+        session=session,
+        supplier_id=supplier_id,
+        upstream_order_id=upstream_order_id,
+    )
+    db_order.status = OrderStatus.REFUNDING
+    session.add(db_order)
     session.commit()
+    session.refresh(db_order)

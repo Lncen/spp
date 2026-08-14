@@ -9,15 +9,14 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from app.core.config import settings
+from app.modules.automation.infrastructure.tasks import automation_task_scan
 from app.modules.level.models import UserLevel
-from app.modules.order.application.sync import (
-    apply_refund_applications,
-    sync_orders_status,
-)
+from app.modules.order.application.sync import sync_orders_status
 from app.modules.order.models import Order
 from app.modules.product.product.models import ProductSupplier
 from app.modules.supplier.infrastructure.clients.base import (
     SupplierClientError,
+    SupplierClientRejectedError,
     SupplierClientUnknownError,
 )
 from app.modules.supplier.infrastructure.clients.ylsup import YlsupClient
@@ -81,6 +80,7 @@ def _create_custom_inventory_product(
     is_batch: bool = True,
     purchase_step: int = 1,
     fulfillment_type: int = 2,
+    can_refund: bool = True,
 ) -> dict:
     category = create_category(client, superuser_token_headers)
     data = {
@@ -98,7 +98,7 @@ def _create_custom_inventory_product(
         },
         "fulfillment": {
             "fulfillment_type": fulfillment_type,
-            "can_refund": True,
+            "can_refund": can_refund,
             "unit": "件",
         },
         "buy_params": [{"key": "account", "label": "账号", "is_required": True}],
@@ -846,17 +846,17 @@ def test_admin_refund_ignores_can_refund(
     assert _product_stock(client, product["id"], superuser_token_headers) == 99
 
 
-def test_user_cancel_rejects_non_refundable_product(
+def test_user_cancel_rejects_non_refundable_api_product(
     client: TestClient,
     db: Session,
     superuser_token_headers: dict[str, str],
 ) -> None:
     headers, _ = _create_wallet_user(client, db)
     _fund_wallet(client, headers, superuser_token_headers)
-    product = _create_ready_product(
+    product, _ = _create_api_product_with_supplier(
         client,
+        db,
         superuser_token_headers,
-        price_mode="fixed",
         can_refund=False,
     )
     order_response = client.post(
@@ -877,17 +877,54 @@ def test_user_cancel_rejects_non_refundable_product(
     assert _product_stock(client, product["id"], superuser_token_headers) == 99
 
 
-def test_admin_cancel_rejects_non_refundable_product(
+def test_cancel_manual_order_refunds_regardless_of_can_refund(
     client: TestClient,
     db: Session,
     superuser_token_headers: dict[str, str],
 ) -> None:
+    """can_refund 仅约束 API 商品的供应商退单，本地/手动商品退单直接本地退款"""
     headers, _ = _create_wallet_user(client, db)
     _fund_wallet(client, headers, superuser_token_headers)
     product = _create_ready_product(
         client,
         superuser_token_headers,
         price_mode="fixed",
+        fulfillment_type=2,
+        can_refund=False,
+    )
+    order_response = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert order_response.status_code == 200
+    order = _first_order_result(order_response)
+    assert _wallet_balance(client, headers) == Decimal("80.00")
+    assert _product_stock(client, product["id"], superuser_token_headers) == 99
+
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/me/{order['id']}/cancel",
+        headers=headers,
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["status"] == 8
+    assert content["refunded_at"] is not None
+    assert _wallet_balance(client, headers) == Decimal("100.00")
+    assert _product_stock(client, product["id"], superuser_token_headers) == 100
+
+
+def test_admin_cancel_rejects_non_refundable_api_product(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product, _ = _create_api_product_with_supplier(
+        client,
+        db,
+        superuser_token_headers,
         can_refund=False,
     )
     order_response = client.post(
@@ -904,6 +941,47 @@ def test_admin_cancel_rejects_non_refundable_product(
     )
     assert response.status_code == 400
     assert response.json()["detail"] == "该订单不支持向供应商申请退单"
+
+
+def test_cancel_exception_order_locally_refunds(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    """异常订单可申请退单，非 API 商品直接本地退款并回补库存"""
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product = _create_ready_product(
+        client,
+        superuser_token_headers,
+        price_mode="fixed",
+        fulfillment_type=2,
+    )
+    order_response = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert order_response.status_code == 200
+    order = _first_order_result(order_response)
+
+    status_response = client.post(
+        f"{settings.API_V1_STR}/orders/{order['id']}/status",
+        headers=superuser_token_headers,
+        json={"status": 9},
+    )
+    assert status_response.status_code == 200
+
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/me/{order['id']}/cancel",
+        headers=headers,
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["status"] == 8
+    assert content["refunded_at"] is not None
+    assert _wallet_balance(client, headers) == Decimal("100.00")
+    assert _product_stock(client, product["id"], superuser_token_headers) == 100
 
 
 def test_admin_update_order_status(
@@ -1041,9 +1119,12 @@ def test_api_refund_application_auto_refunds_on_upstream_refunded(
     assert cancel.status_code == 200
     assert cancel.json()["status"] == 10
 
-    # celery 步骤：调用上游退单申请，成功后状态转为退单中
+    # automation 步骤：cancel 已发布 order.after_sale_applied 事件并生成退单申请任务，
+    # 任务池执行后调用上游退单申请，成功后状态转为退单中
+    stats = automation_task_scan()
+    assert stats["claimed"] >= 1
+    db.expire_all()
     db_order = db.get(Order, uuid.UUID(order_id))
-    apply_refund_applications(session=db, db_orders=[db_order])
     assert db_order.status == 5
 
     # 上游退单完成，自动按公式退款入账
@@ -1068,6 +1149,65 @@ def test_api_refund_application_auto_refunds_on_upstream_refunded(
     assert content["current_quantity"] == 2
     assert _wallet_balance(client, headers) == Decimal("100.00")
     assert _product_stock(client, product["id"], superuser_token_headers) == 100
+
+
+def test_api_refund_application_rejected_keeps_applying_after_sale(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """上游明确拒绝退单申请（业务性拒绝）时任务直接失败终态，订单保持申请售后中"""
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product, _ = _create_api_product_with_supplier(
+        client, db, superuser_token_headers
+    )
+    monkeypatch.setattr(
+        YlsupClient,
+        "create_order",
+        lambda self, **kwargs: "10086",
+    )
+    monkeypatch.setattr(
+        YlsupClient,
+        "query_order",
+        lambda self, order_ids: [
+            UpstreamOrder(upstream_id="10086", status=3)
+        ],
+    )
+
+    def _reject_cancel(_self: object, _order_id: str) -> dict[str, Any]:
+        raise SupplierClientRejectedError("当前订单状态不允许退款")
+
+    monkeypatch.setattr(YlsupClient, "cancel_order", _reject_cancel)
+
+    order_response = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert order_response.status_code == 200
+    order_id = _first_order_result(order_response)["id"]
+    fulfill = client.post(
+        f"{settings.API_V1_STR}/orders/{order_id}/fulfill",
+        headers=superuser_token_headers,
+    )
+    assert fulfill.status_code == 200
+
+    cancel = client.post(
+        f"{settings.API_V1_STR}/orders/me/{order_id}/cancel",
+        headers=headers,
+    )
+    assert cancel.status_code == 200
+    assert cancel.json()["status"] == 10
+
+    # 任务池执行：上游业务性拒绝 -> 任务直接失败终态（不重试），订单保持申请售后中
+    stats = automation_task_scan()
+    assert stats["failed"] >= 1
+    assert stats["retried"] == 0
+    db.expire_all()
+    db_order = db.get(Order, uuid.UUID(order_id))
+    assert db_order.status == 10
 
 
 def test_sync_updates_quantities_and_refund_by_formula(
@@ -1132,12 +1272,15 @@ def _create_api_product_with_supplier(
     client: TestClient,
     db: Session,
     superuser_token_headers: dict[str, str],
+    *,
+    can_refund: bool = True,
 ) -> tuple[dict, object]:
     supplier = create_random_supplier(db)
     product = _create_custom_inventory_product(
         client,
         superuser_token_headers,
         fulfillment_type=3,
+        can_refund=can_refund,
     )
     db.add(
         ProductSupplier(
@@ -1206,6 +1349,39 @@ def test_fulfill_api_order_syncs_upstream_status(
     assert sync.status_code == 200
     assert sync.json()["status"] == 6
     assert sync.json()["completed_at"] is not None
+
+
+def test_fulfill_api_order_parses_dict_order_id(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """上游下单响应 data 为 dict 时提取订单号（如 ylsup 返回 {'id': 3928053}）"""
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product, _ = _create_api_product_with_supplier(
+        client, db, superuser_token_headers
+    )
+    monkeypatch.setattr(
+        YlsupClient,
+        "create_order",
+        lambda self, **kwargs: {"id": 3928053},
+    )
+
+    order = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert order.status_code == 200
+
+    fulfill = client.post(
+        f"{settings.API_V1_STR}/orders/{_first_order_result(order)['id']}/fulfill",
+        headers=superuser_token_headers,
+    )
+    assert fulfill.status_code == 200
+    assert fulfill.json()["supplier_order_id"] == "3928053"
 
 
 def test_fulfill_api_order_definite_failure_rolls_back_claim(

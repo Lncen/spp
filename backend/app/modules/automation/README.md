@@ -64,8 +64,10 @@ from app.modules.automation.infrastructure.executors import (
 
 注册后 `POST /automation/tasks` 才能使用该 `task_type`。
 
-内置已注册执行器：`log`（通用占位）与 `submit_supplier_order`（订单向上游履约）。
+内置已注册执行器：`log`（通用占位）、`submit_supplier_order`（订单向上游履约）与
+`apply_supplier_refund`（订单向上游申请退单）。
 `submit_supplier_order` 的执行体委托 `order.application.fulfillment` 的履约编排服务，
+`apply_supplier_refund` 委托 `order.application.sync.apply_refund_application`，
 执行器只负责幂等预检查、认领超时兜底与任务终态处理。
 
 #### 执行器幂等约束（强制）
@@ -114,6 +116,7 @@ publish(event_type="order.paid", payload={"order_id": "10001"})
 前提：存在启用的规则 `AutomationRule(event_type="order.paid", action_type="submit_supplier_order")`。
 
 订单模块已在 `create_order` / `create_admin_order` 成功提交后自动发布 `order.paid`（payload 含 `order_id`），无需额外接入。
+API 订单申请售后时由 `cancel_order` 发布 `order.after_sale_applied`（payload 含 `order_id`）。
 
 ### 4. 创建自动化规则（事件 → 动作映射）
 
@@ -129,9 +132,15 @@ Authorization: Bearer <superuser-token>
 }
 ```
 
-规则配置 `config` 会合并进任务 payload，且覆盖事件载荷中的同名参数；保留键 `task_options` 不进入 payload，用于配置任务 `priority` 与 `max_retry`。
+规则配置 `config` 会合并进任务 payload，且覆盖事件载荷中的同名参数；保留键 `task_options` 不进入 payload，
+用于配置任务 `priority`、`max_retry` 与 `delay_seconds`（延时执行秒数，0/缺省立即执行；
+订单履约规则 `order.paid` 默认 120 秒，创建订单后延时 2 分钟再提交上游，期间取消订单走本地退款）。
 
-订单履约规则 `order.paid → submit_supplier_order` 已由 `app/init_models_data/automation_rules.py` 在 `init_db` 启动时自动播种（幂等，`max_retry` 对齐 `ORDER_FULFILL_FAIL_LIMIT`），无需手工创建；若规则缺失，事件只落库审计、不会生成任务。
+订单履约规则 `order.paid → submit_supplier_order` 与售后退单规则
+`order.after_sale_applied → apply_supplier_refund` 已由
+`app/init_models_data/automation_rules.py` 在 `init_db` 启动时自动播种（幂等，
+`max_retry` 分别对齐 `ORDER_FULFILL_FAIL_LIMIT` 与 `ORDER_REFUND_APPLY_LIMIT`），
+无需手工创建；若规则缺失，事件只落库审计、不会生成任务。
 
 ### 5. 创建计划任务（周期调度 Celery 任务）
 

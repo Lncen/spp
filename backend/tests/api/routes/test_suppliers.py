@@ -27,6 +27,7 @@ from app.modules.supplier.application.create import (
 from app.modules.supplier.application.sync import sync_upstream_product
 from app.modules.supplier.infrastructure.clients.base import (
     SupplierClientError,
+    SupplierClientUnknownError,
     supplier_client,
 )
 from app.modules.supplier.infrastructure.clients.ylsup import YlsupClient
@@ -327,6 +328,25 @@ def test_ylsup_client_parses_upstream_payloads(
     }
     assert calls[4][1]["json"] == {"ids": [3, 4]}
     assert calls[5][1]["json"] == {"id": "202539", "status": 5}
+
+
+def test_ylsup_client_create_order_missing_data_is_unknown(
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """下单响应缺 data 时视为结果未知（上游可能已下单），不得按明确失败重试"""
+    supplier = create_random_supplier(db)
+    client = YlsupClient(supplier)
+    monkeypatch.setattr(
+        client,
+        "post",
+        lambda path, **kwargs: FakeResponse({"code": 0}),
+    )
+    try:
+        with pytest.raises(SupplierClientUnknownError):
+            client.create_order(product_id="1", quantity=1)
+    finally:
+        client.close()
 
 
 def test_read_upstream_products_marks_synced(

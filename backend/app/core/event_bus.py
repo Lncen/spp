@@ -76,6 +76,7 @@ def publish(
     当前可使用的事件类型：
 
     - ``order.paid``：订单创建成功（已付款），payload 含 ``order_id``；
+    - ``order.after_sale_applied``：API 订单申请售后，payload 含 ``order_id``；
     - ``order.fulfillment_failed``：订单履约异常，payload 含 ``order_id`` / ``order_no`` / ``remark``。
 
     另可通过 automation 模块接口（POST /automation/events，超管权限）发布任意自定义事件类型；

@@ -19,9 +19,10 @@ after_sale/
 | 部分退款 | `refund.py`：`refund_order` / `refund_to_wallet` | 管理员指定金额退款入账，仅已完成订单可用 |
 | 补发 / 重新履约 | 待实现 | 重新触发履约事件并备注 |
 | 人工处理 | `application/fulfillment.py`：`update_order_status` / `record_supplier_order_id` | 手动调整订单状态 / 补录供应商订单号 |
-| 退单 | `cancel.py`：`cancel_order` + `application/sync.py`：`apply_refund_applications` | 本地订单直接退款；API 订单由 celery 调用上游退单接口 |
+| 退单 | `cancel.py`：`cancel_order`（发布 `order.after_sale_applied` 事件）+ automation 执行器 `apply_supplier_refund` 调用 `application/sync.py`：`apply_refund_application` | 本地/自动/手动商品直接本地退款（不校验 `can_refund`）；API 商品由自动化事件触发上游退单申请，`can_refund` 仅约束 API 商品；异常订单可退单 |
 
 ## 依赖
 
-- 上游退单申请：`application/sync.py`（celery 定时任务调用供应商 `cancel_order`）
+- 上游退单申请：`application/sync.py` 的 `apply_refund_application`（由 automation 执行器
+  `apply_supplier_refund` 调用，执行器注册于 `modules/automation/infrastructure/executors/order_refund.py`）
 - 退单退款领域规则：`domain/refund.py` 的 `calc_refund_amount`

@@ -1,6 +1,6 @@
 """自动化模块：事件分发应用服务（按规则生成任务）"""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlmodel import Session
 
@@ -33,12 +33,19 @@ def dispatch_event(*, event: AutomationEvent) -> list[AutomationTask]:
                 config = dict(rule.config)
                 task_options = config.pop("task_options", {})
                 payload = {**db_event.payload, **config}
+                delay_seconds = int(task_options.get("delay_seconds", 0) or 0)
+                execute_at = (
+                    datetime.now(UTC) + timedelta(seconds=delay_seconds)
+                    if delay_seconds > 0
+                    else None
+                )
                 task = create_task(
                     session=session,
                     task_type=rule.action_type,
                     payload=payload,
                     priority=int(task_options.get("priority", 0)),
                     max_retry=int(task_options.get("max_retry", 3)),
+                    execute_at=execute_at,
                     event_id=db_event.id,
                     rule_id=rule.id,
                 )

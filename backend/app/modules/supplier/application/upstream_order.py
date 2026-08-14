@@ -3,6 +3,7 @@
 只封装上游 API 调用与结果归一化，不含业务规则；
 异常语义与 client 一致：
 - SupplierClientError：明确失败，可安全重试；
+- SupplierClientRejectedError：上游明确业务性拒绝（如 code!=0 响应），重试无意义，需人工介入；
 - SupplierClientUnknownError：结果未知（超时/断连/未返回订单号），需人工确认。
 """
 
@@ -46,13 +47,16 @@ def submit_upstream_order(
         call_kwargs["customer_order_id"] = customer_order_id
     with supplier_client(session=session, supplier_id=supplier_id) as client:
         result = client.create_order(**call_kwargs)
-    # 契约返回上游原始 dict，提取订单号；兼容返回标量的平台客户端
-    order_id = result.get("order_id") if isinstance(result, dict) else result
-    if order_id is None:
+    # 契约返回上游原始 dict，提取订单号（order_id / id）；兼容返回标量的平台客户端
+    if isinstance(result, dict):
+        order_id = result.get("order_id") or result.get("id")
+    else:
+        order_id = result
+    if order_id in (None, ""):
         raise SupplierClientUnknownError(
-            "上游下单成功但未返回订单号，需人工确认"
+            f"上游下单成功但未返回订单号，需人工确认\n ❗❗❗result :{result}"
         )
-    return str(order_id)
+    return normalize_upstream_id(order_id)
 
 
 def query_upstream_orders_status(

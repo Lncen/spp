@@ -2,6 +2,7 @@
 
 from app.modules.automation.infrastructure.executors import (
     log,  # noqa: F401  注册内置执行器
+    order_refund,  # noqa: F401  注册订单退单申请执行器
     order_submit,  # noqa: F401  注册订单履约执行器
 )
 from app.modules.automation.infrastructure.executors.base import (

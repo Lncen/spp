@@ -35,11 +35,11 @@ backend/app/modules/order/
 │   ├── __init__.py
 │   ├── create.py                   # 创建订单：条件验证、计价、扣库存、扣款、落库、发事件
 │   ├── fulfillment.py              # 履约编排（认领 → 上游下单 → 分流）+ 手动状态维护
-│   ├── sync.py                     # 上游状态同步 / 退单申请编排
+│   ├── sync.py                     # 上游状态同步 / 退单申请服务
 │   ├── order_state.py              # 履约状态转换规则（认领/回滚/转异常/终态/上游状态映射）
 │   ├── query.py                    # 订单查询
 │   └── after_sale/
-│       ├── cancel.py               # 本地取消（未向上游下单的订单）
+│       ├── cancel.py               # 取消订单：本地退款 / 发布售后事件申请上游退单
 │       └── refund.py               # 退款入账 / 上游退单自动退款
 ├── domain/                         # 领域逻辑：纯规则
 │   ├── __init__.py
@@ -80,7 +80,7 @@ backend/app/modules/order/
 | --- | --- | --- |
 | 上游下单 / 查单 / 退单能力 | `supplier.application.upstream_order` | 纯能力封装，异常语义透传 |
 | 履约编排（认领 → 下单 → 分流） | `order.application.fulfillment` | 同步入口与事件执行器共用 |
-| 查单/退单编排 | `order.application.sync` | 定时任务与手动接口共用 |
+| 查单编排/退单申请 | `order.application.sync` | 定时任务、手动接口与自动化执行器共用 |
 | 履约状态转换规则 | `order.application.order_state` | 认领、回滚、转异常、终态、状态映射 |
 | 退款入账规则 | `order.application.after_sale.refund` | 公式与钱包入账 |
 | 定时任务 | `automation.infrastructure.tasks` | `sync_order_status_periodic`（任务名不变） |

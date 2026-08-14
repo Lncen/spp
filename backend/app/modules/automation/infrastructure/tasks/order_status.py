@@ -4,10 +4,7 @@ from celery import shared_task
 from sqlmodel import Session, select
 
 from app.core.db import engine
-from app.modules.order.application.sync import (
-    apply_refund_applications,
-    sync_orders_status,
-)
+from app.modules.order.application.sync import sync_orders_status
 from app.modules.order.domain.constants import SYNCABLE_ORDER_STATUSES
 from app.modules.order.models import Order
 from app.modules.product.constants import RedeemType
@@ -30,8 +27,8 @@ def sync_order_status_periodic() -> dict:
                 )
             ).all()
             stats["checked"] = len(orders)
-            # 处理退单申请
-            apply_refund_applications(session=session, db_orders=list(orders))
+            # 退单申请已改由 automation 事件驱动
+            # （order.after_sale_applied → apply_supplier_refund 执行器），此处只同步状态
 
             # 同步订单状态
             before = {order.id: order.status for order in orders}

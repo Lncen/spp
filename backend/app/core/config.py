@@ -120,6 +120,9 @@ class Settings(BaseSettings):
     # 订单向上游履约连续失败次数上限，达到后标记异常并通知管理员
     ORDER_FULFILL_FAIL_LIMIT: int = 5
 
+    # 订单向上游退单申请连续失败次数上限，超过后任务进入失败终态供人工处理
+    ORDER_REFUND_APPLY_LIMIT: int = 5
+
     IMAGE_MAX_SIZE: int = 10 * 1024 * 1024  # 10MB
     THUMBNAIL_MAX_DIMENSION: int = 1200
     ALLOWED_IMAGE_EXTENSIONS: set[str] = {".jpg", ".jpeg", ".png", ".webp"}

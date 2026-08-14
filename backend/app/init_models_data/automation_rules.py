@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 # 订单履约规则的固定 UUID（确保幂等性）
 ORDER_PAID_RULE_UUID = uuid.UUID("b0000000-0000-0000-0000-000000000001")
+# 订单售后退单规则的固定 UUID（确保幂等性）
+ORDER_AFTER_SALE_RULE_UUID = uuid.UUID("b0000000-0000-0000-0000-000000000002")
 
 # 默认自动化规则：max_retry 对齐订单履约失败上限，连续失败后订单转人工确认
 AUTOMATION_RULES = [
@@ -26,6 +28,23 @@ AUTOMATION_RULES = [
             "task_options": {
                 "priority": 0,
                 "max_retry": settings.ORDER_FULFILL_FAIL_LIMIT,
+                "delay_seconds": 180,  # 延迟 180 秒触发
+            }
+        },
+        "priority": 0,
+        "is_active": True,
+    },
+    # 订单申请售后 -> 向上游申请退单
+    {
+        "id": ORDER_AFTER_SALE_RULE_UUID,
+        "name": "订单申请售后 → 向上游申请退单",
+        "description": "API 订单申请售后后自动向上游申请退单",
+        "event_type": "order.after_sale_applied",
+        "action_type": "apply_supplier_refund",
+        "config": {
+            "task_options": {
+                "priority": 0,
+                "max_retry": settings.ORDER_REFUND_APPLY_LIMIT,
             }
         },
         "priority": 0,
