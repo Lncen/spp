@@ -48,10 +48,8 @@ export const ToggleRuleDialog = ({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuItem
-        onSelect={() => {
-          // 先让 DropdownMenu 关闭，再打开 Dialog，避免两个焦点陷阱同时激活导致栈溢出
-          window.setTimeout(() => setIsOpen(true), 50)
-        }}
+        onSelect={(e) => e.preventDefault()}
+        onClick={() => setIsOpen(true)}
       >
         {rule.is_active ? <Square /> : <Play />}
         {rule.is_active ? "停用" : "启用"}

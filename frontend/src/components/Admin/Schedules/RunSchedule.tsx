@@ -49,10 +49,8 @@ const RunSchedule = ({ schedule }: RunScheduleProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuItem
-        onSelect={() => {
-          // 先让 DropdownMenu 关闭，再打开 Dialog，避免两个焦点陷阱同时激活导致栈溢出
-          window.setTimeout(openDialog, 50)
-        }}
+        onSelect={(e) => e.preventDefault()}
+        onClick={openDialog}
       >
         <Play />
         立即执行

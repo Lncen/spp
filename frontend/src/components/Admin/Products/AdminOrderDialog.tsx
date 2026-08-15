@@ -326,10 +326,8 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
   return (
     <>
       <DropdownMenuItem
-        onSelect={() => {
-          // 先让 DropdownMenu 关闭，再打开 Dialog，避免两个焦点陷阱同时激活导致栈溢出
-          window.setTimeout(openDialog, 50)
-        }}
+        onSelect={(e) => e.preventDefault()}
+        onClick={openDialog}
       >
         <ShoppingCart />
         管理员下单
