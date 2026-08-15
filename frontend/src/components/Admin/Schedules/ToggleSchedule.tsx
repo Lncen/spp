@@ -45,8 +45,10 @@ const ToggleSchedule = ({ schedule, onSuccess }: ToggleScheduleProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuItem
-        onSelect={(e) => e.preventDefault()}
-        onClick={() => setIsOpen(true)}
+        onSelect={() => {
+          // 先让 DropdownMenu 关闭，再打开 Dialog，避免两个焦点陷阱同时激活导致栈溢出
+          window.setTimeout(() => setIsOpen(true), 50)
+        }}
       >
         {schedule.enabled ? <Square /> : <Play />}
         {schedule.enabled ? "停用" : "启用"}

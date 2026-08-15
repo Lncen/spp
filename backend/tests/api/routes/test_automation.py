@@ -9,6 +9,7 @@ from sqlmodel import Session, delete, select
 
 from app.core.config import settings
 from app.core.db import engine
+from app.init_models_data.automation_rules import seed_automation_rules
 from app.modules.automation.domain.constants import AutomationTaskStatus
 from app.modules.automation.infrastructure.tasks import automation_task_scan
 from app.modules.automation.models import (
@@ -38,6 +39,18 @@ def _clean_automation_tables() -> None:
         session.exec(delete(AutomationEvent))
         session.exec(delete(AutomationRule))
         session.commit()
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _restore_seeded_rules_after_module() -> None:
+    """模块结束后恢复种子自动化规则。
+
+    本模块每个用例会清空 AutomationRule 表（含种子规则），
+    若不恢复会破坏依赖种子规则的其他模块用例（如订单售后自动退单）。
+    """
+    yield
+    with Session(engine) as session:
+        seed_automation_rules(session=session)
 
 
 def _get_archive(*, session: Session, task_id: uuid.UUID) -> AutomationTaskArchive | None:

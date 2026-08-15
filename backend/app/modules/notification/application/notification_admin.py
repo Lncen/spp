@@ -9,12 +9,15 @@ from sqlmodel import Session, col, select
 from app.modules.automation.infrastructure.tasks.notification_delivery import (
     enqueue_delivery,
 )
+from app.modules.notification.application.realtime_publish import (
+    publish_notification_created,
+)
 from app.modules.notification.domain.constants import (
     MANUAL_EMAIL_TEMPLATE,
     ChannelType,
     DeliveryStatus,
 )
-from app.modules.notification.models import NotificationDelivery
+from app.modules.notification.models import Notification, NotificationDelivery
 from app.modules.notification.repositories.delivery import (
     create_delivery,
     get_delivery_or_404,
@@ -170,6 +173,7 @@ def send_manual_notification(
 
     payload: dict[str, Any] = {"title": title, "content": content}
     pending_deliveries: list[NotificationDelivery] = []
+    in_app_notifications: list[Notification] = []
     for user in users:
         if user.id is None:
             continue
@@ -194,7 +198,11 @@ def send_manual_notification(
                     channel=channel,
                 )
             )
+        if ChannelType.IN_APP in channels:
+            in_app_notifications.append(notification)
     session.commit()
+    for notification in in_app_notifications:
+        publish_notification_created(notification)
     enqueued = 0
     for delivery in pending_deliveries:
         if enqueue_delivery(str(delivery.id)):

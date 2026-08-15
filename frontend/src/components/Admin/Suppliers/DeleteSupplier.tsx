@@ -56,8 +56,10 @@ const DeleteSupplier = ({ id, name, onSuccess }: DeleteSupplierProps) => {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuItem
         variant="destructive"
-        onSelect={(e) => e.preventDefault()}
-        onClick={() => setIsOpen(true)}
+        onSelect={() => {
+          // 先让 DropdownMenu 关闭，再打开 Dialog，避免两个焦点陷阱同时激活导致栈溢出
+          window.setTimeout(() => setIsOpen(true), 50)
+        }}
       >
         <Trash2 />
         删除供应商

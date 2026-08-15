@@ -1,9 +1,12 @@
 """用户模块：创建用户应用服务"""
 
+import uuid
+
 from fastapi import HTTPException
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.core.security import get_password_hash
+from app.modules.level.models import UserLevel
 from app.modules.user.domain.constants import default_username
 from app.modules.user.infrastructure.emails import send_new_account_email
 from app.modules.user.models import User
@@ -13,6 +16,14 @@ from app.modules.user.repositories.user import (
     get_user_by_username,
 )
 from app.modules.user.schemas import PrivateUserCreate, UserCreate, UserRegister
+
+
+def _get_default_level_id(*, session: Session) -> uuid.UUID | None:
+    """查询默认等级 ID（无默认等级时返回 None）"""
+    level = session.exec(
+        select(UserLevel).where(UserLevel.is_default == True)  # noqa: E712
+    ).first()
+    return level.id if level else None
 
 
 def create_user(
@@ -55,6 +66,7 @@ def create_user_private(*, session: Session, user_in: PrivateUserCreate) -> User
         full_name=user_in.full_name,
         hashed_password=get_password_hash(user_in.password),
     )
+    user.level_id = _get_default_level_id(session=session)
     session.add(user)
     session.commit()
     return user
@@ -66,7 +78,7 @@ def _persist_user(
     user_create: UserCreate,
     send_notification: bool = False,
 ) -> User:
-    """落库并提交，用户名缺省时默认使用邮箱"""
+    """落库并提交，用户名缺省时默认使用邮箱，并分配默认等级"""
     username = user_create.username or default_username(user_create.email)
     user = create_user_record(
         session=session,
@@ -74,6 +86,7 @@ def _persist_user(
         username=username,
         hashed_password=get_password_hash(user_create.password),
     )
+    user.level_id = _get_default_level_id(session=session)
     session.commit()
     session.refresh(user)
     if send_notification:

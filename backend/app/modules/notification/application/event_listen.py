@@ -15,13 +15,16 @@ from app.modules.automation.infrastructure.tasks.notification_delivery import (
     enqueue_delivery,
 )
 from app.modules.automation.models import AutomationEvent
-from app.modules.notification.domain.constants import RecipientRole
+from app.modules.notification.application.realtime_publish import (
+    publish_notification_created,
+)
+from app.modules.notification.domain.constants import ChannelType, RecipientRole
 from app.modules.notification.domain.rules import (
     RecipientsSpec,
     get_rules_for_event,
     render_notification_template,
 )
-from app.modules.notification.models import NotificationDelivery
+from app.modules.notification.models import Notification, NotificationDelivery
 from app.modules.notification.repositories.delivery import create_delivery
 from app.modules.notification.repositories.notification import create_notification
 from app.modules.user.models import User
@@ -44,6 +47,7 @@ def process_notification_event(*, event: AutomationEvent) -> None:
         return
     with Session(engine) as session:
         pending_deliveries: list[NotificationDelivery] = []
+        in_app_notifications: list[Notification] = []
         for rule in rules:
             recipients = _resolve_recipients(
                 session=session, recipients=rule.recipients
@@ -73,7 +77,11 @@ def process_notification_event(*, event: AutomationEvent) -> None:
                         channel=channel,
                     )
                     pending_deliveries.append(delivery)
+                if ChannelType.IN_APP in rule.channels:
+                    in_app_notifications.append(notification)
         session.commit()
+        for notification in in_app_notifications:
+            publish_notification_created(notification)
         for delivery in pending_deliveries:
             enqueue_delivery(str(delivery.id))
         logger.info(

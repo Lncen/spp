@@ -15,6 +15,10 @@ from app.modules.automation.models import (
     AutomationTask,
     AutomationTaskArchive,
 )
+from app.modules.customer_service.models import (
+    Conversation,
+    ConversationMessage,
+)
 from app.modules.image.models import Image, ImageCategory
 from app.modules.item.models import Item
 from app.modules.order.models import Order, OrderParam
@@ -161,6 +165,8 @@ def db() -> Generator[Session]:
             engine,
             tables=[
                 RefreshToken.__table__,
+                Conversation.__table__,
+                ConversationMessage.__table__,
                 AutomationTask.__table__,
                 AutomationTaskArchive.__table__,
                 AutomationEvent.__table__,
@@ -184,6 +190,10 @@ def db() -> Generator[Session]:
         statement = delete(OrderParam)
         session.execute(statement)
         statement = delete(Order)
+        session.execute(statement)
+        statement = delete(ConversationMessage)
+        session.execute(statement)
+        statement = delete(Conversation)
         session.execute(statement)
         statement = delete(ProductBuyParam)
         session.execute(statement)

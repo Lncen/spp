@@ -16,7 +16,12 @@ export function PasswordFields() {
         render={({ field }) => (
           <HorizontalFormItem label="设置密码">
             <FormControl>
-              <Input placeholder="密码" type="password" {...field} />
+              <Input
+                placeholder="密码"
+                type="password"
+                {...field}
+                value={field.value ?? ""}
+              />
             </FormControl>
             <FormMessage />
           </HorizontalFormItem>
@@ -29,7 +34,12 @@ export function PasswordFields() {
         render={({ field }) => (
           <HorizontalFormItem label="确认密码">
             <FormControl>
-              <Input placeholder="密码" type="password" {...field} />
+              <Input
+                placeholder="密码"
+                type="password"
+                {...field}
+                value={field.value ?? ""}
+              />
             </FormControl>
             <FormMessage />
           </HorizontalFormItem>

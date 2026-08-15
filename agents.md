@@ -2,7 +2,7 @@
 - 本项目页面组件使用shadcn-ui库
 - 页面滚动条使用透明背景
 - 注意api接口触发时机， 避免频繁触发，
-
+- frontend\src\components\ui 此文件夹禁止修改
 
 # 后端
 ## 核心分层

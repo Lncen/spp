@@ -102,6 +102,7 @@ class UserPublic(UserBase):
     username: str
     id: uuid.UUID
     level_id: uuid.UUID | None = Field(default=None, title="用户等级")
+    level_name: str | None = Field(default=None, title="用户等级名称")
     avatar_id: uuid.UUID | None = Field(default=None, title="头像图片 ID")
     created_at: datetime | None = None
 

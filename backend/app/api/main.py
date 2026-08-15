@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 import app.modules.automation.infrastructure.event_listeners  # noqa: F401  注册事件监听器
+import app.modules.customer_service.infrastructure.room_guard  # noqa: F401  注册实时会话守卫
 import app.modules.notification.infrastructure.event_listeners  # noqa: F401  注册通知事件监听器
 from app.common.router import router as utils_router
 from app.core.config import settings
@@ -12,6 +13,7 @@ from app.modules.automation.api import (
     schedule_router,
     schedule_tasks_router,
 )
+from app.modules.customer_service.api import router as customer_service_router
 from app.modules.image.api import (
     category_router as image_category_router,
 )
@@ -67,6 +69,7 @@ api_router.include_router(utils_router)
 api_router.include_router(level_router)
 api_router.include_router(item_router)
 api_router.include_router(notification_router)
+api_router.include_router(customer_service_router)
 api_router.include_router(order_router)
 api_router.include_router(image_router)
 api_router.include_router(image_category_router)

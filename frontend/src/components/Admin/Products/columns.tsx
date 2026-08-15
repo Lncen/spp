@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge"
 import {
   PRODUCT_STATUS_BADGE_VARIANT,
   productStatusLabel,
-  productTypeLabel,
   syncStatusLabel,
 } from "./constants"
 import { ProductActionsMenu } from "./ProductActionsMenu"

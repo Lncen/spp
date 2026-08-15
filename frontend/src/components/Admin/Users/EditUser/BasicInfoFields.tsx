@@ -64,7 +64,12 @@ export function BasicInfoFields({
         render={({ field }) => (
           <HorizontalFormItem label="昵称">
             <FormControl>
-              <Input placeholder="昵称" type="text" {...field} />
+              <Input
+                placeholder="昵称"
+                type="text"
+                {...field}
+                value={field.value ?? ""}
+              />
             </FormControl>
             <FormMessage />
           </HorizontalFormItem>
@@ -77,7 +82,13 @@ export function BasicInfoFields({
         render={({ field }) => (
           <HorizontalFormItem label="用户名" required>
             <FormControl>
-              <Input placeholder="用户名" type="text" {...field} required />
+              <Input
+                placeholder="用户名"
+                type="text"
+                {...field}
+                value={field.value ?? ""}
+                required
+              />
             </FormControl>
             <FormMessage />
           </HorizontalFormItem>
@@ -90,7 +101,12 @@ export function BasicInfoFields({
         render={({ field }) => (
           <HorizontalFormItem label="邮箱">
             <FormControl>
-              <Input placeholder="邮箱" type="email" {...field} />
+              <Input
+                placeholder="邮箱"
+                type="email"
+                {...field}
+                value={field.value ?? ""}
+              />
             </FormControl>
             <FormMessage />
           </HorizontalFormItem>
@@ -108,6 +124,7 @@ export function BasicInfoFields({
                 rows={3}
                 maxLength={1000}
                 {...field}
+                value={field.value ?? ""}
               />
             </FormControl>
             <FormMessage />
@@ -126,6 +143,7 @@ export function BasicInfoFields({
                 rows={2}
                 maxLength={255}
                 {...field}
+                value={field.value ?? ""}
               />
             </FormControl>
             <FormMessage />

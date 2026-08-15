@@ -1040,6 +1040,148 @@ export const Body_login_login_access_tokenSchema = {
     title: 'Body_login-login_access_token'
 } as const;
 
+export const ConversationCreateSchema = {
+    properties: {
+        user_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '目标用户 ID',
+            description: '管理端主动联系的用户；普通用户忽略此字段'
+        }
+    },
+    type: 'object',
+    title: 'ConversationCreate',
+    description: '发起会话请求（管理端为指定用户发起时必填 user_id）'
+} as const;
+
+export const ConversationPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        user_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'User Id'
+        },
+        status: {
+            type: 'string',
+            title: 'Status'
+        },
+        last_message_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Last Message At'
+        },
+        last_message_preview: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Last Message Preview'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        user_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '用户展示名（管理端）'
+        },
+        user_online: {
+            type: 'boolean',
+            title: '用户是否在线（管理端）',
+            default: false
+        },
+        unread_count: {
+            type: 'integer',
+            title: '对方发来的未读消息数',
+            description: '当前查看者视角下对方发来且未读的消息数量',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: ['id', 'status'],
+    title: 'ConversationPublic',
+    description: '会话对外展示结构'
+} as const;
+
+export const ConversationStatusUpdateSchema = {
+    properties: {
+        status: {
+            type: 'string',
+            maxLength: 16,
+            title: 'open / closed'
+        }
+    },
+    type: 'object',
+    required: ['status'],
+    title: 'ConversationStatusUpdate',
+    description: '会话状态更新请求'
+} as const;
+
+export const ConversationsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ConversationPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ConversationsPublic',
+    description: '会话列表'
+} as const;
+
 export const CrontabScheduleInSchema = {
     properties: {
         minute: {
@@ -1391,10 +1533,50 @@ export const ImagePublicSchema = {
         url: {
             type: 'string',
             title: 'Url'
+        },
+        filename: {
+            type: 'string',
+            title: 'Filename'
+        },
+        file_size: {
+            type: 'integer',
+            title: 'File Size'
+        },
+        width: {
+            type: 'integer',
+            title: 'Width'
+        },
+        height: {
+            type: 'integer',
+            title: 'Height'
+        },
+        category: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 32
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '分类'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
         }
     },
     type: 'object',
-    required: ['id', 'url'],
+    required: ['id', 'url', 'filename', 'file_size', 'width', 'height'],
     title: 'ImagePublic',
     description: '图片公开响应'
 } as const;
@@ -1777,6 +1959,107 @@ export const MessageSchema = {
     description: '通用响应消息'
 } as const;
 
+export const MessageCreateSchema = {
+    properties: {
+        content: {
+            type: 'string',
+            maxLength: 2000,
+            minLength: 1,
+            title: '消息内容'
+        }
+    },
+    type: 'object',
+    required: ['content'],
+    title: 'MessageCreate',
+    description: '发送消息请求'
+} as const;
+
+export const MessagePublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        conversation_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Conversation Id'
+        },
+        sender_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Sender Id'
+        },
+        sender_role: {
+            type: 'string',
+            title: 'Sender Role'
+        },
+        content: {
+            type: 'string',
+            title: 'Content'
+        },
+        read_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Read At'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'conversation_id', 'sender_role', 'content'],
+    title: 'MessagePublic',
+    description: '消息对外展示结构'
+} as const;
+
+export const MessagesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/MessagePublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        },
+        conversation: {
+            '$ref': '#/components/schemas/ConversationPublic'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count', 'conversation'],
+    title: 'MessagesPublic',
+    description: '会话消息列表'
+} as const;
+
 export const NewPasswordSchema = {
     properties: {
         token: {
@@ -2036,6 +2319,22 @@ export const NotificationsPublicSchema = {
     required: ['data', 'count', 'unread_count'],
     title: 'NotificationsPublic',
     description: '通知分页列表'
+} as const;
+
+export const OnlineStatusPublicSchema = {
+    properties: {
+        online: {
+            additionalProperties: {
+                type: 'boolean'
+            },
+            type: 'object',
+            title: 'Online'
+        }
+    },
+    type: 'object',
+    required: ['online'],
+    title: 'OnlineStatusPublic',
+    description: '在线状态批量查询结果'
 } as const;
 
 export const OrderCreateSchema = {
@@ -5535,6 +5834,27 @@ export const UnreadCountSchema = {
     description: '未读通知数'
 } as const;
 
+export const UnreadSummarySchema = {
+    properties: {
+        notification_unread_count: {
+            type: 'integer',
+            title: 'Notification Unread Count'
+        },
+        conversation_unread_count: {
+            type: 'integer',
+            title: 'Conversation Unread Count'
+        },
+        total_unread: {
+            type: 'integer',
+            title: 'Total Unread'
+        }
+    },
+    type: 'object',
+    required: ['notification_unread_count', 'conversation_unread_count', 'total_unread'],
+    title: 'UnreadSummary',
+    description: '侧边栏总未读：系统通知 + 客服会话未读'
+} as const;
+
 export const UpdatePasswordSchema = {
     properties: {
         current_password: {
@@ -5885,6 +6205,17 @@ export const UserDetailPublicSchema = {
             ],
             title: '用户等级'
         },
+        level_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '用户等级名称'
+        },
         avatar_id: {
             anyOf: [
                 {
@@ -5908,17 +6239,6 @@ export const UserDetailPublicSchema = {
                 }
             ],
             title: 'Created At'
-        },
-        level_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: '用户等级名称'
         }
     },
     type: 'object',
@@ -6059,6 +6379,17 @@ export const UserPublicSchema = {
                 }
             ],
             title: '用户等级'
+        },
+        level_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '用户等级名称'
         },
         avatar_id: {
             anyOf: [

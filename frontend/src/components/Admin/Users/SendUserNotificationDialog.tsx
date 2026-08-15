@@ -1,6 +1,3 @@
-import { Bell } from "lucide-react"
-import { useState } from "react"
-
 import type { UserListItemPublic } from "@/client"
 import { SendNotificationForm } from "@/components/Admin/Notifications/SendNotificationForm"
 import {
@@ -10,29 +7,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 
 interface SendUserNotificationDialogProps {
   user: UserListItemPublic
+  open: boolean
+  onOpenChange: (open: boolean) => void
   /** 发送成功后关闭外层下拉菜单 */
   onSuccess: () => void
 }
 
 export const SendUserNotificationDialog = ({
   user,
+  open,
+  onOpenChange,
   onSuccess,
 }: SendUserNotificationDialogProps) => {
-  const [isOpen, setIsOpen] = useState(false)
-
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuItem
-        onSelect={(e) => e.preventDefault()}
-        onClick={() => setIsOpen(true)}
-      >
-        <Bell />
-        发送通知
-      </DropdownMenuItem>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>发送通知：{user.username}</DialogTitle>
@@ -43,7 +34,7 @@ export const SendUserNotificationDialog = ({
         <SendNotificationForm
           fixedUserIds={[user.id]}
           onSuccess={() => {
-            setIsOpen(false)
+            onOpenChange(false)
             onSuccess()
           }}
         />

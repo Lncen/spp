@@ -101,9 +101,9 @@ def update_password_me(
 
 
 @router.get("/me", response_model=UserPublic)
-def read_user_me(current_user: CurrentUser) -> Any:
-    """获取当前用户信息"""
-    return current_user
+def read_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
+    """获取当前用户信息（含自己的等级名称）"""
+    return get_user_detail(session=session, user_id=current_user.id)
 
 
 @router.delete("/me", response_model=Message)

@@ -34,6 +34,14 @@ class UnreadCount(SQLModel):
     unread_count: int
 
 
+class UnreadSummary(SQLModel):
+    """侧边栏总未读：系统通知 + 客服会话未读"""
+
+    notification_unread_count: int
+    conversation_unread_count: int
+    total_unread: int
+
+
 class DeliveryPublic(SQLModel):
     """管理端：投递记录展示结构"""
 

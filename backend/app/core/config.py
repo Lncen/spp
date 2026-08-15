@@ -104,6 +104,10 @@ class Settings(BaseSettings):
     SETTINGS_CACHE_TTL_SECONDS: int = 600
     CELERY_BROKER_DB: int = 1
     CELERY_RESULT_DB: int = 2
+    # Socket.IO 实时通道 Redis DB（与缓存 / Celery broker / result 分离）
+    REDIS_SOCKETIO_DB: int = 3
+    # Socket.IO 挂载路径（客户端需以相同 path 连接）
+    SOCKETIO_PATH: str = "socket.io"
 
     @computed_field  # type: ignore[prop-decorator]
     @property

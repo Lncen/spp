@@ -307,6 +307,49 @@ export type Body_login_login_access_token = {
 };
 
 /**
+ * 发起会话请求（管理端为指定用户发起时必填 user_id）
+ */
+export type ConversationCreate = {
+    /**
+     * 管理端主动联系的用户；普通用户忽略此字段
+     */
+    user_id?: (string | null);
+};
+
+/**
+ * 会话对外展示结构
+ */
+export type ConversationPublic = {
+    id: string;
+    user_id?: (string | null);
+    status: string;
+    last_message_at?: (string | null);
+    last_message_preview?: (string | null);
+    created_at?: (string | null);
+    user_name?: (string | null);
+    user_online?: boolean;
+    /**
+     * 当前查看者视角下对方发来且未读的消息数量
+     */
+    unread_count?: number;
+};
+
+/**
+ * 会话列表
+ */
+export type ConversationsPublic = {
+    data: Array<ConversationPublic>;
+    count: number;
+};
+
+/**
+ * 会话状态更新请求
+ */
+export type ConversationStatusUpdate = {
+    status: string;
+};
+
+/**
  * crontab 表达式输入
  */
 export type CrontabScheduleIn = {
@@ -398,6 +441,12 @@ export type ImageCategoryUpdate = {
 export type ImagePublic = {
     id: string;
     url: string;
+    filename: string;
+    file_size: number;
+    width: number;
+    height: number;
+    category?: (string | null);
+    created_at?: (string | null);
 };
 
 /**
@@ -530,6 +579,35 @@ export type Message = {
 };
 
 /**
+ * 发送消息请求
+ */
+export type MessageCreate = {
+    content: string;
+};
+
+/**
+ * 消息对外展示结构
+ */
+export type MessagePublic = {
+    id: string;
+    conversation_id: string;
+    sender_id?: (string | null);
+    sender_role: string;
+    content: string;
+    read_at?: (string | null);
+    created_at?: (string | null);
+};
+
+/**
+ * 会话消息列表
+ */
+export type MessagesPublic = {
+    data: Array<MessagePublic>;
+    count: number;
+    conversation: ConversationPublic;
+};
+
+/**
  * 重置密码请求
  */
 export type NewPassword = {
@@ -604,6 +682,15 @@ export type NotificationsPublic = {
     data: Array<NotificationPublic>;
     count: number;
     unread_count: number;
+};
+
+/**
+ * 在线状态批量查询结果
+ */
+export type OnlineStatusPublic = {
+    online: {
+        [key: string]: (boolean);
+    };
 };
 
 /**
@@ -1548,6 +1635,15 @@ export type UnreadCount = {
 };
 
 /**
+ * 侧边栏总未读：系统通知 + 客服会话未读
+ */
+export type UnreadSummary = {
+    notification_unread_count: number;
+    conversation_unread_count: number;
+    total_unread: number;
+};
+
+/**
  * 修改密码请求
  */
 export type UpdatePassword = {
@@ -1676,9 +1772,9 @@ export type UserDetailPublic = {
     bio?: (string | null);
     id: string;
     level_id?: (string | null);
+    level_name?: (string | null);
     avatar_id?: (string | null);
     created_at?: (string | null);
-    level_name?: (string | null);
 };
 
 /**
@@ -1720,6 +1816,7 @@ export type UserPublic = {
     bio?: (string | null);
     id: string;
     level_id?: (string | null);
+    level_name?: (string | null);
     avatar_id?: (string | null);
     created_at?: (string | null);
 };
@@ -1938,6 +2035,59 @@ export type AutomationToggleAutomationRuleData = {
 
 export type AutomationToggleAutomationRuleResponse = (AutomationRulePublic);
 
+export type CustomerServiceReadConversationsData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type CustomerServiceReadConversationsResponse = (ConversationsPublic);
+
+export type CustomerServiceCreateConversationEndpointData = {
+    requestBody?: (ConversationCreate | null);
+};
+
+export type CustomerServiceCreateConversationEndpointResponse = (ConversationPublic);
+
+export type CustomerServiceReadMessagesData = {
+    before?: (string | null);
+    conversationId: string;
+    limit?: number;
+};
+
+export type CustomerServiceReadMessagesResponse = (MessagesPublic);
+
+export type CustomerServiceSendMessageEndpointData = {
+    conversationId: string;
+    requestBody: MessageCreate;
+};
+
+export type CustomerServiceSendMessageEndpointResponse = (MessagePublic);
+
+export type CustomerServiceReadConversationData = {
+    conversationId: string;
+};
+
+export type CustomerServiceReadConversationResponse = (ConversationPublic);
+
+export type CustomerServiceUpdateStatusEndpointData = {
+    conversationId: string;
+    requestBody: ConversationStatusUpdate;
+};
+
+export type CustomerServiceUpdateStatusEndpointResponse = (ConversationPublic);
+
+export type CustomerServiceDeleteConversationEndpointData = {
+    conversationId: string;
+};
+
+export type CustomerServiceDeleteConversationEndpointResponse = (Message);
+
+export type CustomerServiceReadOnlineStatusData = {
+    userIds: Array<(string)>;
+};
+
+export type CustomerServiceReadOnlineStatusResponse = (OnlineStatusPublic);
+
 export type ImageCategoriesReadCategoriesResponse = (ImageCategoriesPublic);
 
 export type ImageCategoriesCreateNewCategoryData = {
@@ -2101,6 +2251,8 @@ export type NotificationsReadMyNotificationsData = {
 export type NotificationsReadMyNotificationsResponse = (NotificationsPublic);
 
 export type NotificationsReadUnreadCountResponse = (UnreadCount);
+
+export type NotificationsReadUnreadSummaryResponse = (UnreadSummary);
 
 export type NotificationsMarkReadData = {
     notificationId: string;

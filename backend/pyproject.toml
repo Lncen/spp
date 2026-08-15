@@ -23,6 +23,7 @@ dependencies = [
     "celery[redis]>=5.5.3,<6.0.0",
     "redis[hiredis]>=5.0.0,<7.0.0",
     "sqlalchemy-celery-beat>=0.8.4",
+    "python-socketio>=5.11,<6.0",
 ]
 
 [dependency-groups]

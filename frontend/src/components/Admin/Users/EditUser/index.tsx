@@ -5,7 +5,6 @@ import {
   Info,
   Lock,
   Medal,
-  Pencil,
   Shield,
   Wallet,
 } from "lucide-react"
@@ -26,7 +25,6 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { Form } from "@/components/ui/form"
 import { LoadingButton } from "@/components/ui/loading-button"
 import {
@@ -64,6 +62,8 @@ type SectionId = (typeof sections)[number]["id"]
 
 interface EditUserProps {
   user: UserListItemPublic
+  open: boolean
+  onOpenChange: (open: boolean) => void
   onSuccess: () => void
 }
 
@@ -85,8 +85,7 @@ function Section({
   )
 }
 
-const EditUser = ({ user, onSuccess }: EditUserProps) => {
-  const [isOpen, setIsOpen] = useState(false)
+const EditUser = ({ user, open, onOpenChange, onSuccess }: EditUserProps) => {
   const [activeSection, setActiveSection] = useState<SectionId>("basic")
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
@@ -112,27 +111,27 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
   const { data: levels, isLoading: isLevelsLoading } = useQuery({
     queryKey: ["levels"],
     queryFn: () => LevelsService.readLevels(),
-    enabled: isOpen && activeSection === "level",
+    enabled: open && activeSection === "level",
     staleTime: 5 * 60 * 1000,
   })
 
   const { data: avatarImages, isLoading: isAvatarImagesLoading } = useQuery({
     queryKey: ["avatar-images"],
     queryFn: () => ImagesService.readImages({ category: "avatar", limit: 100 }),
-    enabled: isOpen && activeSection === "avatar",
+    enabled: open && activeSection === "avatar",
     staleTime: 5 * 60 * 1000,
   })
 
   const { data: wallet, isLoading: isWalletLoading } = useQuery({
     queryKey: ["wallet", user.id],
     queryFn: () => WalletsService.readWalletByUserId({ userId: user.id }),
-    enabled: isOpen,
+    enabled: open,
   })
 
   const { data: detail } = useQuery({
     queryKey: ["user-detail", user.id],
     queryFn: () => UsersService.readUserById({ userId: user.id }),
-    enabled: isOpen,
+    enabled: open,
   })
 
   useEffect(() => {
@@ -172,7 +171,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
       }),
     onSuccess: () => {
       showSuccessToast("用户更新成功")
-      setIsOpen(false)
+      onOpenChange(false)
       onSuccess()
     },
     onError: handleError.bind(showErrorToast),
@@ -188,17 +187,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
   const userLabel = user.username ?? "用户"
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuItem
-        onSelect={(e) => e.preventDefault()}
-        onClick={() => {
-          setActiveSection("basic")
-          setIsOpen(true)
-        }}
-      >
-        <Pencil />
-        编辑用户
-      </DropdownMenuItem>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="overflow-hidden p-0 md:max-h-[min(800px,85svh)] md:max-w-[400px] lg:max-w-[800px]">
         <DialogTitle className="border-b px-4 py-3 pr-10 text-base font-semibold">
           编辑用户：{userLabel}
@@ -285,7 +274,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                     type="button"
                     variant="outline"
                     disabled={mutation.isPending}
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => onOpenChange(false)}
                   >
                     取消
                   </Button>

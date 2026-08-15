@@ -16,10 +16,13 @@
 业务模块 publish 事件 -> EventBus 落库 AutomationEvent
     -> notification 监听器（listen "*"）
     -> 匹配 NotificationRule -> 生成 Notification + NotificationDelivery
+    -> 实时发布 notification.created（realtime 模块，best-effort）
     -> Celery 异步投递（in_app 落库即达 / email 复用 SMTP）
     -> 记录投递结果（成功 / 失败重试 / 失败终态）
     -> 兜底扫描（每 5 分钟）恢复超时的 pending/sending 投递并重新入队
 ```
+
+**实时提醒**：站内通知创建并提交后，向接收用户发布 `notification.created`（走 `realtime` 模块的 Redis Pub/Sub + Socket.IO）。实时通道只是提醒，PostgreSQL 中的 `Notification` 才是事实来源；发布失败不影响落库，前端可在打开通知中心时重新拉取。
 
 设计原则：
 
@@ -34,6 +37,7 @@
 notification/
 ├── api/                    # 接口层：查询我的通知、未读数、标记已读
 ├── application/            # 应用服务：事件消费、查询与已读编排
+│   └── realtime_publish.py # 通知创建后实时发布（best-effort）
 ├── domain/                 # 领域层：渠道/状态常量、通知规则注册表
 ├── infrastructure/         # 基础设施：渠道实现、Celery 投递与兜底扫描、事件监听
 │   └── channels/           # 渠道注册表 + 内置渠道（email / in_app）
@@ -119,6 +123,18 @@ class DingTalkChannel(BaseChannel):
 `GET /notifications/unread-count`
 
 响应 `UnreadCount`：`unread_count`（当前用户未读通知数）。
+
+**侧边栏总未读（通知 + 会话）**：`GET /notifications/unread-summary`
+
+响应 `UnreadSummary`：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `notification_unread_count` | int | 系统通知未读 |
+| `conversation_unread_count` | int | 客服会话未读（管理端统计全部会话，普通用户统计自己的会话） |
+| `total_unread` | int | 两者之和 |
+
+主页面侧边栏「客服」角标使用该接口；通知与客服消息的实时事件（`notification.created` / `customer_service.message.created`）都会触发其刷新，本地已读 / 删除操作也会同步失效缓存。
 
 ### 3. 标记单条已读
 

@@ -14,6 +14,10 @@ from app.modules.automation.models import (
     AutomationTask,
     AutomationTaskArchive,
 )
+from app.modules.customer_service.models import (
+    Conversation,
+    ConversationMessage,
+)
 from app.modules.image.models import Image, ImageCategory
 from app.modules.item.models import Item
 from app.modules.level.models import UserLevel
@@ -44,6 +48,8 @@ __all__ = [
     "AutomationTaskArchive",
     "AutomationEvent",
     "AutomationRule",
+    "Conversation",
+    "ConversationMessage",
     "UserLevel",
     "Notification",
     "NotificationDelivery",

@@ -22,9 +22,13 @@ class ImageUpdate(SQLModel):
 class ImagePublic(SQLModel):
     """图片公开响应"""
     id: uuid.UUID
-    # owner_id: uuid.UUID
-    # created_at: datetime | None = None
     url: str
+    filename: str
+    file_size: int
+    width: int
+    height: int
+    category: str | None = Field(default=None, max_length=32, title="分类")
+    created_at: datetime | None = None
 
 
 class ImagesPublic(SQLModel):

@@ -6,15 +6,13 @@ import {
   CalendarClock,
   Cpu,
   FolderTree,
-  Frame,
   Home,
   Image,
+  LifeBuoy,
   ListTodo,
-  Map as MapIcon,
   Medal,
   Package,
   Percent,
-  PieChart,
   ReceiptText,
   Server,
   Settings,
@@ -23,12 +21,11 @@ import {
   Workflow,
   Zap,
 } from "lucide-react"
-import { useState } from "react"
 
 import { NotificationsService } from "@/client"
 import { SidebarAppearance } from "@/components/Common/Appearance"
-import { MY_NOTIFICATIONS_UNREAD_QUERY_KEY } from "@/components/Notifications/constants"
-import { NotificationCenterDialog } from "@/components/Notifications/NotificationCenterDialog"
+import { useCustomerService } from "@/components/CustomerService/CustomerServiceProvider"
+import { MY_UNREAD_SUMMARY_QUERY_KEY } from "@/components/Notifications/constants"
 import {
   Sidebar,
   SidebarContent,
@@ -108,36 +105,27 @@ const navGroups: ItemGroup[] = [
   },
 ]
 
-function getUnreadCountQueryOptions() {
-  return {
-    queryKey: MY_NOTIFICATIONS_UNREAD_QUERY_KEY,
-    queryFn: () => NotificationsService.readUnreadCount(),
-  }
-}
-
 export function AppSidebar() {
+  const { openCustomerService } = useCustomerService()
   const { user: currentUser } = useAuth()
   const isSuperuser = currentUser?.is_superuser ?? false
-  const [notificationOpen, setNotificationOpen] = useState(false)
 
   const { data: unreadData } = useQuery({
-    ...getUnreadCountQueryOptions(),
+    queryKey: MY_UNREAD_SUMMARY_QUERY_KEY,
+    queryFn: () => NotificationsService.readUnreadSummary(),
     enabled: Boolean(currentUser),
   })
+  const totalUnread = unreadData?.total_unread ?? 0
 
   const groups = isSuperuser ? navGroups : []
 
   const projects: Project[] = [
     {
-      name: "通知",
-      icon: Bell,
-      badge: unreadData?.unread_count,
-      onClick: () => setNotificationOpen(true),
+      name: "客服",
+      icon: LifeBuoy,
+      badge: totalUnread,
+      onClick: () => openCustomerService(),
     },
-    // 示例数据，替换为真实项目即可
-    { name: "设计工程", url: "#", icon: Frame },
-    { name: "销售与营销", url: "#", icon: PieChart },
-    { name: "旅行", url: "#", icon: MapIcon },
   ]
 
   return (
@@ -154,10 +142,6 @@ export function AppSidebar() {
         <User user={currentUser} />
       </SidebarFooter>
       <SidebarRail />
-      <NotificationCenterDialog
-        open={notificationOpen}
-        onOpenChange={setNotificationOpen}
-      />
     </Sidebar>
   )
 }

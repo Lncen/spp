@@ -146,7 +146,7 @@ def fulfill_claimed_order(
         fail_limit=fail_limit,
     )
     db_order.fulfill_failed_count = 0  # 上游下单成功，清零失败计数
-    # _finalize(session=session, db_order=db_order, is_api=is_api, now=now)
+    _finalize(session=session, db_order=db_order, is_api=is_api, now=now)
     session.add(db_order)
     session.commit()
     session.refresh(db_order)

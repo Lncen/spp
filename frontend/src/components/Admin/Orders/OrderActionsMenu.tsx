@@ -31,15 +31,21 @@ export const OrderActionsMenu = ({ order }: OrderActionsMenuProps) => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem
-            onSelect={(event) => event.preventDefault()}
-            onClick={() => setDetailOpen(true)}
+            onSelect={() => {
+              setMenuOpen(false)
+              // 先关闭菜单再打开 Dialog，避免两个焦点陷阱同时激活导致栈溢出
+              window.setTimeout(() => setDetailOpen(true), 50)
+            }}
           >
             <Eye />
             查看详情
           </DropdownMenuItem>
           <DropdownMenuItem
-            onSelect={(event) => event.preventDefault()}
-            onClick={() => setAfterSaleOpen(true)}
+            onSelect={() => {
+              setMenuOpen(false)
+              // 先关闭菜单再打开 Dialog，避免两个焦点陷阱同时激活导致栈溢出
+              window.setTimeout(() => setAfterSaleOpen(true), 50)
+            }}
           >
             <Wrench />
             售后处理

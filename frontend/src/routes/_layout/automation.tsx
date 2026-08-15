@@ -4,6 +4,6 @@ export const Route = createFileRoute("/_layout/automation")({
   component: AutomationLayout,
 })
 
-export function AutomationLayout() {
+function AutomationLayout() {
   return <Outlet />
 }
