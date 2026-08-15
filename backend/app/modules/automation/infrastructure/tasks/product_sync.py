@@ -1,4 +1,4 @@
-"""商品相关定时任务"""
+"""自动化模块：商品状态同步 Celery 定时任务"""
 
 from celery import shared_task
 from sqlmodel import Session, select
@@ -7,7 +7,10 @@ from app.core.db import engine
 from app.modules.item.models import Item
 
 
-@shared_task(ignore_result=False)
+@shared_task(
+    ignore_result=False,
+    name="app.modules.automation.infrastructure.tasks.sync_product_status",
+)
 def sync_product_status() -> dict:
     """同步商品的状态
 
@@ -31,7 +34,7 @@ def sync_product_status() -> dict:
             items = session.exec(select(Item)).all()
             stats["total_checked"] = len(items)
 
-            for item in items:
+            for _item in items:
                 # TODO: 在这里添加具体的商品状态同步逻辑
                 # 例如：检查库存、过期时间、外部 API 同步等
                 pass

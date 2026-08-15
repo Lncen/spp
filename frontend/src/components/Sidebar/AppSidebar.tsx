@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query"
 import {
   Archive,
   Bell,
@@ -22,8 +23,12 @@ import {
   Workflow,
   Zap,
 } from "lucide-react"
+import { useState } from "react"
 
+import { NotificationsService } from "@/client"
 import { SidebarAppearance } from "@/components/Common/Appearance"
+import { MY_NOTIFICATIONS_UNREAD_QUERY_KEY } from "@/components/Notifications/constants"
+import { NotificationCenterDialog } from "@/components/Notifications/NotificationCenterDialog"
 import {
   Sidebar,
   SidebarContent,
@@ -103,18 +108,37 @@ const navGroups: ItemGroup[] = [
   },
 ]
 
-// 示例数据，替换为真实项目即可
-const projects: Project[] = [
-  { name: "设计工程", url: "#", icon: Frame },
-  { name: "销售与营销", url: "#", icon: PieChart },
-  { name: "旅行", url: "#", icon: MapIcon },
-]
+function getUnreadCountQueryOptions() {
+  return {
+    queryKey: MY_NOTIFICATIONS_UNREAD_QUERY_KEY,
+    queryFn: () => NotificationsService.readUnreadCount(),
+  }
+}
 
 export function AppSidebar() {
   const { user: currentUser } = useAuth()
   const isSuperuser = currentUser?.is_superuser ?? false
+  const [notificationOpen, setNotificationOpen] = useState(false)
+
+  const { data: unreadData } = useQuery({
+    ...getUnreadCountQueryOptions(),
+    enabled: Boolean(currentUser),
+  })
 
   const groups = isSuperuser ? navGroups : []
+
+  const projects: Project[] = [
+    {
+      name: "通知",
+      icon: Bell,
+      badge: unreadData?.unread_count,
+      onClick: () => setNotificationOpen(true),
+    },
+    // 示例数据，替换为真实项目即可
+    { name: "设计工程", url: "#", icon: Frame },
+    { name: "销售与营销", url: "#", icon: PieChart },
+    { name: "旅行", url: "#", icon: MapIcon },
+  ]
 
   return (
     <Sidebar collapsible="icon">
@@ -130,6 +154,10 @@ export function AppSidebar() {
         <User user={currentUser} />
       </SidebarFooter>
       <SidebarRail />
+      <NotificationCenterDialog
+        open={notificationOpen}
+        onOpenChange={setNotificationOpen}
+      />
     </Sidebar>
   )
 }

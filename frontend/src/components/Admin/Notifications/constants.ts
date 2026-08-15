@@ -5,6 +5,11 @@ export const CHANNEL_LABELS: Record<string, string> = {
   email: "邮件",
 }
 
+export const EVENT_TYPE_LABELS: Record<string, string> = {
+  broadcast: "群发",
+  manual: "手动通知",
+}
+
 export const DELIVERY_STATUS_LABELS: Record<string, string> = {
   pending: "待发送",
   sending: "发送中",

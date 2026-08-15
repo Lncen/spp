@@ -11,6 +11,9 @@ from dataclasses import dataclass
 from sqlmodel import Session, col, select
 
 from app.core.db import engine
+from app.modules.automation.infrastructure.tasks.notification_delivery import (
+    enqueue_delivery,
+)
 from app.modules.automation.models import AutomationEvent
 from app.modules.notification.domain.constants import RecipientRole
 from app.modules.notification.domain.rules import (
@@ -18,7 +21,6 @@ from app.modules.notification.domain.rules import (
     get_rules_for_event,
     render_notification_template,
 )
-from app.modules.notification.infrastructure.tasks import enqueue_delivery
 from app.modules.notification.models import NotificationDelivery
 from app.modules.notification.repositories.delivery import create_delivery
 from app.modules.notification.repositories.notification import create_notification
@@ -100,5 +102,9 @@ def _resolve_recipients(
         users = session.exec(
             select(User).where(col(User.is_superuser).is_(True))
         ).all()
-        return [Recipient(user_id=user.id, email=user.email) for user in users]
+        return [
+            Recipient(user_id=user.id, email=user.email)
+            for user in users
+            if user.id is not None
+        ]
     return []

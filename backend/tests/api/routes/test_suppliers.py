@@ -552,7 +552,7 @@ def test_create_upstream_products_sync_returns_task_id(
         return FakeTask()
 
     monkeypatch.setattr(
-        "app.modules.supplier.infrastructure.tasks.celery_app.send_task",
+        "app.modules.automation.infrastructure.tasks.supplier_sync.celery_app.send_task",
         fake_send_task,
     )
     response = client.post(

@@ -9,10 +9,14 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from app.core.config import settings
-from app.modules.automation.infrastructure.tasks import automation_task_scan
+from app.modules.automation.infrastructure.tasks import (
+    automation_task_scan,
+    cleanup_completed_orders,
+)
 from app.modules.level.models import UserLevel
 from app.modules.order.application.sync import sync_orders_status
-from app.modules.order.models import Order
+from app.modules.order.domain.constants import OrderStatus
+from app.modules.order.models import Order, OrderParam
 from app.modules.product.product.models import ProductSupplier
 from app.modules.supplier.infrastructure.clients.base import (
     SupplierClientError,
@@ -1803,7 +1807,7 @@ def test_admin_order_list_filters_by_user_and_includes_username(
     assert response_b.json() == {"data": [], "count": 0}
 
 
-def test_admin_order_list_filters_by_param_value(
+def test_admin_order_list_filters_by_keyword(
     client: TestClient,
     db: Session,
     superuser_token_headers: dict[str, str],
@@ -1826,9 +1830,10 @@ def test_admin_order_list_filters_by_param_value(
         json=_order_payload(product["id"], params={"account": value_b}),
     )
     assert second.status_code == 200
+    order_a = _first_order_result(first)
 
     response = client.get(
-        f"{settings.API_V1_STR}/orders/?param_value={value_a}",
+        f"{settings.API_V1_STR}/orders/?keyword={value_a}",
         headers=superuser_token_headers,
     )
     assert response.status_code == 200
@@ -1837,13 +1842,33 @@ def test_admin_order_list_filters_by_param_value(
     assert content["data"][0]["params"] == {"account": value_a}
 
     response_b = client.get(
-        f"{settings.API_V1_STR}/orders/?param_value={value_b}",
+        f"{settings.API_V1_STR}/orders/?keyword={value_b}",
         headers=superuser_token_headers,
     )
     assert response_b.status_code == 200
     content_b = response_b.json()
     assert content_b["count"] == 1
     assert content_b["data"][0]["params"] == {"account": value_b}
+
+    # 按订单号精确匹配
+    response_no = client.get(
+        f"{settings.API_V1_STR}/orders/?keyword={order_a['order_no']}",
+        headers=superuser_token_headers,
+    )
+    assert response_no.status_code == 200
+    content_no = response_no.json()
+    assert content_no["count"] == 1
+    assert content_no["data"][0]["id"] == order_a["id"]
+
+    # 按订单 ID 精确匹配
+    response_id = client.get(
+        f"{settings.API_V1_STR}/orders/?keyword={order_a['id']}",
+        headers=superuser_token_headers,
+    )
+    assert response_id.status_code == 200
+    content_id = response_id.json()
+    assert content_id["count"] == 1
+    assert content_id["data"][0]["id"] == order_a["id"]
 
 
 def test_admin_create_order_syncs_order_params_for_query(
@@ -1872,7 +1897,7 @@ def test_admin_create_order_syncs_order_params_for_query(
     assert response.json()["success_count"] == 1
 
     query = client.get(
-        f"{settings.API_V1_STR}/orders/?param_value={value}",
+        f"{settings.API_V1_STR}/orders/?keyword={value}",
         headers=superuser_token_headers,
     )
     assert query.status_code == 200
@@ -1914,3 +1939,76 @@ def test_admin_order_detail_includes_username(
     )
     assert cancel.status_code == 200
     assert cancel.json()["username"] == user.username
+
+
+def test_cleanup_completed_orders_purges_terminal_orders(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    """定期清理只删除超过保留期的终态订单，保留钱包流水与非终态/未过期订单"""
+    from datetime import UTC, datetime, timedelta
+
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product = _create_ready_product(
+        client, superuser_token_headers, price_mode="fixed"
+    )
+
+    order_index = 0
+
+    def _create_order() -> Order:
+        nonlocal order_index
+        order_index += 1
+        resp = client.post(
+            f"{settings.API_V1_STR}/orders/",
+            headers=headers,
+            json=_order_payload(
+                product["id"],
+                params={"account": f"cleanup-{order_index}"},
+            ),
+        )
+        assert resp.status_code == 200
+        return db.get(Order, uuid.UUID(_first_order_result(resp)["id"]))
+
+    now = datetime.now(UTC)
+    old = _create_order()
+    old.status = OrderStatus.COMPLETED
+    old.updated_at = now - timedelta(days=30)
+    refunded = _create_order()
+    refunded.status = OrderStatus.REFUNDED
+    refunded.updated_at = now - timedelta(days=30)
+    recent = _create_order()
+    recent.status = OrderStatus.COMPLETED
+    recent.updated_at = now
+    active = _create_order()
+    active.status = OrderStatus.PROCESSING
+    active.updated_at = now - timedelta(days=30)
+    old_id, refunded_id, recent_id, active_id = (
+        old.id,
+        refunded.id,
+        recent.id,
+        active.id,
+    )
+    db.add_all([old, refunded, recent, active])
+    db.commit()
+
+    stats = cleanup_completed_orders()
+    assert stats["errors"] == []
+    assert stats["purged"] == 2
+    for order_id in (old_id, refunded_id):
+        assert db.exec(
+            select(Order.id).where(Order.id == order_id)
+        ).first() is None
+    for order_id in (recent_id, active_id):
+        assert db.exec(
+            select(Order.id).where(Order.id == order_id)
+        ).first() is not None
+    # 订单参数随订单物理删除
+    for order_id in (old_id, refunded_id):
+        remaining = db.exec(
+            select(OrderParam).where(OrderParam.order_id == order_id)
+        ).all()
+        assert remaining == []
+    # 钱包流水保留（4 张订单对应 4 笔消费）
+    assert len(_order_transactions(client, headers)) == 4

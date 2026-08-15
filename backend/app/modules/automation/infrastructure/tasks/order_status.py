@@ -12,7 +12,7 @@ from app.modules.product.constants import RedeemType
 
 @shared_task(
     ignore_result=False,
-    name="app.modules.order.tasks.sync_order_status_periodic",
+    name="app.modules.automation.infrastructure.tasks.sync_order_status_periodic",
 )
 def sync_order_status_periodic() -> dict:
     """定时批量同步上游订单状态（仅处理可同步状态的 API 履约订单）"""

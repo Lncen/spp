@@ -8,16 +8,17 @@ from app.core.celery_app import celery_app, discover_tasks
 from app.modules.automation.schemas import TaskOption, TaskStatusPublic
 
 TASK_LABELS: dict[str, str] = {
-    "app.tasks.cleanup.cleanup_expired_data": "清理过期数据",
-    (
-        "app.modules.automation.infrastructure.tasks."
-        "cleanup_automation_task_archives"
-    ): "清理自动化任务归档数据",
-    "app.modules.order.tasks.sync_order_status_periodic": "同步订单状态",
-    "app.modules.product.tasks.sync_product_status": "同步商品状态",
-    "app.modules.supplier.tasks.sync_upstream_products": "同步供应商商品",
-    "app.modules.automation.infrastructure.tasks.automation_task_scan": "任务池扫描",
-    "app.modules.auth.tasks.cleanup_expired_refresh_tokens": "清理过期刷新令牌",
+    "app.modules.automation.infrastructure.tasks.cleanup_expired_data": "celery_清理过期数据",
+    "app.modules.automation.infrastructure.tasks.cleanup_automation_task_archives" : "自动化_清理自动化任务归档数据",
+    "app.modules.automation.infrastructure.tasks.automation_task_scan": "自动化_任务池扫描",
+    "app.modules.automation.infrastructure.tasks.sync_order_status_periodic": "订单_同步订单状态",
+    "app.modules.automation.infrastructure.tasks.sync_product_status": "商品_同步商品状态",
+    "app.modules.automation.infrastructure.tasks.sync_upstream_products": "供应商_同步供应商商品",
+    "app.modules.automation.infrastructure.tasks.cleanup_expired_refresh_tokens": "用户_清理过期刷新令牌",
+    "app.modules.automation.infrastructure.tasks.cleanup_completed_orders": "订单_清理已完成订单",
+    "app.modules.automation.infrastructure.tasks.cleanup_wallet_transactions": "钱包_清理历史流水",
+    "app.modules.automation.infrastructure.tasks.requeue_stale_notification_deliveries": "通知_投递兜底扫描",
+    "app.modules.automation.infrastructure.tasks.cleanup_notification_records": "通知_清理通知记录",
 }
 
 

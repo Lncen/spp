@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from sqlmodel import SQLModel
 
 
@@ -75,5 +75,21 @@ class NotificationSendRequest(SQLModel):
     title: str = Field(min_length=1, max_length=255)
     content: str = Field(default="", max_length=2000)
     event_type: str = Field(default="manual", min_length=1, max_length=64)
-    user_ids: list[uuid.UUID] = Field(min_length=1, title="接收用户 ID 列表")
+    user_ids: list[uuid.UUID] = Field(
+        default_factory=list,
+        title="接收用户 ID 列表",
+        description="broadcast=false 时必填，至少一个",
+    )
     channels: list[str] = Field(min_length=1, title="投递渠道列表")
+    broadcast: bool = Field(
+        default=False,
+        title="群发",
+        description="为 true 时发送给全部启用用户，忽略 user_ids",
+    )
+
+    @model_validator(mode="after")
+    def _check_recipients(self) -> NotificationSendRequest:
+        """非群发时必须指定至少一个接收用户"""
+        if not self.broadcast and not self.user_ids:
+            raise ValueError("user_ids 至少需要一个接收用户")
+        return self

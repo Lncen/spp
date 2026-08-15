@@ -10,6 +10,7 @@
 - **交易流水**：充值 / 消费 / 退款 / 调账均写入 `WalletTransaction`，保留变动前后余额与操作人；
 - **原子扣款**：余额变更使用带条件的 `UPDATE`（`balance + amount >= 0`），避免并发超扣；
 - **关联主体**：订单模块通过 `get_wallet_by_user_id` / `adjust_balance` 完成下单扣款与退款入账。
+- **流水定期清理**：`WalletTransaction` 按全局设置 `wallet_transaction_retention_days`（默认 7 天）保留，超过保留期的流水由自动化模块定时任务物理删除（`cleanup_wallet_transactions`，每天 04:30），仅清理流水、不影响 `Wallet` 余额表。
 
 ## 二、目录结构
 
@@ -68,10 +69,13 @@ backend/app/modules/wallet/
 2. **事务边界**：repositories 只执行原子更新与 `flush`，由 application 统一 `commit` + `refresh`；`adjust_balance` 保留 `commit` 参数供订单流程嵌套使用（`commit=False`）。
 3. **原子扣款**：余额变更通过带条件的 `UPDATE` 完成（`balance + amount >= 0`），余额不足时回滚并返回 400，避免并发超扣。
 4. **依赖方向**：api → application → repositories / domain，禁止反向依赖。
+5. **流水保留期可配置**：保留天数由全局设置 `wallet_transaction_retention_days` 控制（`PUT /settings/wallet_transaction_retention_days`，默认 7 天，非法值回退默认），定时任务位于 `automation` 模块 `infrastructure/tasks/wallet_cleanup.py`，分批物理删除超过保留期的流水。
 
 ## 六、重构记录
 
 2026-08-11：由扁平结构（`api.py` / `models.py` / `schemas.py` / `service.py`）按 DDD Lite 约定拆分至当前分层，并新增管理端单钱包查询与钱包流水分页接口，原接口行为不变。
+
+2026-08-15：新增钱包流水定期清理：`repositories/wallet.py` 增加 `purge_old_transactions` 分批物理删除，定时任务与调度注册在 `automation` 模块，保留天数由设置模块 `wallet_transaction_retention_days` 控制（默认 7 天）。
 
 | 原文件 | 迁移目标 |
 | --- | --- |

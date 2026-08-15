@@ -1,4 +1,4 @@
-"""通知中心：Celery 异步投递任务"""
+"""自动化模块：通知中心 Celery 异步投递与兜底扫描任务"""
 
 import logging
 import uuid
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 @shared_task(  # type: ignore[untyped-decorator]
     bind=True,
     ignore_result=True,
-    name="app.modules.notification.infrastructure.tasks.deliver_notification",
+    name="app.modules.automation.infrastructure.tasks.deliver_notification",
     # Celery 层重试上限与投递记录默认最大尝试次数对齐（首次执行不算重试）；
     # 实际重试次数以投递记录 max_attempts 状态机为准
     max_retries=DEFAULT_MAX_ATTEMPTS - 1,
@@ -102,7 +102,10 @@ def enqueue_delivery(delivery_id: str) -> bool:
 
 @shared_task(  # type: ignore[untyped-decorator]
     ignore_result=True,
-    name="app.modules.notification.infrastructure.tasks.requeue_stale_notification_deliveries",
+    name=(
+        "app.modules.automation.infrastructure.tasks."
+        "requeue_stale_notification_deliveries"
+    ),
 )
 def requeue_stale_notification_deliveries() -> int:
     """兜底扫描：恢复超时未推进的投递记录并重新入队，防止消息丢失导致永不发送"""

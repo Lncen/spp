@@ -1,10 +1,11 @@
 """钱包模块：数据访问层"""
 
 import uuid
+from datetime import datetime
 from decimal import Decimal
 
 from fastapi import HTTPException
-from sqlmodel import Session, col, func, select, update
+from sqlmodel import Session, col, delete, func, select, update
 
 from app.modules.wallet.models import Wallet, WalletTransaction
 
@@ -74,6 +75,29 @@ def list_wallet_transactions(
         .limit(limit)
     )
     return list(session.exec(statement).all())
+
+
+def purge_old_transactions(
+    *, session: Session, before: datetime, limit: int
+) -> int:
+    """物理删除创建时间早于 before 的钱包流水，返回删除条数。
+
+    仅清理 WalletTransaction 流水数据，不影响 Wallet 余额表；
+    分批由调用方控制，避免长事务。
+    """
+    ids = session.exec(
+        select(WalletTransaction.id)
+        .where(col(WalletTransaction.created_at) < before)
+        .order_by(col(WalletTransaction.created_at).asc())
+        .limit(limit)
+    ).all()
+    if not ids:
+        return 0
+    session.exec(
+        delete(WalletTransaction).where(WalletTransaction.id.in_(ids))
+    )
+    session.commit()
+    return len(ids)
 
 
 def apply_balance_change(

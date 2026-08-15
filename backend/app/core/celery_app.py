@@ -36,11 +36,17 @@ celery_app.set_default()
 
 def discover_tasks() -> None:
     """自动发现任务模块（确保模块被导入，Celery 能注册到任务表中）"""
-    import app.modules.auth.tasks  # noqa: F401
     import app.modules.automation.infrastructure.event_listeners  # noqa: F401
     import app.modules.automation.infrastructure.tasks  # noqa: F401
+    import app.modules.automation.infrastructure.tasks.auth_cleanup  # noqa: F401
+    import app.modules.automation.infrastructure.tasks.cleanup  # noqa: F401
     import app.modules.automation.infrastructure.tasks.expired_data  # noqa: F401
+    import app.modules.automation.infrastructure.tasks.notification_cleanup  # noqa: F401
+    import app.modules.automation.infrastructure.tasks.notification_delivery  # noqa: F401
+    import app.modules.automation.infrastructure.tasks.order_cleanup  # noqa: F401
+    import app.modules.automation.infrastructure.tasks.order_status  # noqa: F401
+    import app.modules.automation.infrastructure.tasks.product_sync  # noqa: F401
+    import app.modules.automation.infrastructure.tasks.scan  # noqa: F401
+    import app.modules.automation.infrastructure.tasks.supplier_sync  # noqa: F401
+    import app.modules.automation.infrastructure.tasks.wallet_cleanup  # noqa: F401
     import app.modules.notification.infrastructure.event_listeners  # noqa: F401
-    import app.modules.notification.infrastructure.tasks  # noqa: F401
-    import app.modules.product.tasks  # noqa: F401
-    import app.modules.supplier.infrastructure.tasks  # noqa: F401

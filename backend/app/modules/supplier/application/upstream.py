@@ -6,10 +6,10 @@ from typing import Any
 from fastapi import HTTPException
 from sqlmodel import Session
 
-from app.modules.supplier.infrastructure.clients.base import supplier_client
-from app.modules.supplier.infrastructure.tasks import (
+from app.modules.automation.infrastructure.tasks.supplier_sync import (
     dispatch_upstream_products_sync,
 )
+from app.modules.supplier.infrastructure.clients.base import supplier_client
 from app.modules.supplier.repositories.supplier import (
     get_supplier_or_404,
     list_synced_sku_map,

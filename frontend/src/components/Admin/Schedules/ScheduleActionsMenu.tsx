@@ -8,7 +8,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import DeleteSchedule from "./DeleteSchedule"
 import EditSchedule from "./EditSchedule"
 import RunSchedule from "./RunSchedule"
 import ToggleSchedule from "./ToggleSchedule"
@@ -31,11 +30,6 @@ export const ScheduleActionsMenu = ({ schedule }: ScheduleActionsMenuProps) => {
         <EditSchedule schedule={schedule} onSuccess={() => setOpen(false)} />
         <ToggleSchedule schedule={schedule} onSuccess={() => setOpen(false)} />
         <RunSchedule schedule={schedule} />
-        <DeleteSchedule
-          id={schedule.id}
-          name={schedule.name}
-          onSuccess={() => setOpen(false)}
-        />
       </DropdownMenuContent>
     </DropdownMenu>
   )

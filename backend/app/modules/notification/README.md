@@ -134,7 +134,13 @@ class DingTalkChannel(BaseChannel):
 
 将当前用户全部未读通知标记为已读，响应 `Message`：`message`（返回已标记条数文案）。
 
-### 5. 管理端：查询通知记录
+### 5. 删除我的通知
+
+`DELETE /notifications/{notification_id}`
+
+删除当前登录用户自己的通知记录（级联删除其全部投递记录），不存在或非本人时返回 404。响应 `Message`：`message`。
+
+### 6. 管理端：查询通知记录
 
 `GET /notifications/admin`（超管）
 
@@ -145,10 +151,12 @@ class DingTalkChannel(BaseChannel):
 | `event_type` | str \| null | null | 按事件类型筛选 |
 | `channel` | str \| null | null | 按渠道筛选（`in_app` / `email`） |
 | `status` | str \| null | null | 按投递状态筛选 |
+| `keyword` | str \| null | null | 按标题 / 内容模糊搜索 |
+| `recipient` | str \| null | null | 按接收人模糊搜索（用户全名 / 用户名 / 邮箱，含无用户记录的 `email_to`） |
 
 响应 `NotificationsAdminPublic`：`data`（一行一条投递记录 `NotificationAdminItem`，含所属通知信息与接收人展示名）、`count`（当前筛选条件下总数）。
 
-### 6. 管理端：手动发送通知
+### 7. 管理端：手动发送通知
 
 `POST /notifications/admin`（超管）
 
@@ -159,20 +167,21 @@ class DingTalkChannel(BaseChannel):
 | `title` | str | 通知标题（必填） |
 | `content` | str | 通知内容 |
 | `event_type` | str | 事件类型，默认 `manual` |
-| `user_ids` | list[uuid] | 接收用户 ID 列表（必填） |
+| `user_ids` | list[uuid] | 接收用户 ID 列表（非群发时必填，至少一个） |
 | `channels` | list[str] | 投递渠道列表（必填，`in_app` / `email`） |
+| `broadcast` | bool | 群发标志，默认 `false`；为 `true` 时发送给全部启用用户并忽略 `user_ids` |
 
-为每个接收人生成 `Notification` 与对应渠道的 `NotificationDelivery`，通过 Celery 异步投递；邮件渠道使用 `notification_manual.html` 模板。响应 `Message`（返回创建的投递条数）。
+为每个接收人生成 `Notification` 与对应渠道的 `NotificationDelivery`，通过 Celery 异步投递；群发（`broadcast=true`）时按「每人一条记录」向全部启用用户写库，已读/删除/未读天然按用户隔离；邮件渠道使用 `notification_manual.html` 模板。响应 `Message`（返回创建的投递条数）。
 
-`user_ids` 中存在不存在的用户时返回 400，避免静默跳过。
+非群发时 `user_ids` 中存在不存在的用户返回 400，避免静默跳过；群发时没有启用用户返回 400。
 
-### 7. 管理端：重试失败投递
+### 8. 管理端：重试失败投递
 
 `POST /notifications/admin/deliveries/{delivery_id}/retry`（超管）
 
 仅 `failed` 状态的投递可重试：重置为 `pending`、清空错误信息并重新入队。响应 `DeliveryPublic`。
 
-### 8. 管理端：删除通知记录
+### 9. 管理端：删除通知记录
 
 `DELETE /notifications/admin/{notification_id}`（超管）
 
@@ -194,6 +203,7 @@ class DingTalkChannel(BaseChannel):
 
 - `notifications`：通知实例（接收人、标题、内容、事件载荷快照、已读时间）；
 - `notification_deliveries`：渠道投递记录（状态机 `pending -> sending -> sent / failed / canceled`，失败自动重试，`attempt_count >= max_attempts` 进入 `failed` 终态）。投递任务以条件更新幂等认领，防止重复发送；超过 `NOTIFICATION_STALE_MINUTES`（默认 30 分钟）仍停留在 `pending`/`sending` 的投递由兜底任务恢复为 `pending` 并重新入队。
+- **数据清理**：通知记录默认保留 30 天，保留天数由全局设置 `notification_retention_days`（管理端「全局设置」页可改，最小 1 天）控制；beat 每天凌晨 03:30 执行 `cleanup_notification_records`，按批次（每批 500 条）物理删除超期通知及其全部投递记录，避免长事务。
 
 ## 六、当前内置规则
 
@@ -202,3 +212,14 @@ class DingTalkChannel(BaseChannel):
 | `order_fulfillment_failed` | `order.fulfillment_failed`（订单履约异常） | 超管 | in_app + email | `notification_order_failed.html` |
 
 手动发送通知（管理端）使用通用邮件模板 `notification_manual.html`（`{{ project_name }}` / `{{ title }}` / `{{ content }}`）。
+
+## 七、前端入口
+
+- **用户侧通知弹窗**：`frontend/src/components/Notifications/NotificationCenterDialog.tsx`
+  - 布局：顶部标题行（通知 + 全部/未读 计数标签 + 全部已读）+ 左右分栏（左：通知列表，右：通知信息详情），整体为 Dialog 弹窗；
+  - 入口位于侧边栏「项目 → 通知」（`AppSidebar.tsx` 挂载），点击打开弹窗；
+  - 左侧列表**懒加载**：每页 20 条（`skip`/`limit` 分页），滚动到底部自动加载下一页；顶部计数用轻量请求（`limit=1`）获取，未读视图带 `unread_only=true`；点击单条自动标记已读并查看详情，支持「全部已读」；
+  - 「通知信息」面板提供**删除**按钮（`DELETE /notifications/{id}`，AlertDialog 二次确认），删除后同步更新列表与计数缓存；
+  - 侧边栏「通知」项显示未读数角标（`GET /notifications/unread-count`，仅在弹窗关闭时刷新，避免频繁请求）。
+- **管理端通知记录**：`frontend/src/components/Admin/Notifications/`，路由 `/notifications`（仅超管，含群发通知、失败重试、投递详情）；
+- **用户表发送通知**：`frontend/src/components/Admin/Users/` 用户行内操作菜单「发送通知」，向指定单个用户发送（事件类型下拉不含群发）。

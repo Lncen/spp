@@ -6,12 +6,14 @@ from typing import Any
 from fastapi import HTTPException
 from sqlmodel import Session, col, select
 
+from app.modules.automation.infrastructure.tasks.notification_delivery import (
+    enqueue_delivery,
+)
 from app.modules.notification.domain.constants import (
     MANUAL_EMAIL_TEMPLATE,
     ChannelType,
     DeliveryStatus,
 )
-from app.modules.notification.infrastructure.tasks import enqueue_delivery
 from app.modules.notification.models import NotificationDelivery
 from app.modules.notification.repositories.delivery import (
     create_delivery,
@@ -48,6 +50,8 @@ def list_admin_notifications(
     event_type: str | None,
     channel: str | None,
     status: str | None,
+    keyword: str | None,
+    recipient: str | None,
 ) -> NotificationsAdminPublic:
     """管理端分页查询通知记录（一行一条投递），返回接收人展示名"""
     deliveries = list_admin_deliveries(
@@ -57,12 +61,16 @@ def list_admin_notifications(
         event_type=event_type,
         channel=channel,
         status=status,
+        keyword=keyword,
+        recipient=recipient,
     )
     count = count_admin_deliveries(
         session=session,
         event_type=event_type,
         channel=channel,
         status=status,
+        keyword=keyword,
+        recipient=recipient,
     )
     if not deliveries:
         return NotificationsAdminPublic(data=[], count=0)
@@ -122,9 +130,11 @@ def send_manual_notification(
     event_type: str,
     user_ids: list[uuid.UUID],
     channels: list[str],
+    broadcast: bool = False,
 ) -> tuple[int, int]:
     """手动发送通知：为每个接收人生成通知与投递记录，异步投递。
 
+    broadcast=True 时接收人为全部启用用户（忽略 user_ids）；
     返回 (创建的投递条数, 成功入队条数)；入队失败不抛异常，
     未入队的记录保持 pending 由兜底扫描任务补投。
     """
@@ -134,17 +144,29 @@ def send_manual_notification(
             status_code=400,
             detail=f"不支持的投递渠道: {', '.join(sorted(invalid_channels))}",
         )
-    users = session.exec(
-        select(User).where(col(User.id).in_(user_ids))
-    ).all()
-    if not users:
-        raise HTTPException(status_code=400, detail="未找到有效的接收用户")
-    missing_ids = set(user_ids) - {user.id for user in users if user.id is not None}
-    if missing_ids:
-        raise HTTPException(
-            status_code=400,
-            detail=f"以下用户不存在: {', '.join(str(uid) for uid in sorted(missing_ids))}",
-        )
+    if broadcast:
+        users = session.exec(
+            select(User).where(col(User.is_active).is_(True))
+        ).all()
+        if not users:
+            raise HTTPException(status_code=400, detail="当前没有可接收的启用用户")
+    else:
+        users = session.exec(
+            select(User).where(col(User.id).in_(user_ids))
+        ).all()
+        if not users:
+            raise HTTPException(status_code=400, detail="未找到有效的接收用户")
+        missing_ids = set(user_ids) - {
+            user.id for user in users if user.id is not None
+        }
+        if missing_ids:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"以下用户不存在: "
+                    f"{', '.join(str(uid) for uid in sorted(missing_ids))}"
+                ),
+            )
 
     payload: dict[str, Any] = {"title": title, "content": content}
     pending_deliveries: list[NotificationDelivery] = []

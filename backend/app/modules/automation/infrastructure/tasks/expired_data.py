@@ -12,7 +12,7 @@ from app.core.db import engine
 
 @shared_task(
     ignore_result=False,
-    name="app.tasks.cleanup.cleanup_expired_data",
+    name="app.modules.automation.infrastructure.tasks.cleanup_expired_data",
 )
 def cleanup_expired_data() -> dict:
     """清理过期数据

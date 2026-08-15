@@ -1970,8 +1970,8 @@ export const NotificationSendRequestSchema = {
                 format: 'uuid'
             },
             type: 'array',
-            minItems: 1,
-            title: '接收用户 ID 列表'
+            title: '接收用户 ID 列表',
+            description: 'broadcast=false 时必填，至少一个'
         },
         channels: {
             items: {
@@ -1980,10 +1980,16 @@ export const NotificationSendRequestSchema = {
             type: 'array',
             minItems: 1,
             title: '投递渠道列表'
+        },
+        broadcast: {
+            type: 'boolean',
+            title: '群发',
+            description: '为 true 时发送给全部启用用户，忽略 user_ids',
+            default: false
         }
     },
     type: 'object',
-    required: ['title', 'user_ids', 'channels'],
+    required: ['title', 'channels'],
     title: 'NotificationSendRequest',
     description: '管理端：手动发送通知请求'
 } as const;
@@ -4671,82 +4677,6 @@ export const RunTaskPublicSchema = {
     description: '立即执行任务响应'
 } as const;
 
-export const ScheduleCreateSchema = {
-    properties: {
-        name: {
-            type: 'string',
-            maxLength: 255,
-            title: '计划名称',
-            description: '唯一标识，beat 启动时会按名称同步'
-        },
-        task: {
-            type: 'string',
-            maxLength: 255,
-            title: '任务名称',
-            description: 'Celery 任务完整路径'
-        },
-        schedule_type: {
-            '$ref': '#/components/schemas/ScheduleType',
-            title: '调度类型'
-        },
-        crontab: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/CrontabScheduleIn'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'crontab 配置',
-            description: 'schedule_type=crontab 时必填'
-        },
-        interval: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/IntervalScheduleIn'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'interval 配置',
-            description: 'schedule_type=interval 时必填'
-        },
-        args: {
-            items: {},
-            type: 'array',
-            title: '位置参数'
-        },
-        kwargs: {
-            additionalProperties: true,
-            type: 'object',
-            title: '关键字参数'
-        },
-        enabled: {
-            type: 'boolean',
-            title: '是否启用',
-            default: true
-        },
-        description: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 1024
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: '描述'
-        }
-    },
-    type: 'object',
-    required: ['name', 'task', 'schedule_type'],
-    title: 'ScheduleCreate',
-    description: '创建计划任务请求'
-} as const;
-
 export const SchedulePublicSchema = {
     properties: {
         id: {
@@ -5049,7 +4979,7 @@ export const SettingReadSchema = {
 
 export const SettingTypeSchema = {
     type: 'string',
-    enum: ['system', 'auth', 'automation', 'image', 'item', 'level', 'order', 'price_template', 'product', 'setting', 'supplier', 'user', 'wallet', 'other'],
+    enum: ['system', 'auth', 'automation', 'image', 'item', 'level', 'notification', 'order', 'price_template', 'product', 'setting', 'supplier', 'user', 'wallet', 'other'],
     title: 'SettingType',
     description: '设置类型：值对应模块名，便于识别设置归属'
 } as const;

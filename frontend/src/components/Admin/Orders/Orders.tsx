@@ -47,7 +47,7 @@ function getOrdersQueryOptions(
         limit: pagination.pageSize,
         status,
         userId: userId ?? null,
-        paramValue: search || undefined,
+        keyword: search || undefined,
       }),
     queryKey: ["orders", userId ?? null, status, search, pagination],
   }
@@ -129,7 +129,7 @@ export function Orders({ userId }: { userId: string | undefined }) {
         <div>
           <h2 className="text-xl font-bold tracking-tight">订单管理</h2>
           <p className="text-muted-foreground">
-            查询全部订单，支持按用户、状态和下单参数搜索
+            查询全部订单，支持按用户、状态和关键字搜索
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -141,7 +141,7 @@ export function Orders({ userId }: { userId: string | undefined }) {
                 setSearchInput(event.target.value)
                 setPagination((current) => ({ ...current, pageIndex: 0 }))
               }}
-              placeholder="搜索下单参数（账号/手机号等）"
+              placeholder="搜索订单 ID / 订单号 / 下单参数"
               className="w-52 pl-9"
             />
           </div>

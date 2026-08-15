@@ -1,10 +1,11 @@
 """订单模块：数据访问层"""
 
 import uuid
+from datetime import datetime
 from typing import Any
 
 from fastapi import HTTPException
-from sqlmodel import Session, col, delete, func, select
+from sqlmodel import Session, col, delete, func, or_, select
 
 from app.modules.order.domain.constants import (
     ACTIVE_ORDER_STATUSES,
@@ -55,22 +56,33 @@ def list_orders(
     limit: int,
     status: OrderStatus | None = None,
     user_id: uuid.UUID | None = None,
-    param_value: str | None = None,
+    keyword: str | None = None,
 ) -> tuple[list[Order], int]:
-    """分页查询全部订单，可按状态与用户过滤"""
+    """分页查询全部订单，可按状态、用户与关键字过滤
+
+    keyword 精确匹配订单 ID、订单号或下单参数值。
+    """
     conditions = []
     if status is not None:
         conditions.append(Order.status == status)
     if user_id is not None:
         conditions.append(Order.user_id == user_id)
-    if param_value is not None:
-        conditions.append(
+    if keyword:
+        keyword_conditions = [
+            Order.order_no == keyword,
             Order.id.in_(
                 select(OrderParam.order_id).where(
-                    OrderParam.value == param_value
+                    OrderParam.value == keyword
                 )
-            )
-        )
+            ),
+        ]
+        try:
+            order_id = uuid.UUID(keyword)
+        except ValueError:
+            pass
+        else:
+            keyword_conditions.append(Order.id == order_id)
+        conditions.append(or_(*keyword_conditions))
     count = session.exec(
         select(func.count()).select_from(Order).where(*conditions)
     ).one()
@@ -198,3 +210,37 @@ def sync_order_params(*, session: Session, db_order: Order) -> None:
         for key, value in (db_order.params or {}).items()
     ]
     session.add_all(rows)
+
+
+def purge_completed_orders(
+    *,
+    session: Session,
+    before: datetime,
+    limit: int,
+) -> int:
+    """物理删除终态订单（已完成/已退单/已退款）中最后更新早于 before 的订单。
+
+    连同订单参数一并删除，返回删除订单条数；钱包流水不在删除范围。
+    显式先删 order_params 再删 orders（不依赖数据库级联配置），分批由调用方控制。
+    """
+    ids = session.exec(
+        select(Order.id)
+        .where(
+            Order.status.in_(
+                (
+                    OrderStatus.COMPLETED,
+                    OrderStatus.CANCELED,
+                    OrderStatus.REFUNDED,
+                )
+            ),
+            col(Order.updated_at) < before,
+        )
+        .order_by(col(Order.updated_at).asc())
+        .limit(limit)
+    ).all()
+    if not ids:
+        return 0
+    session.exec(delete(OrderParam).where(OrderParam.order_id.in_(ids)))
+    session.exec(delete(Order).where(Order.id.in_(ids)))
+    session.commit()
+    return len(ids)

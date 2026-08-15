@@ -586,8 +586,15 @@ export type NotificationSendRequest = {
     title: string;
     content?: string;
     event_type?: string;
-    user_ids: Array<(string)>;
+    /**
+     * broadcast=false 时必填，至少一个
+     */
+    user_ids?: Array<(string)>;
     channels: Array<(string)>;
+    /**
+     * 为 true 时发送给全部启用用户，忽略 user_ids
+     */
+    broadcast?: boolean;
 };
 
 /**
@@ -1269,35 +1276,6 @@ export type RunTaskPublic = {
 };
 
 /**
- * 创建计划任务请求
- */
-export type ScheduleCreate = {
-    /**
-     * 唯一标识，beat 启动时会按名称同步
-     */
-    name: string;
-    /**
-     * Celery 任务完整路径
-     */
-    task: string;
-    schedule_type: ScheduleType;
-    /**
-     * schedule_type=crontab 时必填
-     */
-    crontab?: (CrontabScheduleIn | null);
-    /**
-     * schedule_type=interval 时必填
-     */
-    interval?: (IntervalScheduleIn | null);
-    args?: Array<unknown>;
-    kwargs?: {
-        [key: string]: unknown;
-    };
-    enabled?: boolean;
-    description?: (string | null);
-};
-
-/**
  * 计划任务公开响应
  */
 export type SchedulePublic = {
@@ -1374,7 +1352,7 @@ export type SettingsRead = {
 /**
  * 设置类型：值对应模块名，便于识别设置归属
  */
-export type SettingType = 'system' | 'auth' | 'automation' | 'image' | 'item' | 'level' | 'order' | 'price_template' | 'product' | 'setting' | 'supplier' | 'user' | 'wallet' | 'other';
+export type SettingType = 'system' | 'auth' | 'automation' | 'image' | 'item' | 'level' | 'notification' | 'order' | 'price_template' | 'product' | 'setting' | 'supplier' | 'user' | 'wallet' | 'other';
 
 /**
  * 更新设置请求
@@ -2132,10 +2110,18 @@ export type NotificationsMarkReadResponse = (NotificationPublic);
 
 export type NotificationsMarkAllReadResponse = (Message);
 
+export type NotificationsDeleteMyNotificationEndpointData = {
+    notificationId: string;
+};
+
+export type NotificationsDeleteMyNotificationEndpointResponse = (Message);
+
 export type NotificationsReadAdminNotificationsData = {
     channel?: (string | null);
     eventType?: (string | null);
+    keyword?: (string | null);
     limit?: number;
+    recipient?: (string | null);
     skip?: number;
     status?: (string | null);
 };
@@ -2167,8 +2153,8 @@ export type OrdersCreateUserOrdersData = {
 export type OrdersCreateUserOrdersResponse = (AdminOrdersPublic);
 
 export type OrdersReadOrdersData = {
+    keyword?: (string | null);
     limit?: number;
-    paramValue?: (string | null);
     skip?: number;
     status?: (OrderStatus | null);
     userId?: (string | null);
@@ -2362,12 +2348,6 @@ export type SchedulesReadSchedulesData = {
 
 export type SchedulesReadSchedulesResponse = (SchedulesPublic);
 
-export type SchedulesCreateScheduleData = {
-    requestBody: ScheduleCreate;
-};
-
-export type SchedulesCreateScheduleResponse = (SchedulePublic);
-
 export type SchedulesReadTaskOptionsResponse = (TaskOptionsPublic);
 
 export type SchedulesReadScheduleData = {
@@ -2382,12 +2362,6 @@ export type SchedulesUpdateScheduleData = {
 };
 
 export type SchedulesUpdateScheduleResponse = (SchedulePublic);
-
-export type SchedulesDeleteScheduleData = {
-    id: number;
-};
-
-export type SchedulesDeleteScheduleResponse = (Message);
 
 export type SchedulesToggleScheduleData = {
     id: number;

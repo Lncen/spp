@@ -10,6 +10,10 @@
 - **自动化任务池**：`AutomationTask` 持久化业务任务，由 worker 扫描认领并交给 Executor 执行，失败自动重试；
 - **任务归档**：终态任务（成功 / 失败 / 取消）完成即移入 `AutomationTaskArchive` 归档表，任务池只保留待执行与执行中任务；
 - **定期清理**：归档与事件数据按全局设置 `automation_task_retention_days`（默认 3 天）保留，到期由定时任务同步物理删除；
+  已完成订单数据按 `order_retention_days`（默认 7 天）保留，由 `cleanup_completed_orders` 每天清理；
+  钱包流水数据按 `wallet_transaction_retention_days`（默认 7 天）保留，由 `cleanup_wallet_transactions` 每天清理；
+- **任务统一收敛**：全项目 Celery 任务统一放在 `infrastructure/tasks/`，任务名统一为 `app.modules.automation.infrastructure.tasks.*`；
+  `beat_schedule.py` 初始调度、`infrastructure/celery.py` 的 TASK_LABELS 与 `app/core/celery_app.py` 的任务发现同步维护；
 - **事件驱动**：业务模块通过 `app/core/event_bus.py` 发布事件 → 落库 `AutomationEvent` → 按启用的 `AutomationRule` 生成自动化任务。
 
 核心链路：
@@ -144,38 +148,10 @@ Authorization: Bearer <superuser-token>
 
 ### 5. 创建计划任务（周期调度 Celery 任务）
 
-任务池扫描已在 `app/tasks/__init__.py` 的 beat 初始任务中默认注册（每 3 分钟一次），一般无需自建。其余周期业务可用数据库调度：
+计划任务由 `automation/infrastructure/beat_schedule.py` 的 `init_tasks` 在启动时写入数据库作为初始种子，**不再提供创建 / 删除接口**；周期任务的新增、调整统一通过修改 `beat_schedule.py` 维护。已存在的计划任务支持：
 
-crontab（每 5 分钟）：
-
-```http
-POST /schedules
-Authorization: Bearer <superuser-token>
-
-{
-  "name": "sync-order-status",
-  "task": "app.modules.order.tasks.sync_order_status_periodic",
-  "schedule_type": "crontab",
-  "crontab": {"minute": "*/5"},
-  "enabled": true
-}
-```
-
-interval（每 30 分钟）：
-
-```http
-POST /schedules
-Authorization: Bearer <superuser-token>
-
-{
-  "name": "sync-product-status",
-  "task": "app.modules.product.tasks.sync_product_status",
-  "schedule_type": "interval",
-  "interval": {"every": 30, "period": "minutes"},
-  "enabled": true
-}
-```
-
+- 更新配置：`PUT /schedules/{id}`（支持切换 crontab / interval）
+- 启用 / 停用：`POST /schedules/{id}/toggle`
 - 立即执行一次：`POST /schedules/{id}/run`
 - 查询执行状态：`GET /schedules/tasks/{task_id}/status`
 - 可用任务清单（前端下拉）：`GET /schedules/task-options`
@@ -200,14 +176,12 @@ backend/app/modules/automation/
 │   ├── automation.py               # /automation/tasks 任务池管理（列表/创建/详情/重试/取消）
 │   ├── events.py                   # /automation/events 事件列表与手动发布
 │   ├── rules.py                    # /automation/rules 规则 CRUD 与启停
-│   ├── schedules.py                # /schedules CRUD、task-options、toggle、run、delete
+│   ├── schedules.py                # /schedules 列表/详情/更新、task-options、toggle、run
 │   └── tasks.py                    # /schedules/tasks/{task_id}/status
 ├── application/                    # 应用服务：按业务动作拆分
 │   ├── __init__.py
-│   ├── schedule_create.py          # 创建计划任务
 │   ├── schedule_update.py          # 更新计划任务（支持切换 crontab / interval）
 │   ├── schedule_toggle.py          # 启用 / 停用计划任务
-│   ├── schedule_delete.py          # 删除计划任务
 │   ├── schedule_run.py             # 立即执行一次计划任务
 │   ├── schedule_query.py           # 列表 / 详情查询 + PeriodicTask → SchedulePublic
 │   ├── task_status.py              # 查询 Celery 任务执行状态
@@ -240,12 +214,20 @@ backend/app/modules/automation/
 │   │   ├── __init__.py             # 导入内置执行器，导出 EXECUTORS 注册表
 │   │   ├── base.py                 # BaseExecutor 基类 + register_executor + get_executor
 │   │   └── log.py                  # log 执行器（通用占位）
-│   └── tasks/                      # Celery 定时任务（按职责拆分）
-│       ├── __init__.py             # 导出 4 个任务，保持旧导入路径兼容
+│   └── tasks/                      # Celery 定时任务（全项目任务统一收敛，按职责拆分）
+│       ├── __init__.py             # 统一导出全部任务
 │       ├── scan.py                 # automation_task_scan：扫描任务池并执行
 │       ├── cleanup.py              # cleanup_automation_task_archives：归档/事件清理
 │       ├── order_status.py         # sync_order_status_periodic：订单状态同步
-│       └── expired_data.py         # cleanup_expired_data：过期数据/临时文件清理
+│       ├── order_cleanup.py        # cleanup_completed_orders：已完成订单数据清理
+│       ├── wallet_cleanup.py       # cleanup_wallet_transactions：钱包流水数据清理
+│       ├── auth_cleanup.py         # cleanup_expired_refresh_tokens：过期刷新令牌清理
+│       ├── product_sync.py         # sync_product_status：商品状态同步
+│       ├── supplier_sync.py        # sync_upstream_products + dispatch_upstream_products_sync：供应商上游商品同步
+│       ├── notification_delivery.py  # deliver_notification / requeue_stale_notification_deliveries：通知投递与兜底扫描
+│       ├── notification_cleanup.py # cleanup_notification_records：通知记录清理
+│       ├── expired_data.py         # cleanup_expired_data：过期数据/临时文件清理
+│       └── wallet_cleanup.py       # cleanup_wallet_transactions：钱包流水数据清理
 ├── models/                         # 数据模型（SQLModel 表模型）
 │   ├── __init__.py
 │   ├── task.py                     # AutomationTask（任务池：状态机、优先级、重试、payload、来源事件/规则、认领/开始/完成时间线）
@@ -283,11 +265,9 @@ backend/app/modules/automation/
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | GET | /schedules/ | 计划任务列表（超管） |
-| POST | /schedules/ | 创建计划任务（超管） |
 | GET | /schedules/task-options | 可配置 Celery 任务列表（超管） |
 | GET | /schedules/{id} | 计划任务详情（超管） |
 | PUT | /schedules/{id} | 更新计划任务（超管） |
-| DELETE | /schedules/{id} | 删除计划任务（超管） |
 | POST | /schedules/{id}/toggle | 启用 / 停用（超管） |
 | POST | /schedules/{id}/run | 立即执行一次（超管） |
 | GET | /schedules/tasks/{task_id}/status | 查询 Celery 任务状态（超管） |
@@ -330,8 +310,9 @@ backend/app/modules/automation/
 6. **事件驱动链路**：业务模块 `event_bus.publish` 落库事件 → 自动化监听器按启用规则生成任务 → 任务池执行；payload 合并规则为 `事件载荷 + 规则配置（配置优先）`。
 7. **终态即归档**：`mark_success` / `mark_failed`（重试耗尽或业务终态）/ `cancel_task` 在同一事务内将任务移入 `automation_task_archives`（原任务 ID 存入 `task_id`，追加 `archived_at`），主表保持精简；失败任务可经 `retry` 接口从归档恢复重新入队（重试计数清零）。
 8. **保留期可配置**：保留天数由全局设置 `automation_task_retention_days` 控制（默认 3 天），每天 04:00 的 `cleanup_automation_task_archives` 批量归档遗留终态任务，并同步物理清理超期归档与事件数据。
-9. **执行器幂等强制**：任务池为 at-least-once 语义，所有执行器必须显式声明 `idempotent`（注册时校验），外部副作用型执行器必须实现 `check_already_done` 预执行判定（业务目标已达成则直接成功归档），崩溃重跑不会重复产生副作用；详见「二、使用方法 1」的幂等约束说明。
-10. **业务编排归属**：订单履约与状态同步的流程编排在 order 模块（`application/fulfillment.py`、`application/sync.py`）；automation 只负责调度触发——执行器 `submit_supplier_order` 调用履约编排，`sync_order_status_periodic` 定时任务调用状态同步编排。订单状态转换规则保留在 order 模块，上游调用走 supplier 能力服务（`supplier.application.upstream_order`）；任务名保持不变，兼容既有 beat 配置与数据库计划任务。
+9. **钱包流水清理**：保留天数由全局设置 `wallet_transaction_retention_days` 控制（默认 7 天，`PUT /settings/wallet_transaction_retention_days` 可调），每天 04:30 的 `cleanup_wallet_transactions` 按 `created_at` 分批物理删除超期流水（`repositories/wallet.py` 的 `purge_old_transactions`），只清流水、不动 `Wallet` 余额表。
+10. **执行器幂等强制**：任务池为 at-least-once 语义，所有执行器必须显式声明 `idempotent`（注册时校验），外部副作用型执行器必须实现 `check_already_done` 预执行判定（业务目标已达成则直接成功归档），崩溃重跑不会重复产生副作用；详见「二、使用方法 1」的幂等约束说明。
+11. **业务编排归属**：订单履约与状态同步的流程编排在 order 模块（`application/fulfillment.py`、`application/sync.py`）；automation 只负责调度触发——执行器 `submit_supplier_order` 调用履约编排，`sync_order_status_periodic` 定时任务调用状态同步编排。订单状态转换规则保留在 order 模块，上游调用走 supplier 能力服务（`supplier.application.upstream_order`）；全部定时任务文件与任务名统一收敛至 `automation.infrastructure.tasks`，业务模块不再维护 Celery 任务文件。
 
 ## 七、演进方向（未实现）
 

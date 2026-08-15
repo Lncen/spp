@@ -5,7 +5,6 @@ import { Suspense, useState } from "react"
 import type { SchedulePublic } from "@/client"
 import { SchedulesService } from "@/client"
 import Pending from "@/components/Admin/Pending/PendingItems"
-import AddSchedule from "@/components/Admin/Schedules/AddSchedule"
 import { columns } from "@/components/Admin/Schedules/columns"
 import { DataTable } from "@/components/Common/DataTable"
 
@@ -57,9 +56,6 @@ function SchedulesTable() {
 export function SchedulesSection() {
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <AddSchedule />
-      </div>
       <SchedulesTable />
     </div>
   )

@@ -9,6 +9,7 @@ from app.modules.notification.models import Notification
 from app.modules.notification.repositories.notification import (
     count_unread_notifications,
     count_user_notifications,
+    delete_user_notification,
     get_user_notification_or_404,
     list_user_notifications,
     mark_all_read,
@@ -81,3 +82,18 @@ def mark_my_all_read(*, session: Session, user_id: uuid.UUID) -> int:
     )
     session.commit()
     return updated
+
+
+def delete_my_notification(
+    *,
+    session: Session,
+    user_id: uuid.UUID,
+    notification_id: uuid.UUID,
+) -> None:
+    """删除当前用户的通知及其全部投递记录（非本人抛 404）"""
+    delete_user_notification(
+        session=session,
+        user_id=user_id,
+        notification_id=notification_id,
+    )
+    session.commit()

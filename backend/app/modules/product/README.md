@@ -21,7 +21,6 @@ backend/app/modules/product/
 ├── __init__.py
 ├── README.md                       # 本文档：模块定位、结构与设计说明
 ├── constants.py                    # 商品状态/类型/来源/输入控件/定价规则枚举
-├── tasks.py                        # 定时任务（商品状态同步，待实现）
 ├── category/                       # 商品分类（旧式扁平结构）
 │   ├── api.py
 │   ├── models.py

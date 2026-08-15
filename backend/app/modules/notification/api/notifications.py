@@ -18,6 +18,7 @@ from app.modules.notification.application.notification_admin import (
     send_manual_notification,
 )
 from app.modules.notification.application.notification_query import (
+    delete_my_notification,
     get_my_notifications,
     get_unread_count,
     mark_my_all_read,
@@ -87,6 +88,21 @@ def mark_all_read(
     return Message(message=f"已标记 {updated} 条通知为已读")
 
 
+@router.delete("/{notification_id}", response_model=Message)
+def delete_my_notification_endpoint(
+    session: SessionDep,
+    current_user: CurrentUser,
+    notification_id: uuid.UUID,
+) -> Message:
+    """删除当前用户的通知记录（级联删除其全部投递记录）"""
+    delete_my_notification(
+        session=session,
+        user_id=current_user.id,
+        notification_id=notification_id,
+    )
+    return Message(message="通知已删除")
+
+
 @router.get(
     "/admin",
     dependencies=[Depends(get_current_active_superuser)],
@@ -99,8 +115,10 @@ def read_admin_notifications(
     event_type: str | None = Query(default=None, max_length=64),
     channel: str | None = Query(default=None, max_length=32),
     status: str | None = Query(default=None, max_length=16),
+    keyword: str | None = Query(default=None, max_length=64),
+    recipient: str | None = Query(default=None, max_length=255),
 ) -> NotificationsAdminPublic:
-    """管理端分页查询全部通知记录（一行一条投递），可按事件类型/渠道/状态筛选"""
+    """管理端分页查询全部通知记录（一行一条投递），可按事件类型/渠道/状态/关键字/接收人筛选"""
     return list_admin_notifications(
         session=session,
         skip=skip,
@@ -108,6 +126,8 @@ def read_admin_notifications(
         event_type=event_type,
         channel=channel,
         status=status,
+        keyword=keyword,
+        recipient=recipient,
     )
 
 
@@ -120,7 +140,7 @@ def send_admin_notification(
     session: SessionDep,
     body: NotificationSendRequest,
 ) -> Message:
-    """管理端手动发送通知（站内/邮件），投递异步执行"""
+    """管理端手动发送通知（站内/邮件），投递异步执行；broadcast=true 时群发给全部启用用户"""
     created, enqueued = send_manual_notification(
         session=session,
         title=body.title,
@@ -128,6 +148,7 @@ def send_admin_notification(
         event_type=body.event_type,
         user_ids=body.user_ids,
         channels=body.channels,
+        broadcast=body.broadcast,
     )
     message = f"已创建 {created} 条投递记录，正在异步发送"
     failed = created - enqueued

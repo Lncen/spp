@@ -13,6 +13,7 @@ import {
 import useAuth from "@/hooks/useAuth"
 import DeleteUser from "./DeleteUser"
 import EditUser from "./EditUser"
+import { SendUserNotificationDialog } from "./SendUserNotificationDialog"
 
 interface UserActionsMenuProps {
   user: UserListItemPublic
@@ -38,6 +39,10 @@ export const UserActionsMenu = ({ user }: UserActionsMenuProps) => {
             查看订单
           </RouterLink>
         </DropdownMenuItem>
+        <SendUserNotificationDialog
+          user={user}
+          onSuccess={() => setOpen(false)}
+        />
         <EditUser user={user} onSuccess={() => setOpen(false)} />
         {!isCurrentUser && (
           <DeleteUser id={user.id} onSuccess={() => setOpen(false)} />

@@ -1,4 +1,4 @@
-"""供应商相关异步任务与任务分发"""
+"""自动化模块：供应商上游商品同步 Celery 任务与任务分发"""
 
 import uuid
 from typing import Any
@@ -19,8 +19,9 @@ from app.modules.supplier.repositories.supplier import (
     mark_product_sync_failed,
 )
 
-# 任务名保持与重构前一致，避免已入队任务与数据库计划任务失效
-SYNC_UPSTREAM_PRODUCTS_TASK = "app.modules.supplier.tasks.sync_upstream_products"
+SYNC_UPSTREAM_PRODUCTS_TASK = (
+    "app.modules.automation.infrastructure.tasks.sync_upstream_products"
+)
 
 
 def dispatch_upstream_products_sync(

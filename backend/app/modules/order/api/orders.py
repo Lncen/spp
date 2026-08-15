@@ -164,16 +164,16 @@ def read_orders(
     limit: int = 100,
     status: OrderStatus | None = None,
     user_id: uuid.UUID | None = None,
-    param_value: str | None = None,
+    keyword: str | None = None,
 ) -> Any:
-    """查看全部订单，可按用户和状态过滤（仅超级管理员可用）"""
+    """查看全部订单，可按用户、状态与关键字过滤（仅超级管理员可用）"""
     orders, count = list_orders(
         session=session,
         skip=skip,
         limit=limit,
         status=status,
         user_id=user_id,
-        param_value=param_value,
+        keyword=keyword,
     )
     return OrdersPublic(
         data=to_order_list_item(session=session, orders=orders),

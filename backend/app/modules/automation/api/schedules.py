@@ -5,13 +5,6 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.deps import SessionDep, get_current_active_superuser
-from app.common.models import Message
-from app.modules.automation.application.schedule_create import (
-    create_schedule as create_schedule_service,
-)
-from app.modules.automation.application.schedule_delete import (
-    delete_schedule as delete_schedule_service,
-)
 from app.modules.automation.application.schedule_query import (
     get_schedule_public,
     list_schedules,
@@ -27,7 +20,6 @@ from app.modules.automation.application.schedule_update import (
 from app.modules.automation.application.task_options import list_task_options
 from app.modules.automation.schemas import (
     RunTaskPublic,
-    ScheduleCreate,
     SchedulePublic,
     SchedulesPublic,
     ScheduleUpdate,
@@ -72,24 +64,6 @@ def read_schedule(
 ) -> Any:
     """根据 ID 获取计划任务（超管权限）"""
     return get_schedule_public(session=session, task_id=id)
-
-
-@router.post(
-    "/",
-    dependencies=[Depends(get_current_active_superuser)],
-    response_model=SchedulePublic,
-)
-def create_schedule(
-    *,
-    session: SessionDep,
-    schedule_in: ScheduleCreate,
-) -> Any:
-    """创建计划任务（超管权限）"""
-    try:
-        task = create_schedule_service(session=session, schedule_in=schedule_in)
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e)) from e
-    return to_schedule_public(task)
 
 
 @router.put(
@@ -141,17 +115,3 @@ def run_schedule(
 ) -> Any:
     """立即执行一次计划任务（超管权限，不影响原计划）"""
     return RunTaskPublic(task_id=run_schedule_now(session=session, task_id=id))
-
-
-@router.delete(
-    "/{id}",
-    dependencies=[Depends(get_current_active_superuser)],
-    response_model=Message,
-)
-def delete_schedule(
-    session: SessionDep,
-    id: int,
-) -> Message:
-    """删除计划任务（超管权限）"""
-    delete_schedule_service(session=session, task_id=id)
-    return Message(message="计划任务已删除")

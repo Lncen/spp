@@ -30,36 +30,6 @@ class IntervalScheduleIn(SQLModel):
     )
 
 
-class ScheduleBase(SQLModel):
-    """计划任务基础属性"""
-
-    name: str = Field(
-        max_length=255,
-        title="计划名称",
-        description="唯一标识，beat 启动时会按名称同步",
-    )
-    task: str = Field(max_length=255, title="任务名称", description="Celery 任务完整路径")
-    schedule_type: ScheduleType = Field(title="调度类型")
-    crontab: CrontabScheduleIn | None = Field(
-        default=None,
-        title="crontab 配置",
-        description="schedule_type=crontab 时必填",
-    )
-    interval: IntervalScheduleIn | None = Field(
-        default=None,
-        title="interval 配置",
-        description="schedule_type=interval 时必填",
-    )
-    args: list[Any] = Field(default_factory=list, title="位置参数")
-    kwargs: dict[str, Any] = Field(default_factory=dict, title="关键字参数")
-    enabled: bool = Field(default=True, title="是否启用")
-    description: str | None = Field(default=None, max_length=1024, title="描述")
-
-
-class ScheduleCreate(ScheduleBase):
-    """创建计划任务请求"""
-
-
 class ScheduleUpdate(SQLModel):
     """更新计划任务请求（全部可选）"""
 

@@ -5,9 +5,34 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import HTTPException
-from sqlmodel import Session, col, func, select, update
+from sqlmodel import Session, col, delete, func, or_, select, update
 
 from app.modules.notification.models import Notification, NotificationDelivery
+from app.modules.user.models import User
+
+
+def _keyword_filter(keyword: str | None):
+    """构造标题/内容模糊匹配条件，无关键字时返回 None"""
+    if not keyword:
+        return None
+    pattern = f"%{keyword.strip()}%"
+    return or_(
+        Notification.title.ilike(pattern),
+        Notification.content.ilike(pattern),
+    )
+
+
+def _recipient_filter(recipient: str | None):
+    """构造接收人模糊匹配条件（用户全名/用户名/邮箱或直接邮箱），无关键词时返回 None"""
+    if not recipient:
+        return None
+    pattern = f"%{recipient.strip()}%"
+    return or_(
+        User.full_name.ilike(pattern),
+        User.username.ilike(pattern),
+        User.email.ilike(pattern),
+        Notification.email_to.ilike(pattern),
+    )
 
 
 def create_notification(
@@ -92,6 +117,8 @@ def list_admin_deliveries(
     event_type: str | None,
     channel: str | None,
     status: str | None,
+    keyword: str | None,
+    recipient: str | None,
 ) -> list[NotificationDelivery]:
     """管理端分页查询全部投递记录（含所属通知），最新在前"""
     stmt = (
@@ -110,6 +137,14 @@ def list_admin_deliveries(
         stmt = stmt.where(NotificationDelivery.channel == channel)
     if status:
         stmt = stmt.where(NotificationDelivery.status == status)
+    keyword_filter = _keyword_filter(keyword)
+    if keyword_filter is not None:
+        stmt = stmt.where(keyword_filter)
+    recipient_filter = _recipient_filter(recipient)
+    if recipient_filter is not None:
+        stmt = stmt.outerjoin(User, Notification.user_id == User.id).where(
+            recipient_filter
+        )
     return list(session.exec(stmt).all())
 
 
@@ -119,6 +154,8 @@ def count_admin_deliveries(
     event_type: str | None,
     channel: str | None,
     status: str | None,
+    keyword: str | None,
+    recipient: str | None,
 ) -> int:
     """统计管理端投递记录总数（与列表同条件）"""
     stmt = (
@@ -132,6 +169,14 @@ def count_admin_deliveries(
         stmt = stmt.where(NotificationDelivery.channel == channel)
     if status:
         stmt = stmt.where(NotificationDelivery.status == status)
+    keyword_filter = _keyword_filter(keyword)
+    if keyword_filter is not None:
+        stmt = stmt.where(keyword_filter)
+    recipient_filter = _recipient_filter(recipient)
+    if recipient_filter is not None:
+        stmt = stmt.outerjoin(User, Notification.user_id == User.id).where(
+            recipient_filter
+        )
     return session.exec(stmt).one()
 
 
@@ -193,6 +238,24 @@ def mark_all_read(
     return result.rowcount or 0
 
 
+def delete_user_notification(
+    *,
+    session: Session,
+    user_id: uuid.UUID,
+    notification_id: uuid.UUID,
+) -> None:
+    """删除当前用户的通知及其全部投递记录（非本人抛 404）"""
+    notification = get_user_notification_or_404(
+        session=session,
+        notification_id=notification_id,
+        user_id=user_id,
+    )
+    delete_notification_with_deliveries(
+        session=session,
+        notification_id=notification.id,
+    )
+
+
 def delete_notification_with_deliveries(
     *,
     session: Session,
@@ -211,3 +274,30 @@ def delete_notification_with_deliveries(
         session.delete(delivery)
     session.delete(notification)
     return notification
+
+
+def purge_old_notifications(
+    *,
+    session: Session,
+    before: datetime,
+    limit: int,
+) -> int:
+    """物理删除创建时间早于 before 的通知及其全部投递记录，返回删除通知条数。
+
+    显式先删投递记录再删通知（不依赖数据库级联配置），分批由调用方控制。
+    """
+    ids = session.exec(
+        select(Notification.id)
+        .where(col(Notification.created_at) < before)
+        .limit(limit)
+    ).all()
+    if not ids:
+        return 0
+    session.exec(
+        delete(NotificationDelivery).where(
+            NotificationDelivery.notification_id.in_(ids)
+        )
+    )
+    session.exec(delete(Notification).where(Notification.id.in_(ids)))
+    session.commit()
+    return len(ids)

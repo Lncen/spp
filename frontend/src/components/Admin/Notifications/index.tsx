@@ -1,11 +1,13 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import type { PaginationState } from "@tanstack/react-table"
-import { Suspense, useState } from "react"
+import { Search } from "lucide-react"
+import { Suspense, useEffect, useState } from "react"
 
 import type { NotificationAdminItem } from "@/client"
 import { NotificationsService } from "@/client"
 import Pending from "@/components/Admin/Pending/PendingItems"
 import { DataTable } from "@/components/Common/DataTable"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -13,12 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { notificationColumns } from "./columns"
 import { CHANNEL_LABELS, DELIVERY_STATUS_LABELS } from "./constants"
 import { NotificationDetailDialog } from "./NotificationDetailDialog"
 import { SendNotificationDialog } from "./SendNotificationDialog"
 
 const ALL = "all"
+const SEARCH_DEBOUNCE_MS = 300
 
 interface NotificationsFilters {
   channel: string
@@ -28,6 +32,8 @@ interface NotificationsFilters {
 function getNotificationsQueryOptions(
   filters: NotificationsFilters,
   pagination: PaginationState,
+  keyword: string,
+  recipient: string,
 ) {
   return {
     queryFn: () =>
@@ -36,8 +42,10 @@ function getNotificationsQueryOptions(
         limit: pagination.pageSize,
         channel: filters.channel === ALL ? null : filters.channel,
         status: filters.status === ALL ? null : filters.status,
+        keyword: keyword || undefined,
+        recipient: recipient || undefined,
       }),
-    queryKey: ["admin-notifications", filters, pagination],
+    queryKey: ["admin-notifications", filters, keyword, recipient, pagination],
   }
 }
 
@@ -46,14 +54,18 @@ function NotificationsTableContent({
   pagination,
   setPagination,
   onView,
+  keyword,
+  recipient,
 }: {
   filters: NotificationsFilters
   pagination: PaginationState
   setPagination: (pagination: PaginationState) => void
   onView: (item: NotificationAdminItem) => void
+  keyword: string
+  recipient: string
 }) {
   const { data } = useSuspenseQuery(
-    getNotificationsQueryOptions(filters, pagination),
+    getNotificationsQueryOptions(filters, pagination, keyword, recipient),
   )
 
   return (
@@ -72,11 +84,15 @@ function NotificationsTable({
   pagination,
   setPagination,
   onView,
+  keyword,
+  recipient,
 }: {
   filters: NotificationsFilters
   pagination: PaginationState
   setPagination: (pagination: PaginationState) => void
   onView: (item: NotificationAdminItem) => void
+  keyword: string
+  recipient: string
 }) {
   return (
     <Suspense fallback={<Pending />}>
@@ -85,6 +101,8 @@ function NotificationsTable({
         pagination={pagination}
         setPagination={setPagination}
         onView={onView}
+        keyword={keyword}
+        recipient={recipient}
       />
     </Suspense>
   )
@@ -100,12 +118,22 @@ export function NotificationsSection() {
     pageSize: 10,
   })
   const [selected, setSelected] = useState<NotificationAdminItem | null>(null)
+  const [keywordInput, setKeywordInput] = useState("")
+  const keyword = useDebouncedValue(keywordInput, SEARCH_DEBOUNCE_MS)
+  const [recipientInput, setRecipientInput] = useState("")
+  const recipient = useDebouncedValue(recipientInput, SEARCH_DEBOUNCE_MS)
 
   const handleFilterChange =
     (key: keyof NotificationsFilters) => (value: string) => {
       setFilters((current) => ({ ...current, [key]: value }))
       setPagination((current) => ({ ...current, pageIndex: 0 }))
     }
+
+  useEffect(() => {
+    if (keyword || recipient) {
+      setPagination((current) => ({ ...current, pageIndex: 0 }))
+    }
+  }, [keyword, recipient])
 
   return (
     <div className="flex flex-col gap-6">
@@ -117,6 +145,24 @@ export function NotificationsSection() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={keywordInput}
+              onChange={(event) => setKeywordInput(event.target.value)}
+              placeholder="搜索标题 / 内容"
+              className="w-48 pl-9"
+            />
+          </div>
+          <div className="relative">
+            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={recipientInput}
+              onChange={(event) => setRecipientInput(event.target.value)}
+              placeholder="搜索接收人"
+              className="w-44 pl-9"
+            />
+          </div>
           <Select
             value={filters.channel}
             onValueChange={handleFilterChange("channel")}
@@ -157,6 +203,8 @@ export function NotificationsSection() {
         pagination={pagination}
         setPagination={setPagination}
         onView={setSelected}
+        keyword={keyword}
+        recipient={recipient}
       />
       <NotificationDetailDialog
         item={selected}

@@ -73,7 +73,7 @@ def register_builtin_rules() -> None:
         NotificationRule(
             event_type="order.fulfillment_failed",
             rule_id="order_fulfillment_failed",
-            title_template="订单履约异常：{{ order_no }}",
+            title_template="订单履约异常",
             content_template="订单 {{ order_no }} 履约异常，需管理员人工核对处理。",
             channels=("in_app", "email"),
             recipients=RecipientsSpec(role=RecipientRole.SUPERUSER),

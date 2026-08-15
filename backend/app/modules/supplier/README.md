@@ -49,7 +49,6 @@ backend/app/modules/supplier/
 │   └── mapping.py                  # 上游参数/数量边界 → 本地业务字段映射
 ├── infrastructure/                 # 基础设施：外部系统交互
 │   ├── __init__.py
-│   ├── tasks.py                    # Celery 同步任务 + 任务分发辅助
 │   └── clients/                    # 供应商 API 客户端
 │       ├── __init__.py             # 导入具体平台 client（触发自动注册）
 │       ├── base.py                 # 异常、ClientMeta 注册表、HTTP 传输基类、supplier_client 上下文
@@ -104,6 +103,8 @@ backend/app/modules/supplier/
    不直接复用 `SupplierClientBase`。
 4. **客户端自动注册**：`ClientMeta` 元类按 `code` 注册具体平台 client，
    `supplier_client` 上下文管理器按供应商 `platform` 路由并保证退出时关闭连接池。
-5. **对外接口与任务名不变**：API 路径、响应字段与重构前一致；Celery 任务显式
-   `name="app.modules.supplier.tasks.sync_upstream_products"`，已入队任务与数据库计划任务不受影响。
+5. **对外接口不变，任务统一收敛**：API 路径、响应字段与重构前一致；Celery 任务
+   `sync_upstream_products` 与分发辅助 `dispatch_upstream_products_sync` 已收敛至
+   `automation.infrastructure.tasks.supplier_sync`，任务名统一为
+   `app.modules.automation.infrastructure.tasks.sync_upstream_products`。
 6. **余额写入约束**：`Supplier.balance` 仅由余额同步接口写回，更新接口显式剔除该字段。

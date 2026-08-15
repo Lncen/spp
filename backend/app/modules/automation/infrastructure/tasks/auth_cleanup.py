@@ -1,6 +1,5 @@
-"""认证模块：定时任务"""
+"""自动化模块：过期刷新令牌清理 Celery 任务"""
 
-import logging
 from datetime import UTC, datetime
 
 from celery import shared_task  # type: ignore[import-untyped]
@@ -9,10 +8,14 @@ from sqlmodel import Session, delete
 from app.core.db import engine
 from app.modules.auth.models import RefreshToken
 
-logger = logging.getLogger(__name__)
 
-
-@shared_task  # type: ignore[untyped-decorator]
+@shared_task(  # type: ignore[untyped-decorator]
+    ignore_result=False,
+    name=(
+        "app.modules.automation.infrastructure.tasks."
+        "cleanup_expired_refresh_tokens"
+    ),
+)
 def cleanup_expired_refresh_tokens() -> dict[str, int]:
     """清理已过期或已撤销的刷新令牌，防止表无限增长"""
     now = datetime.now(UTC)
