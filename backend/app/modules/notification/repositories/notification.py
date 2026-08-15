@@ -5,9 +5,9 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import HTTPException
-from sqlmodel import Session, col, func, select
+from sqlmodel import Session, col, func, select, update
 
-from app.modules.notification.models import Notification
+from app.modules.notification.models import Notification, NotificationDelivery
 
 
 def create_notification(
@@ -84,6 +84,71 @@ def count_unread_notifications(
     return count_user_notifications(session=session, user_id=user_id, unread_only=True)
 
 
+def list_admin_deliveries(
+    *,
+    session: Session,
+    skip: int,
+    limit: int,
+    event_type: str | None,
+    channel: str | None,
+    status: str | None,
+) -> list[NotificationDelivery]:
+    """管理端分页查询全部投递记录（含所属通知），最新在前"""
+    stmt = (
+        select(NotificationDelivery)
+        .join(Notification, NotificationDelivery.notification_id == Notification.id)
+        .order_by(
+            col(Notification.created_at).desc(),
+            col(NotificationDelivery.created_at).desc(),
+        )
+        .offset(skip)
+        .limit(limit)
+    )
+    if event_type:
+        stmt = stmt.where(Notification.event_type == event_type)
+    if channel:
+        stmt = stmt.where(NotificationDelivery.channel == channel)
+    if status:
+        stmt = stmt.where(NotificationDelivery.status == status)
+    return list(session.exec(stmt).all())
+
+
+def count_admin_deliveries(
+    *,
+    session: Session,
+    event_type: str | None,
+    channel: str | None,
+    status: str | None,
+) -> int:
+    """统计管理端投递记录总数（与列表同条件）"""
+    stmt = (
+        select(func.count())
+        .select_from(NotificationDelivery)
+        .join(Notification, NotificationDelivery.notification_id == Notification.id)
+    )
+    if event_type:
+        stmt = stmt.where(Notification.event_type == event_type)
+    if channel:
+        stmt = stmt.where(NotificationDelivery.channel == channel)
+    if status:
+        stmt = stmt.where(NotificationDelivery.status == status)
+    return session.exec(stmt).one()
+
+
+def get_notifications_by_ids(
+    *,
+    session: Session,
+    notification_ids: list[uuid.UUID],
+) -> dict[uuid.UUID, Notification]:
+    """批量查询通知，返回 id -> Notification 映射"""
+    if not notification_ids:
+        return {}
+    notifications = session.exec(
+        select(Notification).where(Notification.id.in_(notification_ids))
+    ).all()
+    return {notification.id: notification for notification in notifications}
+
+
 def get_user_notification_or_404(
     *,
     session: Session,
@@ -117,12 +182,32 @@ def mark_all_read(
     now: datetime,
 ) -> int:
     """批量标记当前用户全部未读通知为已读，返回更新条数"""
-    stmt = (
-        select(Notification)
-        .where(Notification.user_id == user_id, col(Notification.read_at).is_(None))
+    result = session.exec(
+        update(Notification)
+        .where(
+            Notification.user_id == user_id,
+            col(Notification.read_at).is_(None),
+        )
+        .values(read_at=now)
     )
-    notifications = session.exec(stmt).all()
-    for notification in notifications:
-        notification.read_at = now
-        session.add(notification)
-    return len(notifications)
+    return result.rowcount or 0
+
+
+def delete_notification_with_deliveries(
+    *,
+    session: Session,
+    notification_id: uuid.UUID,
+) -> Notification:
+    """删除通知实例及其全部投递记录（显式删除，不依赖数据库级联配置）"""
+    notification = session.get(Notification, notification_id)
+    if notification is None:
+        raise HTTPException(status_code=404, detail="通知不存在")
+    deliveries = session.exec(
+        select(NotificationDelivery).where(
+            NotificationDelivery.notification_id == notification_id
+        )
+    ).all()
+    for delivery in deliveries:
+        session.delete(delivery)
+    session.delete(notification)
+    return notification

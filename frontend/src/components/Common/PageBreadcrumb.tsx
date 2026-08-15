@@ -22,6 +22,7 @@ const segmentTitles: Record<string, string> = {
   schedules: "计划任务",
   automation: "自动化",
   orders: "订单",
+  notifications: "通知记录",
   "global-settings": "全局设置",
   admin: "用户",
   settings: "设置",

@@ -25,3 +25,4 @@ class RecipientRole:
 
 
 DEFAULT_MAX_ATTEMPTS = 3
+MANUAL_EMAIL_TEMPLATE = "notification_manual.html"

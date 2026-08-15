@@ -3,10 +3,20 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import (
+    CurrentUser,
+    SessionDep,
+    get_current_active_superuser,
+)
 from app.common.models import Message
+from app.modules.notification.application.notification_admin import (
+    delete_notification_record,
+    list_admin_notifications,
+    retry_delivery,
+    send_manual_notification,
+)
 from app.modules.notification.application.notification_query import (
     get_my_notifications,
     get_unread_count,
@@ -14,7 +24,10 @@ from app.modules.notification.application.notification_query import (
     mark_my_notification_read,
 )
 from app.modules.notification.schemas.notification import (
+    DeliveryPublic,
     NotificationPublic,
+    NotificationsAdminPublic,
+    NotificationSendRequest,
     NotificationsPublic,
     UnreadCount,
 )
@@ -72,3 +85,86 @@ def mark_all_read(
     """将当前用户全部未读通知标记为已读"""
     updated = mark_my_all_read(session=session, user_id=current_user.id)
     return Message(message=f"已标记 {updated} 条通知为已读")
+
+
+@router.get(
+    "/admin",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=NotificationsAdminPublic,
+)
+def read_admin_notifications(
+    session: SessionDep,
+    skip: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    event_type: str | None = Query(default=None, max_length=64),
+    channel: str | None = Query(default=None, max_length=32),
+    status: str | None = Query(default=None, max_length=16),
+) -> NotificationsAdminPublic:
+    """管理端分页查询全部通知记录（一行一条投递），可按事件类型/渠道/状态筛选"""
+    return list_admin_notifications(
+        session=session,
+        skip=skip,
+        limit=limit,
+        event_type=event_type,
+        channel=channel,
+        status=status,
+    )
+
+
+@router.post(
+    "/admin",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=Message,
+)
+def send_admin_notification(
+    session: SessionDep,
+    body: NotificationSendRequest,
+) -> Message:
+    """管理端手动发送通知（站内/邮件），投递异步执行"""
+    created, enqueued = send_manual_notification(
+        session=session,
+        title=body.title,
+        content=body.content,
+        event_type=body.event_type,
+        user_ids=body.user_ids,
+        channels=body.channels,
+    )
+    message = f"已创建 {created} 条投递记录，正在异步发送"
+    failed = created - enqueued
+    if failed:
+        message = (
+            f"已创建 {created} 条投递记录，其中 {failed} 条入队失败，"
+            "将由兜底任务自动补投"
+        )
+    return Message(message=message)
+
+
+@router.post(
+    "/admin/deliveries/{delivery_id}/retry",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=DeliveryPublic,
+)
+def retry_admin_delivery(
+    session: SessionDep,
+    delivery_id: uuid.UUID,
+) -> DeliveryPublic:
+    """重试失败的投递记录，重新入队发送"""
+    delivery = retry_delivery(session=session, delivery_id=delivery_id)
+    return DeliveryPublic.model_validate(delivery)
+
+
+@router.delete(
+    "/admin/{notification_id}",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=Message,
+)
+def delete_admin_notification(
+    session: SessionDep,
+    notification_id: uuid.UUID,
+) -> Message:
+    """管理端删除通知记录（级联删除其全部投递记录）"""
+    delete_notification_record(
+        session=session,
+        notification_id=notification_id,
+    )
+    return Message(message="通知已删除")

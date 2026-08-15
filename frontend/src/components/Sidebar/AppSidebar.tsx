@@ -1,10 +1,14 @@
 import {
+  Archive,
+  Bell,
   Briefcase,
+  CalendarClock,
   Cpu,
   FolderTree,
   Frame,
   Home,
   Image,
+  ListTodo,
   Map as MapIcon,
   Medal,
   Package,
@@ -15,9 +19,6 @@ import {
   Settings,
   Tags,
   Users,
-  CalendarClock,
-  ListTodo,
-  Archive,
   Workflow,
   Zap,
 } from "lucide-react"
@@ -46,8 +47,7 @@ const navGroups: ItemGroup[] = [
     path: "/automations",
     items: [
       { icon: ReceiptText, title: "订单", path: "/orders" },
-
-
+      { icon: Bell, title: "通知记录", path: "/notifications" },
     ],
   },
   {

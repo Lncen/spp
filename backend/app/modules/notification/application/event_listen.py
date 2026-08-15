@@ -16,19 +16,15 @@ from app.modules.notification.domain.constants import RecipientRole
 from app.modules.notification.domain.rules import (
     RecipientsSpec,
     get_rules_for_event,
-    register_builtin_rules,
     render_notification_template,
 )
-from app.modules.notification.infrastructure.tasks import deliver_notification
+from app.modules.notification.infrastructure.tasks import enqueue_delivery
 from app.modules.notification.models import NotificationDelivery
 from app.modules.notification.repositories.delivery import create_delivery
 from app.modules.notification.repositories.notification import create_notification
 from app.modules.user.models import User
 
 logger = logging.getLogger(__name__)
-
-# 内置规则在应用层显式注册（幂等），避免依赖 __init__.py 副作用
-register_builtin_rules()
 
 
 @dataclass(frozen=True)
@@ -59,7 +55,7 @@ def process_notification_event(*, event: AutomationEvent) -> None:
                     session=session,
                     event_id=event.id,
                     event_type=event.event_type,
-                    rule_id=rule.event_type,
+                    rule_id=rule.rule_id or rule.event_type,
                     user_id=recipient.user_id,
                     email_to=recipient.email,
                     title=title,
@@ -77,7 +73,7 @@ def process_notification_event(*, event: AutomationEvent) -> None:
                     pending_deliveries.append(delivery)
         session.commit()
         for delivery in pending_deliveries:
-            deliver_notification.delay(str(delivery.id))
+            enqueue_delivery(str(delivery.id))
         logger.info(
             "通知事件 %s 生成 %d 条投递记录",
             event.event_type,
@@ -92,9 +88,13 @@ def _resolve_recipients(
 ) -> list[Recipient]:
     """解析规则接收人配置为具体接收人（当前支持角色与显式用户 ID）"""
     if recipients.user_ids:
+        users = session.exec(
+            select(User).where(col(User.id).in_(recipients.user_ids))
+        ).all()
         return [
-            Recipient(user_id=user_id, email=None)
-            for user_id in recipients.user_ids
+            Recipient(user_id=user.id, email=user.email)
+            for user in users
+            if user.id is not None
         ]
     if recipients.role == RecipientRole.SUPERUSER:
         users = session.exec(

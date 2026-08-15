@@ -123,6 +123,9 @@ class Settings(BaseSettings):
     # 订单向上游退单申请连续失败次数上限，超过后任务进入失败终态供人工处理
     ORDER_REFUND_APPLY_LIMIT: int = 5
 
+    # 通知投递超时阈值（分钟）：超过该时长仍停留在 pending/sending 的投递由兜底任务重新入队
+    NOTIFICATION_STALE_MINUTES: int = 30
+
     IMAGE_MAX_SIZE: int = 10 * 1024 * 1024  # 10MB
     THUMBNAIL_MAX_DIMENSION: int = 1200
     ALLOWED_IMAGE_EXTENSIONS: set[str] = {".jpg", ".jpeg", ".png", ".webp"}

@@ -22,6 +22,7 @@ import { Route as LayoutProductsRouteImport } from './routes/_layout/products'
 import { Route as LayoutProductCategoriesRouteImport } from './routes/_layout/product-categories'
 import { Route as LayoutPriceTemplatesRouteImport } from './routes/_layout/price-templates'
 import { Route as LayoutOrdersRouteImport } from './routes/_layout/orders'
+import { Route as LayoutNotificationsRouteImport } from './routes/_layout/notifications'
 import { Route as LayoutLevelsRouteImport } from './routes/_layout/levels'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutImagesRouteImport } from './routes/_layout/images'
@@ -99,6 +100,11 @@ const LayoutOrdersRoute = LayoutOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutNotificationsRoute = LayoutNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutLevelsRoute = LayoutLevelsRouteImport.update({
   id: '/levels',
   path: '/levels',
@@ -174,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/images': typeof LayoutImagesRoute
   '/items': typeof LayoutItemsRoute
   '/levels': typeof LayoutLevelsRoute
+  '/notifications': typeof LayoutNotificationsRoute
   '/orders': typeof LayoutOrdersRoute
   '/price-templates': typeof LayoutPriceTemplatesRoute
   '/product-categories': typeof LayoutProductCategoriesRoute
@@ -198,6 +205,7 @@ export interface FileRoutesByTo {
   '/images': typeof LayoutImagesRoute
   '/items': typeof LayoutItemsRoute
   '/levels': typeof LayoutLevelsRoute
+  '/notifications': typeof LayoutNotificationsRoute
   '/orders': typeof LayoutOrdersRoute
   '/price-templates': typeof LayoutPriceTemplatesRoute
   '/product-categories': typeof LayoutProductCategoriesRoute
@@ -226,6 +234,7 @@ export interface FileRoutesById {
   '/_layout/images': typeof LayoutImagesRoute
   '/_layout/items': typeof LayoutItemsRoute
   '/_layout/levels': typeof LayoutLevelsRoute
+  '/_layout/notifications': typeof LayoutNotificationsRoute
   '/_layout/orders': typeof LayoutOrdersRoute
   '/_layout/price-templates': typeof LayoutPriceTemplatesRoute
   '/_layout/product-categories': typeof LayoutProductCategoriesRoute
@@ -255,6 +264,7 @@ export interface FileRouteTypes {
     | '/images'
     | '/items'
     | '/levels'
+    | '/notifications'
     | '/orders'
     | '/price-templates'
     | '/product-categories'
@@ -279,6 +289,7 @@ export interface FileRouteTypes {
     | '/images'
     | '/items'
     | '/levels'
+    | '/notifications'
     | '/orders'
     | '/price-templates'
     | '/product-categories'
@@ -306,6 +317,7 @@ export interface FileRouteTypes {
     | '/_layout/images'
     | '/_layout/items'
     | '/_layout/levels'
+    | '/_layout/notifications'
     | '/_layout/orders'
     | '/_layout/price-templates'
     | '/_layout/product-categories'
@@ -422,6 +434,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutOrdersRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/notifications': {
+      id: '/_layout/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof LayoutNotificationsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/levels': {
       id: '/_layout/levels'
       path: '/levels'
@@ -536,6 +555,7 @@ interface LayoutRouteChildren {
   LayoutImagesRoute: typeof LayoutImagesRoute
   LayoutItemsRoute: typeof LayoutItemsRoute
   LayoutLevelsRoute: typeof LayoutLevelsRoute
+  LayoutNotificationsRoute: typeof LayoutNotificationsRoute
   LayoutOrdersRoute: typeof LayoutOrdersRoute
   LayoutPriceTemplatesRoute: typeof LayoutPriceTemplatesRoute
   LayoutProductCategoriesRoute: typeof LayoutProductCategoriesRoute
@@ -554,6 +574,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutImagesRoute: LayoutImagesRoute,
   LayoutItemsRoute: LayoutItemsRoute,
   LayoutLevelsRoute: LayoutLevelsRoute,
+  LayoutNotificationsRoute: LayoutNotificationsRoute,
   LayoutOrdersRoute: LayoutOrdersRoute,
   LayoutPriceTemplatesRoute: LayoutPriceTemplatesRoute,
   LayoutProductCategoriesRoute: LayoutProductCategoriesRoute,

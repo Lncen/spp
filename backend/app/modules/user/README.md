@@ -55,7 +55,7 @@ backend/app/modules/user/
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| GET | /users/ | 获取用户列表：用户名/余额/角色/状态（仅超管） |
+| GET | /users/ | 获取用户列表：用户名/余额/角色/状态；支持 `search` 按用户名/邮箱/昵称模糊搜索（仅超管） |
 | POST | /users/ | 创建新用户（仅超管，可选邮件通知） |
 | PATCH | /users/me | 更新当前用户个人信息 |
 | PATCH | /users/me/password | 修改当前用户密码 |
@@ -74,7 +74,8 @@ backend/app/modules/user/
 3. **依赖方向**：api → application → repositories / domain / infrastructure，禁止反向依赖。
 4. **字段权限**：`remark`（备注）仅管理员可修改；`bio`（简介）由用户本人维护；`avatar_id`（头像）关联 `image` 表，用户设置头像时校验图片归属。
 5. **列表与详情分离**：`GET /users/` 仅返回列表展示字段（`id`/`username`/`balance`/`is_superuser`/`is_active`，余额联查钱包）；`GET /users/{user_id}` 返回详情（含 `level_name`），仅超管可访问，编辑页打开时调用。
-6. **删除账号开关**：`DELETE /users/me` 受系统设置 `allow_delete_account` 控制，默认关闭（返回 403）。
+6. **列表搜索**：`GET /users/` 的 `search` 参数对 `username` / `email` / `full_name` 做大小写不敏感的模糊匹配（`ilike`），命中任一字段即返回，搜索词为空时不生效。
+7. **删除账号开关**：`DELETE /users/me` 受系统设置 `allow_delete_account` 控制，默认关闭（返回 403）。
 
 ## 六、重构记录
 

@@ -43,6 +43,14 @@ init_tasks = {
         "task": "app.modules.automation.infrastructure.tasks.automation_task_scan",
         "schedule": timedelta(seconds=30),
     },
+    # 通知投递兜底扫描 —— 每 5 分钟恢复超时的 pending/sending 投递并重新入队
+    "通知_投递兜底扫描": {
+        "task": (
+            "app.modules.notification.infrastructure.tasks."
+            "requeue_stale_notification_deliveries"
+        ),
+        "schedule": timedelta(minutes=5),
+    },
     # 自动化任务归档数据清理 —— 每天凌晨 4:00 执行
     "自动化_归档数据清理": {
         "task": (

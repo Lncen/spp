@@ -27,11 +27,15 @@ from app.modules.user.schemas import UserDetailPublic, UserListItemPublic
 
 
 def get_users_page(
-    *, session: Session, skip: int = 0, limit: int = 100
+    *,
+    session: Session,
+    skip: int = 0,
+    limit: int = 100,
+    search: str | None = None,
 ) -> tuple[int, list[UserListItemPublic]]:
     """分页查询用户列表项（含钱包余额），返回 (总数, 列表)"""
-    count = count_users(session=session)
-    users = list_users_record(session=session, skip=skip, limit=limit)
+    count = count_users(session=session, search=search)
+    users = list_users_record(session=session, skip=skip, limit=limit, search=search)
     wallets = list_wallets_by_user_ids(
         session=session,
         user_ids=[user.id for user in users if user.id is not None],
@@ -77,6 +81,4 @@ def get_user_detail(*, session: Session, user_id: uuid.UUID) -> UserDetailPublic
     if user.level_id is not None:
         level = session.get(UserLevel, user.level_id)
         level_name = level.name if level else None
-    return UserDetailPublic.model_validate(
-        user, update={"level_name": level_name}
-    )
+    return UserDetailPublic.model_validate(user, update={"level_name": level_name})

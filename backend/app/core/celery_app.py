@@ -28,6 +28,11 @@ celery_app.conf.update(
 
 celery_app.conf.beat_schedule = init_tasks
 
+# shared_task 返回的是 celery.local 线程本地代理：FastAPI 同步接口在线程池线程中执行，
+# 若不显式设默认应用，`.delay()` 会绑定到新建的默认 AMQP broker（连接被拒），
+# 导致入队失败。set_default() 将本应用设为全局默认，所有线程统一走配置的 Redis broker。
+celery_app.set_default()
+
 
 def discover_tasks() -> None:
     """自动发现任务模块（确保模块被导入，Celery 能注册到任务表中）"""

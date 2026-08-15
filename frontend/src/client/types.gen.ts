@@ -330,6 +330,19 @@ export type CrontabSchedulePublic = {
     timezone?: string;
 };
 
+/**
+ * 管理端：投递记录展示结构
+ */
+export type DeliveryPublic = {
+    id: string;
+    channel: string;
+    status: string;
+    attempt_count: number;
+    max_attempts: number;
+    error_message?: (string | null);
+    sent_at?: (string | null);
+};
+
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -525,6 +538,25 @@ export type NewPassword = {
 };
 
 /**
+ * 管理端：通知记录列表项（按投递粒度一行）
+ */
+export type NotificationAdminItem = {
+    notification_id: string;
+    event_type: string;
+    title: string;
+    content: string;
+    payload_snapshot?: {
+        [key: string]: unknown;
+    };
+    recipient?: (string | null);
+    event_id?: (string | null);
+    rule_id?: (string | null);
+    created_at?: (string | null);
+    read_at?: (string | null);
+    delivery: DeliveryPublic;
+};
+
+/**
  * 通知对外展示结构
  */
 export type NotificationPublic = {
@@ -537,6 +569,25 @@ export type NotificationPublic = {
     };
     created_at: (string | null);
     read_at: (string | null);
+};
+
+/**
+ * 管理端：通知记录分页列表
+ */
+export type NotificationsAdminPublic = {
+    data: Array<NotificationAdminItem>;
+    count: number;
+};
+
+/**
+ * 管理端：手动发送通知请求
+ */
+export type NotificationSendRequest = {
+    title: string;
+    content?: string;
+    event_type?: string;
+    user_ids: Array<(string)>;
+    channels: Array<(string)>;
 };
 
 /**
@@ -2081,6 +2132,34 @@ export type NotificationsMarkReadResponse = (NotificationPublic);
 
 export type NotificationsMarkAllReadResponse = (Message);
 
+export type NotificationsReadAdminNotificationsData = {
+    channel?: (string | null);
+    eventType?: (string | null);
+    limit?: number;
+    skip?: number;
+    status?: (string | null);
+};
+
+export type NotificationsReadAdminNotificationsResponse = (NotificationsAdminPublic);
+
+export type NotificationsSendAdminNotificationData = {
+    requestBody: NotificationSendRequest;
+};
+
+export type NotificationsSendAdminNotificationResponse = (Message);
+
+export type NotificationsRetryAdminDeliveryData = {
+    deliveryId: string;
+};
+
+export type NotificationsRetryAdminDeliveryResponse = (DeliveryPublic);
+
+export type NotificationsDeleteAdminNotificationData = {
+    notificationId: string;
+};
+
+export type NotificationsDeleteAdminNotificationResponse = (Message);
+
 export type OrdersCreateUserOrdersData = {
     requestBody: AdminOrdersCreate;
 };
@@ -2406,6 +2485,7 @@ export type SuppliersReadUpstreamProductsSyncStatusResponse = (TaskStatusPublic)
 
 export type UsersReadUsersData = {
     limit?: number;
+    search?: (string | null);
     skip?: number;
 };
 

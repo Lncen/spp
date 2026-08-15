@@ -3,7 +3,7 @@
 import uuid
 from typing import Any
 
-from sqlmodel import Session, col, delete, func, select
+from sqlmodel import Session, col, delete, func, or_, select
 
 from app.modules.item.models import Item
 from app.modules.user.models import User
@@ -11,16 +11,40 @@ from app.modules.user.schemas import UserCreate
 from app.modules.wallet.models import Wallet
 
 
-def count_users(*, session: Session) -> int:
-    """统计用户总数"""
-    return session.exec(select(func.count()).select_from(User)).one()
-
-
-def list_users(*, session: Session, skip: int = 0, limit: int = 100) -> list[User]:
-    """按创建时间倒序分页查询用户"""
-    statement = (
-        select(User).order_by(col(User.created_at).desc()).offset(skip).limit(limit)
+def _search_filter(search: str | None):
+    """构造用户名/邮箱/昵称模糊匹配条件，无搜索词时返回 None"""
+    if not search:
+        return None
+    pattern = f"%{search.strip()}%"
+    return or_(
+        User.username.ilike(pattern),
+        User.email.ilike(pattern),
+        User.full_name.ilike(pattern),
     )
+
+
+def count_users(*, session: Session, search: str | None = None) -> int:
+    """统计用户总数"""
+    statement = select(func.count()).select_from(User)
+    search_filter = _search_filter(search)
+    if search_filter is not None:
+        statement = statement.where(search_filter)
+    return session.exec(statement).one()
+
+
+def list_users(
+    *,
+    session: Session,
+    skip: int = 0,
+    limit: int = 100,
+    search: str | None = None,
+) -> list[User]:
+    """按创建时间倒序分页查询用户"""
+    statement = select(User).order_by(col(User.created_at).desc())
+    search_filter = _search_filter(search)
+    if search_filter is not None:
+        statement = statement.where(search_filter)
+    statement = statement.offset(skip).limit(limit)
     return list(session.exec(statement).all())
 
 

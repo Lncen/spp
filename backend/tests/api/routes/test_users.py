@@ -93,9 +93,7 @@ def test_get_non_existing_user_as_superuser(
     assert r.json() == {"detail": "用户不存在"}
 
 
-def test_get_own_user_as_normal_user_forbidden(
-    client: TestClient, db: Session
-) -> None:
+def test_get_own_user_as_normal_user_forbidden(client: TestClient, db: Session) -> None:
     """普通用户不能通过详情接口查看自己（仅超管可用）"""
     username = random_email()
     password = random_lower_string()
@@ -209,6 +207,45 @@ def test_retrieve_users(
         assert "email" not in item
 
 
+def test_search_users(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    """按用户名/邮箱/昵称模糊搜索用户"""
+    password = random_lower_string()
+    username = random_email()
+    full_name = random_lower_string()
+    user_in = UserCreate(email=username, password=password, full_name=full_name)
+    user = create_user(session=db, user_create=user_in)
+
+    other_username = random_email()
+    other_in = UserCreate(email=other_username, password=password)
+    other = create_user(session=db, user_create=other_in)
+
+    # 按邮箱/用户名片段搜索
+    r = client.get(
+        f"{settings.API_V1_STR}/users/",
+        headers=superuser_token_headers,
+        params={"search": username.split("@")[0]},
+    )
+    assert r.status_code == 200
+    result = r.json()
+    usernames = [item["username"] for item in result["data"]]
+    assert user.username in usernames
+    assert other.username not in usernames
+
+    # 按昵称搜索
+    r = client.get(
+        f"{settings.API_V1_STR}/users/",
+        headers=superuser_token_headers,
+        params={"search": full_name},
+    )
+    assert r.status_code == 200
+    result = r.json()
+    usernames = [item["username"] for item in result["data"]]
+    assert user.username in usernames
+    assert other.username not in usernames
+
+
 def test_update_user_me(
     client: TestClient, normal_user_token_headers: dict[str, str], db: Session
 ) -> None:
@@ -247,9 +284,7 @@ def test_update_user_me_username(
     updated_user = r.json()
     assert updated_user["username"] == new_username
 
-    user_db = db.exec(
-        select(User).where(User.username == new_username)
-    ).first()
+    user_db = db.exec(select(User).where(User.username == new_username)).first()
     assert user_db
     assert user_db.username == new_username
 
@@ -414,9 +449,7 @@ def test_update_password_me_same_password_error(
     )
     assert r.status_code == 400
     updated_user = r.json()
-    assert (
-        updated_user["detail"] == "新密码不能与当前密码相同"
-    )
+    assert updated_user["detail"] == "新密码不能与当前密码相同"
 
 
 def test_register_user(client: TestClient, db: Session) -> None:
@@ -462,15 +495,11 @@ def test_register_user_with_username(client: TestClient, db: Session) -> None:
     assert user_db.username == username
 
 
-def test_register_user_username_exists_error(
-    client: TestClient, db: Session
-) -> None:
+def test_register_user_username_exists_error(client: TestClient, db: Session) -> None:
     """注册用户名重复时报错"""
     username = random_lower_string()
     password = random_lower_string()
-    user_in = UserCreate(
-        email=random_email(), username=username, password=password
-    )
+    user_in = UserCreate(email=random_email(), username=username, password=password)
     create_user(session=db, user_create=user_in)
 
     data = {"email": random_email(), "username": username, "password": password}
@@ -560,9 +589,7 @@ def test_update_user_email_exists(
     assert r.json()["detail"] == "该邮箱已被其他用户使用"
 
 
-def test_delete_user_me_disabled_by_default(
-    client: TestClient, db: Session
-) -> None:
+def test_delete_user_me_disabled_by_default(client: TestClient, db: Session) -> None:
     """删除账号设置默认关闭时返回 403"""
     username = random_email()
     password = random_lower_string()

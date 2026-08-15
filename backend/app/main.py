@@ -6,6 +6,7 @@ from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 
+import app.core.celery_app  # noqa: F401  注册默认 Celery 应用（shared_task 线程本地绑定）
 from app.api.main import api_router
 from app.core.config import settings
 from app.core.middleware import MaintenanceMiddleware, SecurityHeadersMiddleware

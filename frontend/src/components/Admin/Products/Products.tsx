@@ -1,5 +1,6 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query"
 import type { PaginationState } from "@tanstack/react-table"
+import { Search } from "lucide-react"
 import { Suspense, useState } from "react"
 import type { ProductType } from "@/client"
 import { ProductCategoriesService, ProductsService } from "@/client"
@@ -8,6 +9,7 @@ import {
   getProductCategoryPath,
 } from "@/components/Admin/ProductCategories/types"
 import { DataTable } from "@/components/Common/DataTable"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -15,12 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import AddProduct from "./AddProduct"
 import { columns } from "./columns"
 import { PRODUCT_TYPE_OPTIONS } from "./constants"
 import PendingProducts from "./PendingProducts"
 
 const NONE = "none"
+const SEARCH_DEBOUNCE_MS = 300
 
 function toProductType(value: string): ProductType | undefined {
   if (value === NONE) return undefined
@@ -36,6 +40,7 @@ interface ProductsFilters {
 function getProductsQueryOptions(
   filters: ProductsFilters,
   pagination: PaginationState,
+  search: string,
 ) {
   return {
     queryFn: () =>
@@ -45,8 +50,15 @@ function getProductsQueryOptions(
         productType: toProductType(filters.productType),
         categoryId:
           filters.categoryId === NONE ? undefined : filters.categoryId,
+        name: search || undefined,
       }),
-    queryKey: ["products", filters.productType, filters.categoryId, pagination],
+    queryKey: [
+      "products",
+      filters.productType,
+      filters.categoryId,
+      search,
+      pagination,
+    ],
   }
 }
 
@@ -54,13 +66,15 @@ function ProductsTableContent({
   filters,
   pagination,
   setPagination,
+  search,
 }: {
   filters: ProductsFilters
   pagination: PaginationState
   setPagination: (pagination: PaginationState) => void
+  search: string
 }) {
   const { data: products } = useSuspenseQuery(
-    getProductsQueryOptions(filters, pagination),
+    getProductsQueryOptions(filters, pagination, search),
   )
 
   return (
@@ -78,10 +92,12 @@ function ProductsTable({
   filters,
   pagination,
   setPagination,
+  search,
 }: {
   filters: ProductsFilters
   pagination: PaginationState
   setPagination: (pagination: PaginationState) => void
+  search: string
 }) {
   return (
     <Suspense fallback={<PendingProducts />}>
@@ -89,6 +105,7 @@ function ProductsTable({
         filters={filters}
         pagination={pagination}
         setPagination={setPagination}
+        search={search}
       />
     </Suspense>
   )
@@ -99,6 +116,8 @@ export const Products = () => {
     productType: NONE,
     categoryId: NONE,
   })
+  const [searchInput, setSearchInput] = useState("")
+  const search = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS)
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -120,6 +139,18 @@ export const Products = () => {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchInput}
+              onChange={(event) => {
+                setSearchInput(event.target.value)
+                resetPage()
+              }}
+              placeholder="搜索商品名称"
+              className="w-52 pl-9"
+            />
+          </div>
           <Select
             value={filters.categoryId}
             onValueChange={(categoryId) => {
@@ -170,6 +201,7 @@ export const Products = () => {
         filters={filters}
         pagination={pagination}
         setPagination={setPagination}
+        search={search}
       />
     </div>
   )

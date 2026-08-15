@@ -1,13 +1,14 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { Link as RouterLink } from "@tanstack/react-router"
 import type { PaginationState } from "@tanstack/react-table"
-import { X } from "lucide-react"
+import { Search, X } from "lucide-react"
 import { Suspense, useState } from "react"
 
 import type { OrderStatus } from "@/client"
 import { OrdersService } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -15,11 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { columns } from "./columns"
 import { ORDER_STATUS_OPTIONS } from "./constants"
 import PendingOrders from "./PendingOrders"
 
 const ALL_STATUS = "all"
+const SEARCH_DEBOUNCE_MS = 300
 
 function toOrderStatus(value: string): OrderStatus | undefined {
   if (value === ALL_STATUS) return undefined
@@ -34,6 +37,7 @@ function getOrdersQueryOptions(
   userId: string | undefined,
   filters: OrdersFilters,
   pagination: PaginationState,
+  search: string,
 ) {
   const status = toOrderStatus(filters.status)
   return {
@@ -43,8 +47,9 @@ function getOrdersQueryOptions(
         limit: pagination.pageSize,
         status,
         userId: userId ?? null,
+        paramValue: search || undefined,
       }),
-    queryKey: ["orders", userId ?? null, status, pagination],
+    queryKey: ["orders", userId ?? null, status, search, pagination],
   }
 }
 
@@ -53,14 +58,16 @@ function OrdersTableContent({
   filters,
   pagination,
   setPagination,
+  search,
 }: {
   userId: string | undefined
   filters: OrdersFilters
   pagination: PaginationState
   setPagination: (pagination: PaginationState) => void
+  search: string
 }) {
   const { data: orders } = useSuspenseQuery(
-    getOrdersQueryOptions(userId, filters, pagination),
+    getOrdersQueryOptions(userId, filters, pagination, search),
   )
 
   return (
@@ -79,11 +86,13 @@ function OrdersTable({
   filters,
   pagination,
   setPagination,
+  search,
 }: {
   userId: string | undefined
   filters: OrdersFilters
   pagination: PaginationState
   setPagination: (pagination: PaginationState) => void
+  search: string
 }) {
   return (
     <Suspense fallback={<PendingOrders />}>
@@ -92,6 +101,7 @@ function OrdersTable({
         filters={filters}
         pagination={pagination}
         setPagination={setPagination}
+        search={search}
       />
     </Suspense>
   )
@@ -101,6 +111,8 @@ export function Orders({ userId }: { userId: string | undefined }) {
   const [filters, setFilters] = useState<OrdersFilters>({
     status: ALL_STATUS,
   })
+  const [searchInput, setSearchInput] = useState("")
+  const search = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS)
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -117,10 +129,22 @@ export function Orders({ userId }: { userId: string | undefined }) {
         <div>
           <h2 className="text-xl font-bold tracking-tight">订单管理</h2>
           <p className="text-muted-foreground">
-            查询全部订单，支持按用户和状态筛选
+            查询全部订单，支持按用户、状态和下单参数搜索
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchInput}
+              onChange={(event) => {
+                setSearchInput(event.target.value)
+                setPagination((current) => ({ ...current, pageIndex: 0 }))
+              }}
+              placeholder="搜索下单参数（账号/手机号等）"
+              className="w-52 pl-9"
+            />
+          </div>
           {userId && (
             <Button variant="outline" size="sm" asChild>
               <RouterLink to="/orders" search={{}}>
@@ -149,6 +173,7 @@ export function Orders({ userId }: { userId: string | undefined }) {
         filters={filters}
         pagination={pagination}
         setPagination={setPagination}
+        search={search}
       />
     </div>
   )

@@ -1128,6 +1128,59 @@ export const CrontabSchedulePublicSchema = {
     description: 'crontab 配置响应'
 } as const;
 
+export const DeliveryPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        channel: {
+            type: 'string',
+            title: 'Channel'
+        },
+        status: {
+            type: 'string',
+            title: 'Status'
+        },
+        attempt_count: {
+            type: 'integer',
+            title: 'Attempt Count'
+        },
+        max_attempts: {
+            type: 'integer',
+            title: 'Max Attempts'
+        },
+        error_message: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error Message'
+        },
+        sent_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Sent At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'channel', 'status', 'attempt_count', 'max_attempts'],
+    title: 'DeliveryPublic',
+    description: '管理端：投递记录展示结构'
+} as const;
+
 export const HTTPValidationErrorSchema = {
     properties: {
         detail: {
@@ -1743,6 +1796,98 @@ export const NewPasswordSchema = {
     description: '重置密码请求'
 } as const;
 
+export const NotificationAdminItemSchema = {
+    properties: {
+        notification_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Notification Id'
+        },
+        event_type: {
+            type: 'string',
+            title: 'Event Type'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        content: {
+            type: 'string',
+            title: 'Content'
+        },
+        payload_snapshot: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Payload Snapshot'
+        },
+        recipient: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '接收对象展示名'
+        },
+        event_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Id'
+        },
+        rule_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rule Id'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        read_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Read At'
+        },
+        delivery: {
+            '$ref': '#/components/schemas/DeliveryPublic'
+        }
+    },
+    type: 'object',
+    required: ['notification_id', 'event_type', 'title', 'content', 'delivery'],
+    title: 'NotificationAdminItem',
+    description: '管理端：通知记录列表项（按投递粒度一行）'
+} as const;
+
 export const NotificationPublicSchema = {
     properties: {
         id: {
@@ -1796,6 +1941,71 @@ export const NotificationPublicSchema = {
     required: ['id', 'title', 'content', 'event_type', 'payload_snapshot', 'created_at', 'read_at'],
     title: 'NotificationPublic',
     description: '通知对外展示结构'
+} as const;
+
+export const NotificationSendRequestSchema = {
+    properties: {
+        title: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Title'
+        },
+        content: {
+            type: 'string',
+            maxLength: 2000,
+            title: 'Content',
+            default: ''
+        },
+        event_type: {
+            type: 'string',
+            maxLength: 64,
+            minLength: 1,
+            title: 'Event Type',
+            default: 'manual'
+        },
+        user_ids: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            minItems: 1,
+            title: '接收用户 ID 列表'
+        },
+        channels: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            minItems: 1,
+            title: '投递渠道列表'
+        }
+    },
+    type: 'object',
+    required: ['title', 'user_ids', 'channels'],
+    title: 'NotificationSendRequest',
+    description: '管理端：手动发送通知请求'
+} as const;
+
+export const NotificationsAdminPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/NotificationAdminItem'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'NotificationsAdminPublic',
+    description: '管理端：通知记录分页列表'
 } as const;
 
 export const NotificationsPublicSchema = {
