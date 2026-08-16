@@ -21,8 +21,6 @@ from app.modules.image.api import (
     router as image_router,
 )
 from app.modules.image.models import Image, ImageCategory  # noqa: F401
-from app.modules.item.api import router as item_router
-from app.modules.item.models import Item  # noqa: F401
 from app.modules.level.api import router as level_router
 from app.modules.level.models import UserLevel  # noqa: F401
 from app.modules.notification.api import router as notification_router
@@ -67,7 +65,6 @@ api_router.include_router(user_router)
 api_router.include_router(wallet_router)
 api_router.include_router(utils_router)
 api_router.include_router(level_router)
-api_router.include_router(item_router)
 api_router.include_router(notification_router)
 api_router.include_router(customer_service_router)
 api_router.include_router(order_router)

@@ -1,9 +1,22 @@
 """供应商模块：上游数据到本地业务字段的映射规则（纯函数，无 I/O）"""
 
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
+from app.modules.price_template.constants import (
+    DEFAULT_DISCOUNT_RATE,
+    MONEY_PRECISION,
+)
 from app.modules.product.constants import InputType
 from app.modules.supplier.schemas.upstream import UpstreamBuyParam
+
+
+def calc_sync_fixed_price(*, cost_price: Decimal) -> Decimal:
+    """同步商品固定售价：成本价 × 默认折扣率（1.5 倍），按金额精度四舍五入"""
+    return (cost_price * DEFAULT_DISCOUNT_RATE).quantize(
+        MONEY_PRECISION,
+        rounding=ROUND_HALF_UP,
+    )
 
 
 def build_buy_params(params: list[UpstreamBuyParam]) -> list[dict[str, Any]]:

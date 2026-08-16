@@ -118,7 +118,7 @@ export const columns: ColumnDef<ProductPublic>[] = [
   // },
   {
     id: "price",
-    header: "成本价",
+    header: "价格",
     cell: ({ row }) => (
       <span className="font-mono text-sm">{formatPrice(row.original)}</span>
     ),

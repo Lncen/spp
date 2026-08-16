@@ -3,9 +3,8 @@
 import uuid
 from typing import Any
 
-from sqlmodel import Session, col, delete, func, or_, select
+from sqlmodel import Session, col, func, or_, select
 
-from app.modules.item.models import Item
 from app.modules.user.models import User
 from app.modules.user.schemas import UserCreate
 from app.modules.wallet.models import Wallet
@@ -109,10 +108,8 @@ def update_user_record(
     return db_user
 
 
-def delete_user_record(*, session: Session, user: User, user_id: uuid.UUID) -> None:
-    """删除用户及其关联 items（不提交，由应用层控制事务）"""
-    statement = delete(Item).where(col(Item.owner_id) == user_id)
-    session.exec(statement)
+def delete_user_record(*, session: Session, user: User) -> None:
+    """删除用户记录（不提交，由应用层控制事务）"""
     session.delete(user)
     session.flush()
 

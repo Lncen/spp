@@ -222,7 +222,7 @@ backend/app/modules/automation/
 │       ├── order_cleanup.py        # cleanup_completed_orders：已完成订单数据清理
 │       ├── wallet_cleanup.py       # cleanup_wallet_transactions：钱包流水数据清理
 │       ├── auth_cleanup.py         # cleanup_expired_refresh_tokens：过期刷新令牌清理
-│       ├── product_sync.py         # sync_product_status：商品状态同步
+│       ├── product_sync.py         # sync_product_status：商品定时同步（上游成本价与关闭状态）
 │       ├── supplier_sync.py        # sync_upstream_products + dispatch_upstream_products_sync：供应商上游商品同步
 │       ├── notification_delivery.py  # deliver_notification / requeue_stale_notification_deliveries：通知投递与兜底扫描
 │       ├── notification_cleanup.py # cleanup_notification_records：通知记录清理

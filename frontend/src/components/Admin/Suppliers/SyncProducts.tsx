@@ -463,7 +463,7 @@ const SyncProducts = ({ id }: SyncProductsProps) => {
         <DialogHeader className="px-6 pt-6">
           <DialogTitle>同步上游商品</DialogTitle>
           <DialogDescription>
-            勾选要同步的商品。已匹配的本地商品只更新成本价，未匹配的会自动创建。
+            勾选要同步的商品。已匹配的本地商品更新成本价与关闭状态，未匹配的会自动创建。
           </DialogDescription>
         </DialogHeader>
 

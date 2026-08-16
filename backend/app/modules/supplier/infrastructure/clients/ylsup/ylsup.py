@@ -102,7 +102,6 @@ class YlsupClient(SupplierClientBase):
             "page": page,
             "page_size": page_size,
         }
-        # TODO: keyword 对应的上游参数名待确认
         if category_id:
             body["goods_category_id"] = category_id
         payload = self.post("/openapi/customer/Goods/List", json=body).json()

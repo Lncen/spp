@@ -8,6 +8,7 @@ from typing import Any
 from fastapi import HTTPException
 from sqlmodel import Session, col, func, select
 
+from app.modules.price_template.constants import DEFAULT_DISCOUNT_RATE
 from app.modules.product.constants import (
     ProductStatus,
     ProductType,
@@ -23,6 +24,7 @@ from app.modules.product.product.models import (
     ProductPricing,
     ProductSupplier,
 )
+from app.modules.supplier.domain.mapping import calc_sync_fixed_price
 from app.modules.supplier.models import Supplier
 from app.modules.supplier.schemas import SupplierCreate
 from app.modules.supplier.schemas.upstream import UpstreamProductDetail
@@ -112,10 +114,11 @@ def update_matched_product(
     session: Session,
     product_id: uuid.UUID,
     cost_price: Decimal,
+    is_closed: bool,
     category_id: uuid.UUID | None,
     upstream_name: str | None = None,
 ) -> tuple[uuid.UUID | None, uuid.UUID | None]:
-    """更新已同步商品的成本价与分类，返回 (旧分类 ID, 新分类 ID)"""
+    """更新已同步商品的成本价与关闭下单状态，返回 (旧分类 ID, 新分类 ID)"""
     db_product = session.get(Product, product_id)
     if db_product is None:
         raise ValueError("已同步商品缺少商品记录，无法更新")
@@ -126,9 +129,15 @@ def update_matched_product(
         raise ValueError("已同步商品缺少定价配置，无法更新成本价")
     old_category_id = db_product.category_id
     db_pricing.cost_price = cost_price
+    db_product.is_closed = is_closed
+    # 按商品当前定价模式维护 1.5 倍售价：固定价格模式更新固定售价，
+    # 商品系数模式保持系数为默认折扣率，价格模板模式不干预
+    if db_pricing.fixed_price is not None:
+        db_pricing.fixed_price = calc_sync_fixed_price(cost_price=cost_price)
+    elif db_pricing.item_coefficient is not None:
+        db_pricing.item_coefficient = DEFAULT_DISCOUNT_RATE
     if category_id is not None and category_id != db_product.category_id:
         db_product.category_id = category_id
-        session.add(db_product)
     db_product.sync_status = SyncStatus.SUCCESS
     db_product.synced_at = datetime.now(UTC)
     session.add(db_product)
@@ -185,7 +194,7 @@ def create_synced_product(
         ProductPricing(
             product_id=product_id,
             cost_price=detail.cost_price,
-            fixed_price=detail.cost_price,
+            fixed_price=calc_sync_fixed_price(cost_price=detail.cost_price),
             loss_price=Decimal("0.00"),
         )
     )

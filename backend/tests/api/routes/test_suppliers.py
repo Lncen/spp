@@ -9,6 +9,9 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from app.core.config import settings
+from app.modules.automation.infrastructure.tasks.product_sync import (
+    sync_product_status,
+)
 from app.modules.product.category.models import ProductCategory
 from app.modules.product.constants import (
     ProductStatus,
@@ -493,7 +496,8 @@ def test_sync_upstream_product_creates_and_updates(
         select(ProductPricing).where(ProductPricing.product_id == product.id)
     ).one()
     assert pricing.cost_price == Decimal("0.01296")
-    assert pricing.fixed_price == Decimal("0.01296")
+    # 固定售价 = 成本价 × 1.5
+    assert pricing.fixed_price == Decimal("0.01944")
 
     row = db.exec(
         select(ProductSupplier).where(
@@ -506,15 +510,20 @@ def test_sync_upstream_product_creates_and_updates(
     action, updated_id = sync_upstream_product(
         session=db,
         supplier=supplier,
-        detail=detail.model_copy(update={"cost_price": Decimal("0.02")}),
+        detail=detail.model_copy(
+            update={"cost_price": Decimal("0.02"), "is_closed": True}
+        ),
         category_id=second_category.id,
     )
     assert action == "updated"
     assert updated_id == product.id
     db.refresh(pricing)
     assert pricing.cost_price == Decimal("0.02")
+    # 固定售价按成本价 1.5 倍维护
+    assert pricing.fixed_price == Decimal("0.03")
     db.refresh(product)
     assert product.category_id == second_category.id
+    assert product.is_closed is True
     db.refresh(category)
     db.refresh(second_category)
     assert category.product_count == 0
@@ -523,12 +532,104 @@ def test_sync_upstream_product_creates_and_updates(
     action, updated_id = sync_upstream_product(
         session=db,
         supplier=supplier,
-        detail=detail.model_copy(update={"cost_price": Decimal("0.03")}),
+        detail=detail.model_copy(
+            update={"cost_price": Decimal("0.03"), "is_closed": False}
+        ),
     )
     assert action == "updated"
     assert updated_id == product.id
     db.refresh(product)
     assert product.category_id == second_category.id
+    # 不传分类时同样同步关闭状态
+    assert product.is_closed is False
+    db.refresh(pricing)
+    assert pricing.cost_price == Decimal("0.03")
+    assert pricing.fixed_price == Decimal("0.045")
+
+
+def test_sync_upstream_product_keeps_coefficient_markup(db: Session) -> None:
+    """已匹配商品切换为商品系数模式后，同步仍按 1.5 倍维护系数"""
+    supplier = create_random_supplier(db)
+    detail = UpstreamProductDetail(
+        upstream_id="838",
+        name="VIP快速)",
+        cost_price=Decimal("0.01296"),
+        is_closed=False,
+    )
+    _action, product_id = sync_upstream_product(
+        session=db,
+        supplier=supplier,
+        detail=detail,
+    )
+    pricing = db.exec(
+        select(ProductPricing).where(ProductPricing.product_id == product_id)
+    ).one()
+    pricing.fixed_price = None
+    pricing.item_coefficient = Decimal("1.20")
+    db.add(pricing)
+    db.commit()
+
+    _action, updated_id = sync_upstream_product(
+        session=db,
+        supplier=supplier,
+        detail=detail.model_copy(update={"cost_price": Decimal("0.02")}),
+    )
+    assert updated_id == product_id
+    db.refresh(pricing)
+    assert pricing.cost_price == Decimal("0.02")
+    assert pricing.item_coefficient == Decimal("1.5")
+    assert pricing.fixed_price is None
+
+
+def test_sync_product_status_periodic_dispatches_upstream_sync(
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """定时任务 sync_product_status 与手动同步派发同一个 sync_upstream_products 任务"""
+    supplier = create_random_supplier(db)
+    detail = UpstreamProductDetail(
+        upstream_id="838",
+        name="VIP快速)",
+        cost_price=Decimal("0.01296"),
+        is_closed=False,
+    )
+    action, product_id = sync_upstream_product(
+        session=db,
+        supplier=supplier,
+        detail=detail,
+    )
+    assert action == "created"
+    product = db.get(Product, product_id)
+    assert product is not None
+
+    dispatched: list[dict[str, object]] = []
+
+    def fake_dispatch(
+        *,
+        supplier_id: str,
+        product_ids: list[str],
+        **kwargs: object,
+    ) -> str:
+        dispatched.append(
+            {"supplier_id": supplier_id, "product_ids": product_ids, "kwargs": kwargs}
+        )
+        return "fake-task-id"
+
+    monkeypatch.setattr(
+        "app.modules.automation.infrastructure.tasks.product_sync."
+        "dispatch_upstream_products_sync",
+        fake_dispatch,
+    )
+
+    result = sync_product_status()
+    # 测试会话内其他用例也会留下已同步商品，只校验本用例商品被分发
+    assert result["total_checked"] >= 1
+    assert len(result["dispatched"]) >= 1
+    assert result["failed"] == []
+    assert any(
+        item["supplier_id"] == str(supplier.id) and "838" in item["product_ids"]
+        for item in dispatched
+    )
 
 
 def test_create_upstream_products_sync_returns_task_id(

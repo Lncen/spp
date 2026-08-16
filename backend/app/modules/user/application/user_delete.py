@@ -12,8 +12,8 @@ from app.modules.user.repositories.user import (
 
 
 def delete_user(*, session: Session, user: User, user_id: uuid.UUID) -> None:
-    """删除用户及其关联 items（仅超级管理员）"""
-    delete_user_record(session=session, user=user, user_id=user_id)
+    """删除用户（仅超级管理员）"""
+    delete_user_record(session=session, user=user)
     session.commit()
 
 

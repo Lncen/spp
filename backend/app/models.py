@@ -19,7 +19,6 @@ from app.modules.customer_service.models import (
     ConversationMessage,
 )
 from app.modules.image.models import Image, ImageCategory
-from app.modules.item.models import Item
 from app.modules.level.models import UserLevel
 from app.modules.notification.models import (
     Notification,
@@ -53,7 +52,6 @@ __all__ = [
     "UserLevel",
     "Notification",
     "NotificationDelivery",
-    "Item",
     "User",
     "Image",
     "ImageCategory",

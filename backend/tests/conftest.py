@@ -20,7 +20,6 @@ from app.modules.customer_service.models import (
     ConversationMessage,
 )
 from app.modules.image.models import Image, ImageCategory
-from app.modules.item.models import Item
 from app.modules.order.models import Order, OrderParam
 from app.modules.price_template.models import PriceTemplate, PriceTemplateRule
 from app.modules.product.category.models import ProductCategory
@@ -208,8 +207,6 @@ def db() -> Generator[Session]:
         statement = delete(Product)
         session.execute(statement)
         statement = delete(ProductCategory)
-        session.execute(statement)
-        statement = delete(Item)
         session.execute(statement)
         statement = delete(WalletTransaction)
         session.execute(statement)

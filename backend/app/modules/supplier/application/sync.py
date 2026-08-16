@@ -28,9 +28,10 @@ def sync_upstream_product(
     detail: UpstreamProductDetail,
     category_id: uuid.UUID | None = None,
 ) -> tuple[str, Any]:
-    """同步单个上游商品到本地：匹配时只更新成本价，未匹配时创建完整商品"""
+    """同步单个上游商品到本地：匹配时更新成本价与关闭下单状态（售价按成本价 1.5 倍维护），未匹配时创建完整商品"""
     upstream_id = detail.upstream_id
     cost_price = detail.cost_price
+    is_closed = detail.is_closed
     if category_id is not None and session.get(ProductCategory, category_id) is None:
         raise ValueError("本地分类不存在")
 
@@ -45,6 +46,7 @@ def sync_upstream_product(
             product_id=matched.product_id,
             cost_price=cost_price,
             category_id=category_id,
+            is_closed=is_closed,
             upstream_name=str(detail.name or f"上游商品 {detail.upstream_id}"),
         )
         if category_id is not None and old_category_id != category_id:
