@@ -49,4 +49,5 @@ def discover_tasks() -> None:
     import app.modules.automation.infrastructure.tasks.scan  # noqa: F401
     import app.modules.automation.infrastructure.tasks.supplier_sync  # noqa: F401
     import app.modules.automation.infrastructure.tasks.wallet_cleanup  # noqa: F401
+    import app.modules.backup.infrastructure.tasks  # noqa: F401
     import app.modules.notification.infrastructure.event_listeners  # noqa: F401

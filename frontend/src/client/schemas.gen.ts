@@ -1089,6 +1089,88 @@ export const AutomationTasksPublicSchema = {
     description: '自动化任务列表响应'
 } as const;
 
+export const BackupCountsSchema = {
+    properties: {
+        users: {
+            type: 'integer',
+            title: 'Users',
+            default: 0
+        },
+        wallets: {
+            type: 'integer',
+            title: 'Wallets',
+            default: 0
+        },
+        orders: {
+            type: 'integer',
+            title: 'Orders',
+            default: 0
+        },
+        order_params: {
+            type: 'integer',
+            title: 'Order Params',
+            default: 0
+        },
+        suppliers: {
+            type: 'integer',
+            title: 'Suppliers',
+            default: 0
+        }
+    },
+    type: 'object',
+    title: 'BackupCounts',
+    description: '单份备份的数据条数统计'
+} as const;
+
+export const BackupPublicSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        size: {
+            type: 'integer',
+            title: 'Size'
+        },
+        order_hours: {
+            type: 'integer',
+            title: 'Order Hours'
+        },
+        counts: {
+            '$ref': '#/components/schemas/BackupCounts'
+        }
+    },
+    type: 'object',
+    required: ['filename', 'created_at', 'size', 'order_hours', 'counts'],
+    title: 'BackupPublic',
+    description: '备份文件列表项'
+} as const;
+
+export const BackupsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/BackupPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'BackupsPublic',
+    description: '备份文件列表响应'
+} as const;
+
 export const BalancePublicSchema = {
     properties: {
         balance: {
@@ -1462,6 +1544,24 @@ export const DeliveryPublicSchema = {
     required: ['id', 'channel', 'status', 'attempt_count', 'max_attempts'],
     title: 'DeliveryPublic',
     description: '管理端：投递记录展示结构'
+} as const;
+
+export const EntityRestoreStatsSchema = {
+    properties: {
+        inserted: {
+            type: 'integer',
+            title: 'Inserted',
+            default: 0
+        },
+        updated: {
+            type: 'integer',
+            title: 'Updated',
+            default: 0
+        }
+    },
+    type: 'object',
+    title: 'EntityRestoreStats',
+    description: '单类数据恢复统计'
 } as const;
 
 export const HTTPValidationErrorSchema = {
@@ -4931,6 +5031,30 @@ export const RefreshTokenRequestSchema = {
     required: ['refresh_token'],
     title: 'RefreshTokenRequest',
     description: '刷新令牌请求'
+} as const;
+
+export const RestoreResultPublicSchema = {
+    properties: {
+        users: {
+            '$ref': '#/components/schemas/EntityRestoreStats'
+        },
+        wallets: {
+            '$ref': '#/components/schemas/EntityRestoreStats'
+        },
+        orders: {
+            '$ref': '#/components/schemas/EntityRestoreStats'
+        },
+        order_params: {
+            '$ref': '#/components/schemas/EntityRestoreStats'
+        },
+        suppliers: {
+            '$ref': '#/components/schemas/EntityRestoreStats'
+        }
+    },
+    type: 'object',
+    required: ['users', 'wallets', 'orders', 'order_params', 'suppliers'],
+    title: 'RestoreResultPublic',
+    description: '合并恢复结果'
 } as const;
 
 export const RuleTypeSchema = {

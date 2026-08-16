@@ -97,6 +97,8 @@
     networks:
       - traefik-public
       - default
+    volumes:
+      - ./backend/backups:/app/backups
     depends_on:
       db:
         condition: service_healthy
@@ -128,6 +130,7 @@
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
+      - BACKUP_DIR=/app/backups
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]
       interval: 10s
@@ -155,6 +158,8 @@
     networks:
       - traefik-public
       - default
+    volumes:
+      - ./backend/backups:/app/backups
     depends_on:
       db:
         condition: service_healthy
@@ -184,6 +189,7 @@
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
+      - BACKUP_DIR=/app/backups
     command: celery -A celery_worker worker --concurrency=4 -l info
     build:
       context: .
@@ -195,6 +201,8 @@
     networks:
       - traefik-public
       - default
+    volumes:
+      - ./backend/backups:/app/backups
     depends_on:
       db:
         condition: service_healthy
@@ -224,6 +232,7 @@
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
+      - BACKUP_DIR=/app/backups
     command: celery -A celery_worker beat -l info
     build:
       context: .

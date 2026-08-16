@@ -36,6 +36,12 @@ ORDER_RETENTION_DAYS = "order_retention_days"
 # 钱包流水数据保留天数
 WALLET_TRANSACTION_RETENTION_DAYS = "wallet_transaction_retention_days"
 
+# 数据备份目录；留空时使用环境变量 BACKUP_DIR
+BACKUP_DIR = "backup_dir"
+
+# 备份文件保留天数
+BACKUP_RETENTION_DAYS = "backup_retention_days"
+
 # 新消息提示音音量（0~1，0 为静音）
 MESSAGE_CUE_VOLUME = "message_cue_volume"
 
@@ -85,6 +91,16 @@ DEFAULT_SETTINGS: dict[str, dict[str, Any]] = {
         "value": 7,
         "description": "钱包流水数据保留天数，到期后物理删除",
         "type": SettingType.WALLET,
+    },
+    BACKUP_DIR: {
+        "value": "",
+        "description": "数据备份保存目录；留空时使用环境变量 BACKUP_DIR",
+        "type": SettingType.SYSTEM,
+    },
+    BACKUP_RETENTION_DAYS: {
+        "value": 7,
+        "description": "备份文件保留天数，到期后自动清理",
+        "type": SettingType.SYSTEM,
     },
     MESSAGE_CUE_VOLUME: {
         "value": 0.15,

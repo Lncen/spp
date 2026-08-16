@@ -41,15 +41,6 @@ function formatPrice(product: ProductPublic) {
   return "未配置"
 }
 
-function formatLossPrice(product: ProductPublic) {
-  const lossPrice = product.pricing?.loss_price
-  if (lossPrice == null) {
-    return "未配置"
-  }
-  const precision = product.pricing?.price_display_precision ?? 2
-  return Number(lossPrice).toFixed(precision)
-}
-
 function formatStock(product: ProductPublic) {
   const stock = product.inventory?.stock
   if (stock == null) {

@@ -318,6 +318,36 @@ export type AutomationTasksPublic = {
 export type AutomationTaskStatus = 'pending' | 'running' | 'success' | 'failed' | 'canceled';
 
 /**
+ * 单份备份的数据条数统计
+ */
+export type BackupCounts = {
+    users?: number;
+    wallets?: number;
+    orders?: number;
+    order_params?: number;
+    suppliers?: number;
+};
+
+/**
+ * 备份文件列表项
+ */
+export type BackupPublic = {
+    filename: string;
+    created_at: string;
+    size: number;
+    order_hours: number;
+    counts: BackupCounts;
+};
+
+/**
+ * 备份文件列表响应
+ */
+export type BackupsPublic = {
+    data: Array<BackupPublic>;
+    count: number;
+};
+
+/**
  * 供应商上游实时余额响应
  */
 export type BalancePublic = {
@@ -418,6 +448,14 @@ export type DeliveryPublic = {
     max_attempts: number;
     error_message?: (string | null);
     sent_at?: (string | null);
+};
+
+/**
+ * 单类数据恢复统计
+ */
+export type EntityRestoreStats = {
+    inserted?: number;
+    updated?: number;
 };
 
 export type HTTPValidationError = {
@@ -1347,6 +1385,17 @@ export type RefreshTokenRequest = {
 };
 
 /**
+ * 合并恢复结果
+ */
+export type RestoreResultPublic = {
+    users: EntityRestoreStats;
+    wallets: EntityRestoreStats;
+    orders: EntityRestoreStats;
+    order_params: EntityRestoreStats;
+    suppliers: EntityRestoreStats;
+};
+
+/**
  * 定价规则（由字段派生，不落库）
  */
 export type RuleType = 1 | 2 | 3;
@@ -2064,6 +2113,33 @@ export type AutomationToggleAutomationRuleData = {
 };
 
 export type AutomationToggleAutomationRuleResponse = (AutomationRulePublic);
+
+export type BackupsReadBackupsData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type BackupsReadBackupsResponse = (BackupsPublic);
+
+export type BackupsCreateBackupResponse = (BackupPublic);
+
+export type BackupsDownloadBackupData = {
+    filename: string;
+};
+
+export type BackupsDownloadBackupResponse = (unknown);
+
+export type BackupsRestoreBackupData = {
+    filename: string;
+};
+
+export type BackupsRestoreBackupResponse = (RestoreResultPublic);
+
+export type BackupsDeleteBackupData = {
+    filename: string;
+};
+
+export type BackupsDeleteBackupResponse = (Message);
 
 export type CustomerServiceReadConversationsData = {
     limit?: number;

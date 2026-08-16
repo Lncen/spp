@@ -94,4 +94,9 @@ init_tasks = {
         ),
         "schedule": crontab(hour=5, minute=0),
     },
+    # 数据备份 —— 每天凌晨 2:00 执行
+    "系统_创建数据备份": {
+        "task": "app.modules.backup.infrastructure.tasks.create_backup",
+        "schedule": crontab(hour=2, minute=0),
+    },
 }

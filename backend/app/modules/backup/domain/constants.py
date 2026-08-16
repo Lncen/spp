@@ -1,0 +1,6 @@
+"""数据备份模块常量"""
+
+BACKUP_VERSION = 1
+BACKUP_FILE_SUFFIX = ".json.gz"
+BACKUP_META_SUFFIX = ".meta.json"
+DEFAULT_BACKUP_RETENTION_DAYS = 7

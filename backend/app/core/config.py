@@ -96,6 +96,10 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_PASSWORD: str
 
     UPLOAD_DIR: str = "uploads"
+    # 数据备份目录；Docker 环境通过环境变量覆盖为 /app/backups
+    BACKUP_DIR: str = "backend/backups"
+    # 每次备份覆盖的订单时间窗口（小时）
+    BACKUP_ORDER_HOURS: int = 48
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     REDIS_PASSWORD: str = ""

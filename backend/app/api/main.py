@@ -14,6 +14,7 @@ from app.modules.automation.api import (
     schedule_router,
     schedule_tasks_router,
 )
+from app.modules.backup.api import router as backup_router
 from app.modules.customer_service.api import router as customer_service_router
 from app.modules.image.api import (
     category_router as image_category_router,
@@ -64,6 +65,7 @@ from app.modules.wallet.api import router as wallet_router
 from app.modules.wallet.models import Wallet, WalletTransaction  # noqa: F401
 
 api_router = APIRouter()
+api_router.include_router(backup_router)
 api_router.include_router(login_router)
 api_router.include_router(password_router)
 api_router.include_router(token_router)

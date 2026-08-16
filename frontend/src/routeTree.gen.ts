@@ -29,6 +29,7 @@ import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutImagesRouteImport } from './routes/_layout/images'
 import { Route as LayoutGlobalSettingsRouteImport } from './routes/_layout/global-settings'
 import { Route as LayoutCategoriesRouteImport } from './routes/_layout/categories'
+import { Route as LayoutBackupsRouteImport } from './routes/_layout/backups'
 import { Route as LayoutAutomationRouteImport } from './routes/_layout/automation'
 import { Route as LayoutAuditLogsRouteImport } from './routes/_layout/audit-logs'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
@@ -137,6 +138,11 @@ const LayoutCategoriesRoute = LayoutCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutBackupsRoute = LayoutBackupsRouteImport.update({
+  id: '/backups',
+  path: '/backups',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutAutomationRoute = LayoutAutomationRouteImport.update({
   id: '/automation',
   path: '/automation',
@@ -188,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof LayoutAdminRoute
   '/audit-logs': typeof LayoutAuditLogsRoute
   '/automation': typeof LayoutAutomationRouteWithChildren
+  '/backups': typeof LayoutBackupsRoute
   '/categories': typeof LayoutCategoriesRoute
   '/global-settings': typeof LayoutGlobalSettingsRoute
   '/images': typeof LayoutImagesRoute
@@ -215,6 +222,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
   '/audit-logs': typeof LayoutAuditLogsRoute
+  '/backups': typeof LayoutBackupsRoute
   '/categories': typeof LayoutCategoriesRoute
   '/global-settings': typeof LayoutGlobalSettingsRoute
   '/images': typeof LayoutImagesRoute
@@ -246,6 +254,7 @@ export interface FileRoutesById {
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/audit-logs': typeof LayoutAuditLogsRoute
   '/_layout/automation': typeof LayoutAutomationRouteWithChildren
+  '/_layout/backups': typeof LayoutBackupsRoute
   '/_layout/categories': typeof LayoutCategoriesRoute
   '/_layout/global-settings': typeof LayoutGlobalSettingsRoute
   '/_layout/images': typeof LayoutImagesRoute
@@ -278,6 +287,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/audit-logs'
     | '/automation'
+    | '/backups'
     | '/categories'
     | '/global-settings'
     | '/images'
@@ -305,6 +315,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/audit-logs'
+    | '/backups'
     | '/categories'
     | '/global-settings'
     | '/images'
@@ -335,6 +346,7 @@ export interface FileRouteTypes {
     | '/_layout/admin'
     | '/_layout/audit-logs'
     | '/_layout/automation'
+    | '/_layout/backups'
     | '/_layout/categories'
     | '/_layout/global-settings'
     | '/_layout/images'
@@ -507,6 +519,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutCategoriesRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/backups': {
+      id: '/_layout/backups'
+      path: '/backups'
+      fullPath: '/backups'
+      preLoaderRoute: typeof LayoutBackupsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/automation': {
       id: '/_layout/automation'
       path: '/automation'
@@ -589,6 +608,7 @@ interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutAuditLogsRoute: typeof LayoutAuditLogsRoute
   LayoutAutomationRoute: typeof LayoutAutomationRouteWithChildren
+  LayoutBackupsRoute: typeof LayoutBackupsRoute
   LayoutCategoriesRoute: typeof LayoutCategoriesRoute
   LayoutGlobalSettingsRoute: typeof LayoutGlobalSettingsRoute
   LayoutImagesRoute: typeof LayoutImagesRoute
@@ -610,6 +630,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutAuditLogsRoute: LayoutAuditLogsRoute,
   LayoutAutomationRoute: LayoutAutomationRouteWithChildren,
+  LayoutBackupsRoute: LayoutBackupsRoute,
   LayoutCategoriesRoute: LayoutCategoriesRoute,
   LayoutGlobalSettingsRoute: LayoutGlobalSettingsRoute,
   LayoutImagesRoute: LayoutImagesRoute,
