@@ -37,6 +37,7 @@ from app.modules.product.product.models import (
 )
 from app.modules.setting.models import AppSetting
 from app.modules.supplier.models import Supplier
+from app.modules.system_log.models import AuditLog, SystemLog
 from app.modules.user.models import User
 from app.modules.wallet.models import Wallet, WalletTransaction
 
@@ -56,6 +57,8 @@ __all__ = [
     "Image",
     "ImageCategory",
     "Supplier",
+    "SystemLog",
+    "AuditLog",
     "AppSetting",
     "Order",
     "OrderParam",

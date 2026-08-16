@@ -15,6 +15,7 @@ import { Route as RecoverPasswordRouteImport } from './routes/recover-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
+import { Route as LayoutSystemLogsRouteImport } from './routes/_layout/system-logs'
 import { Route as LayoutSuppliersRouteImport } from './routes/_layout/suppliers'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutSchedulesRouteImport } from './routes/_layout/schedules'
@@ -29,6 +30,7 @@ import { Route as LayoutImagesRouteImport } from './routes/_layout/images'
 import { Route as LayoutGlobalSettingsRouteImport } from './routes/_layout/global-settings'
 import { Route as LayoutCategoriesRouteImport } from './routes/_layout/categories'
 import { Route as LayoutAutomationRouteImport } from './routes/_layout/automation'
+import { Route as LayoutAuditLogsRouteImport } from './routes/_layout/audit-logs'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 import { Route as LayoutAutomationIndexRouteImport } from './routes/_layout/automation/index'
 import { Route as LayoutAutomationTasksRouteImport } from './routes/_layout/automation/tasks'
@@ -63,6 +65,11 @@ const LayoutRoute = LayoutRouteImport.update({
 const LayoutIndexRoute = LayoutIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutSystemLogsRoute = LayoutSystemLogsRouteImport.update({
+  id: '/system-logs',
+  path: '/system-logs',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutSuppliersRoute = LayoutSuppliersRouteImport.update({
@@ -135,6 +142,11 @@ const LayoutAutomationRoute = LayoutAutomationRouteImport.update({
   path: '/automation',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutAuditLogsRoute = LayoutAuditLogsRouteImport.update({
+  id: '/audit-logs',
+  path: '/audit-logs',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutAdminRoute = LayoutAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -174,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
+  '/audit-logs': typeof LayoutAuditLogsRoute
   '/automation': typeof LayoutAutomationRouteWithChildren
   '/categories': typeof LayoutCategoriesRoute
   '/global-settings': typeof LayoutGlobalSettingsRoute
@@ -188,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/schedules': typeof LayoutSchedulesRoute
   '/settings': typeof LayoutSettingsRoute
   '/suppliers': typeof LayoutSuppliersRoute
+  '/system-logs': typeof LayoutSystemLogsRoute
   '/automation/archives': typeof LayoutAutomationArchivesRoute
   '/automation/events': typeof LayoutAutomationEventsRoute
   '/automation/rules': typeof LayoutAutomationRulesRoute
@@ -200,6 +214,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
+  '/audit-logs': typeof LayoutAuditLogsRoute
   '/categories': typeof LayoutCategoriesRoute
   '/global-settings': typeof LayoutGlobalSettingsRoute
   '/images': typeof LayoutImagesRoute
@@ -213,6 +228,7 @@ export interface FileRoutesByTo {
   '/schedules': typeof LayoutSchedulesRoute
   '/settings': typeof LayoutSettingsRoute
   '/suppliers': typeof LayoutSuppliersRoute
+  '/system-logs': typeof LayoutSystemLogsRoute
   '/': typeof LayoutIndexRoute
   '/automation/archives': typeof LayoutAutomationArchivesRoute
   '/automation/events': typeof LayoutAutomationEventsRoute
@@ -228,6 +244,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
+  '/_layout/audit-logs': typeof LayoutAuditLogsRoute
   '/_layout/automation': typeof LayoutAutomationRouteWithChildren
   '/_layout/categories': typeof LayoutCategoriesRoute
   '/_layout/global-settings': typeof LayoutGlobalSettingsRoute
@@ -242,6 +259,7 @@ export interface FileRoutesById {
   '/_layout/schedules': typeof LayoutSchedulesRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/suppliers': typeof LayoutSuppliersRoute
+  '/_layout/system-logs': typeof LayoutSystemLogsRoute
   '/_layout/': typeof LayoutIndexRoute
   '/_layout/automation/archives': typeof LayoutAutomationArchivesRoute
   '/_layout/automation/events': typeof LayoutAutomationEventsRoute
@@ -258,6 +276,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
+    | '/audit-logs'
     | '/automation'
     | '/categories'
     | '/global-settings'
@@ -272,6 +291,7 @@ export interface FileRouteTypes {
     | '/schedules'
     | '/settings'
     | '/suppliers'
+    | '/system-logs'
     | '/automation/archives'
     | '/automation/events'
     | '/automation/rules'
@@ -284,6 +304,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
+    | '/audit-logs'
     | '/categories'
     | '/global-settings'
     | '/images'
@@ -297,6 +318,7 @@ export interface FileRouteTypes {
     | '/schedules'
     | '/settings'
     | '/suppliers'
+    | '/system-logs'
     | '/'
     | '/automation/archives'
     | '/automation/events'
@@ -311,6 +333,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/_layout/admin'
+    | '/_layout/audit-logs'
     | '/_layout/automation'
     | '/_layout/categories'
     | '/_layout/global-settings'
@@ -325,6 +348,7 @@ export interface FileRouteTypes {
     | '/_layout/schedules'
     | '/_layout/settings'
     | '/_layout/suppliers'
+    | '/_layout/system-logs'
     | '/_layout/'
     | '/_layout/automation/archives'
     | '/_layout/automation/events'
@@ -383,6 +407,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof LayoutIndexRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/system-logs': {
+      id: '/_layout/system-logs'
+      path: '/system-logs'
+      fullPath: '/system-logs'
+      preLoaderRoute: typeof LayoutSystemLogsRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/suppliers': {
@@ -483,6 +514,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAutomationRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/audit-logs': {
+      id: '/_layout/audit-logs'
+      path: '/audit-logs'
+      fullPath: '/audit-logs'
+      preLoaderRoute: typeof LayoutAuditLogsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/admin': {
       id: '/_layout/admin'
       path: '/admin'
@@ -549,6 +587,7 @@ const LayoutAutomationRouteWithChildren =
 
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
+  LayoutAuditLogsRoute: typeof LayoutAuditLogsRoute
   LayoutAutomationRoute: typeof LayoutAutomationRouteWithChildren
   LayoutCategoriesRoute: typeof LayoutCategoriesRoute
   LayoutGlobalSettingsRoute: typeof LayoutGlobalSettingsRoute
@@ -563,11 +602,13 @@ interface LayoutRouteChildren {
   LayoutSchedulesRoute: typeof LayoutSchedulesRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutSuppliersRoute: typeof LayoutSuppliersRoute
+  LayoutSystemLogsRoute: typeof LayoutSystemLogsRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
+  LayoutAuditLogsRoute: LayoutAuditLogsRoute,
   LayoutAutomationRoute: LayoutAutomationRouteWithChildren,
   LayoutCategoriesRoute: LayoutCategoriesRoute,
   LayoutGlobalSettingsRoute: LayoutGlobalSettingsRoute,
@@ -582,6 +623,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutSchedulesRoute: LayoutSchedulesRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutSuppliersRoute: LayoutSuppliersRoute,
+  LayoutSystemLogsRoute: LayoutSystemLogsRoute,
   LayoutIndexRoute: LayoutIndexRoute,
 }
 

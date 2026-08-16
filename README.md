@@ -206,6 +206,21 @@ The input variables, with their default values (some auto generated) are:
 - `postgres_password`: (default: `"changethis"`) The password for the PostgreSQL database, stored in .env, you can generate one with the method above.
 - `sentry_dsn`: (default: "") The DSN for Sentry, if you are using it, you can set it later in .env.
 
+## 系统日志模块
+
+系统日志与操作审计独立为 `system_log` 模块，详细设计见
+[backend/app/modules/system_log/README.md](./backend/app/modules/system_log/README.md)。
+
+- 业务模块只发布 `AutomationEvent`，系统日志由全局监听器自动落库。
+- 关键管理操作通过 `record_audit_log` 写入操作审计。
+- 管理端入口：`/system-logs` 和 `/audit-logs`。
+- 按项目规范不提交 Alembic 迁移文件，上线前需手动生成并升级：
+
+```bash
+alembic revision --autogenerate -m "add system_logs and audit_logs"
+alembic upgrade head
+```
+
 ## Backend Development
 
 Backend docs: [backend/README.md](./backend/README.md).

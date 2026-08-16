@@ -11,11 +11,13 @@ from redis.asyncio import Redis as AsyncRedis
 from sqlmodel import Session, select
 
 from app.core.config import settings
+from app.core.event_bus import publish
 from app.core.redis import get_redis, run_redis_sync
 from app.core.security import verify_password
 from app.modules.auth.models import RefreshToken
 from app.modules.setting.application.setting_query import get_setting
 from app.modules.user.models import User
+
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +67,20 @@ def record_login_failure(*, session: Session, login: str) -> None:
     count = _run_login_redis(lambda r: r.incr(key))
     if count is None:
         return
+    if count >= fail_limit:
+        publish(
+            event_type="auth.login.fail",
+            payload={
+                "user_id": login.strip().lower(),
+            }
+        )
+        logger.warning(
+            "账号因密码错误超过次数被锁定 login=%s count=%d limit=%d lockout_minutes=%d",
+            login.strip().lower(),
+            count,
+            fail_limit,
+            lockout_minutes,
+        )
     if count == 1 or count >= fail_limit:
         _run_login_redis(lambda r: r.expire(key, lockout_minutes * 60))
 

@@ -13,8 +13,10 @@ import {
   Package,
   Percent,
   ReceiptText,
+  ScrollText,
   Server,
   Settings,
+  ShieldCheck,
   Tags,
   Users,
   Workflow,
@@ -94,6 +96,18 @@ const navGroups: ItemGroup[] = [
     label: "系统",
     collapsible: true,
     items: [
+      {
+        icon: ScrollText,
+        title: "系统日志",
+        path: "/system-logs",
+        superuserOnly: true,
+      },
+      {
+        icon: ShieldCheck,
+        title: "操作审计",
+        path: "/audit-logs",
+        superuserOnly: true,
+      },
       {
         icon: Settings,
         title: "全局设置",

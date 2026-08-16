@@ -3,6 +3,7 @@ from fastapi import APIRouter
 import app.modules.automation.infrastructure.event_listeners  # noqa: F401  注册事件监听器
 import app.modules.customer_service.infrastructure.room_guard  # noqa: F401  注册实时会话守卫
 import app.modules.notification.infrastructure.event_listeners  # noqa: F401  注册通知事件监听器
+import app.modules.system_log.infrastructure.event_listeners  # noqa: F401  注册系统日志监听器
 from app.common.router import router as utils_router
 from app.core.config import settings
 from app.modules.auth.api import login_router, password_router, token_router
@@ -51,6 +52,11 @@ from app.modules.product.product.models import (  # noqa: F401
 from app.modules.setting.api import router as setting_router
 from app.modules.supplier.api import router as supplier_router
 from app.modules.supplier.models import Supplier  # noqa: F401
+from app.modules.system_log.api import router as system_log_router
+from app.modules.system_log.models import (  # noqa: F401
+    AuditLog,
+    SystemLog,
+)
 from app.modules.user.api import private_router
 from app.modules.user.api import router as user_router
 from app.modules.user.models import User  # noqa: F401
@@ -78,6 +84,7 @@ api_router.include_router(automation_events_router)
 api_router.include_router(automation_rules_router)
 api_router.include_router(setting_router)
 api_router.include_router(supplier_router)
+api_router.include_router(system_log_router)
 api_router.include_router(product_router)
 api_router.include_router(product_category_router)
 

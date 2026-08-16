@@ -3,13 +3,14 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from app.api.deps import (
     CurrentUser,
     SessionDep,
     get_current_active_superuser,
 )
+from app.modules.system_log.application.audit_log_create import record_audit_log
 from app.modules.wallet.application.wallet_adjust import adjust_balance
 from app.modules.wallet.application.wallet_query import (
     get_or_create_user_wallet,
@@ -133,6 +134,7 @@ def read_wallet_transactions(
 )
 def adjust_wallet_balance(
     *,
+    request: Request,
     session: SessionDep,
     current_user: CurrentUser,
     wallet_id: uuid.UUID,
@@ -140,7 +142,9 @@ def adjust_wallet_balance(
 ) -> Any:
     """管理员调账：正数入账，负数扣款（仅超级管理员可用）"""
     wallet = get_wallet_by_id(session=session, wallet_id=wallet_id)
-    return adjust_balance(
+    balance_before = str(wallet.balance)
+    amount = str(body.amount)
+    transaction = adjust_balance(
         session=session,
         wallet=wallet,
         amount=body.amount,
@@ -148,6 +152,29 @@ def adjust_wallet_balance(
         remark=body.remark,
         operator_id=current_user.id,
     )
+    ip = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+    request_id = request.headers.get("x-request-id")
+    record_audit_log(
+        session=session,
+        actor=current_user,
+        action="wallet.adjust",
+        resource_type="wallet",
+        resource_id=str(wallet.id),
+        before={"balance": balance_before},
+        after={"balance": str(transaction.balance_after)},
+        changes={
+            "balance": {
+                "old": balance_before,
+                "new": str(transaction.balance_after),
+            },
+            "amount": {"old": None, "new": amount},
+        },
+        ip=ip,
+        user_agent=user_agent,
+        request_id=request_id,
+    )
+    return transaction
 
 
 @router.patch(

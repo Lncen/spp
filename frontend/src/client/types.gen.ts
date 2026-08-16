@@ -58,6 +58,40 @@ export type AdminOrdersPublic = {
 };
 
 /**
+ * 操作审计对外展示结构
+ */
+export type AuditLogPublic = {
+    id: string;
+    actor_id?: (string | null);
+    actor_identifier?: (string | null);
+    action: string;
+    resource_type: string;
+    resource_id?: (string | null);
+    before: {
+        [key: string]: unknown;
+    };
+    after: {
+        [key: string]: unknown;
+    };
+    changes: {
+        [key: string]: unknown;
+    };
+    ip?: (string | null);
+    user_agent?: (string | null);
+    request_id?: (string | null);
+    event_id?: (string | null);
+    created_at: string;
+};
+
+/**
+ * 操作审计分页列表
+ */
+export type AuditLogsPublic = {
+    data: Array<AuditLogPublic>;
+    count: number;
+};
+
+/**
  * 发布业务事件请求
  */
 export type AutomationEventCreate = {
@@ -494,44 +528,6 @@ export type IntervalSchedulePublic = {
      * days/hours/minutes/seconds/microseconds
      */
     period?: IntervalPeriod;
-};
-
-/**
- * 创建物品请求
- */
-export type ItemCreate = {
-    title: string;
-    description?: (string | null);
-};
-
-/**
- * 物品公开响应
- */
-export type ItemPublic = {
-    title: string;
-    description?: (string | null);
-    id: string;
-    owner_id: string;
-    created_at?: (string | null);
-    image_id?: (string | null);
-    image_url?: (string | null);
-};
-
-/**
- * 物品列表响应
- */
-export type ItemsPublic = {
-    data: Array<ItemPublic>;
-    count: number;
-};
-
-/**
- * 更新物品请求（全部可选）
- */
-export type ItemUpdate = {
-    title?: (string | null);
-    description?: (string | null);
-    image_id?: (string | null);
 };
 
 /**
@@ -1591,6 +1587,40 @@ export type SupplierUpdate = {
 export type SyncStatus = 1 | 2;
 
 /**
+ * 系统日志对外展示结构
+ */
+export type SystemLogPublic = {
+    id: string;
+    level: string;
+    event_type: string;
+    module: string;
+    actor_type?: (string | null);
+    actor_id?: (string | null);
+    resource_type?: (string | null);
+    resource_id?: (string | null);
+    event_id?: (string | null);
+    request_id?: (string | null);
+    trace_id?: (string | null);
+    business_id?: (string | null);
+    task_id?: (string | null);
+    status?: (string | null);
+    error_code?: (string | null);
+    error_message?: (string | null);
+    context: {
+        [key: string]: unknown;
+    };
+    created_at: string;
+};
+
+/**
+ * 系统日志分页列表
+ */
+export type SystemLogsPublic = {
+    data: Array<SystemLogPublic>;
+    count: number;
+};
+
+/**
  * 可选任务项，供前端下拉选择
  */
 export type TaskOption = {
@@ -2157,38 +2187,6 @@ export type ImagesUploadImageData = {
 
 export type ImagesUploadImageResponse = (ImagePublic);
 
-export type ItemsReadItemsData = {
-    limit?: number;
-    skip?: number;
-};
-
-export type ItemsReadItemsResponse = (ItemsPublic);
-
-export type ItemsCreateItemData = {
-    requestBody: ItemCreate;
-};
-
-export type ItemsCreateItemResponse = (ItemPublic);
-
-export type ItemsReadItemData = {
-    id: string;
-};
-
-export type ItemsReadItemResponse = (ItemPublic);
-
-export type ItemsUpdateItemData = {
-    id: string;
-    requestBody: ItemUpdate;
-};
-
-export type ItemsUpdateItemResponse = (ItemPublic);
-
-export type ItemsDeleteItemData = {
-    id: string;
-};
-
-export type ItemsDeleteItemResponse = (Message);
-
 export type LevelsReadLevelsResponse = (LevelsPublic);
 
 export type LevelsReadLevelData = {
@@ -2609,6 +2607,48 @@ export type SuppliersReadUpstreamProductsSyncStatusData = {
 
 export type SuppliersReadUpstreamProductsSyncStatusResponse = (TaskStatusPublic);
 
+export type SystemLogsReadSystemLogsData = {
+    endAt?: (string | null);
+    eventType?: (string | null);
+    keyword?: (string | null);
+    level?: (string | null);
+    limit?: number;
+    module?: (string | null);
+    resourceId?: (string | null);
+    resourceType?: (string | null);
+    skip?: number;
+    startAt?: (string | null);
+    status?: (string | null);
+};
+
+export type SystemLogsReadSystemLogsResponse = (SystemLogsPublic);
+
+export type SystemLogsReadSystemLogData = {
+    logId: string;
+};
+
+export type SystemLogsReadSystemLogResponse = (SystemLogPublic);
+
+export type SystemLogsReadAuditLogsData = {
+    action?: (string | null);
+    actorId?: (string | null);
+    endAt?: (string | null);
+    keyword?: (string | null);
+    limit?: number;
+    resourceId?: (string | null);
+    resourceType?: (string | null);
+    skip?: number;
+    startAt?: (string | null);
+};
+
+export type SystemLogsReadAuditLogsResponse = (AuditLogsPublic);
+
+export type SystemLogsReadAuditLogData = {
+    auditLogId: string;
+};
+
+export type SystemLogsReadAuditLogResponse = (AuditLogPublic);
+
 export type UsersReadUsersData = {
     limit?: number;
     search?: (string | null);
@@ -2723,3 +2763,73 @@ export type WalletsAdjustWalletBalanceData = {
 };
 
 export type WalletsAdjustWalletBalanceResponse = (WalletTransactionPublic);
+
+/**
+ * 创建物品请求
+ */
+export type ItemCreate = {
+    title: string;
+    description?: (string | null);
+};
+
+/**
+ * 物品公开响应
+ */
+export type ItemPublic = {
+    title: string;
+    description?: (string | null);
+    id: string;
+    owner_id: string;
+    created_at?: (string | null);
+    image_id?: (string | null);
+    image_url?: (string | null);
+};
+
+/**
+ * 物品列表响应
+ */
+export type ItemsPublic = {
+    data: Array<ItemPublic>;
+    count: number;
+};
+
+/**
+ * 更新物品请求（全部可选）
+ */
+export type ItemUpdate = {
+    title?: (string | null);
+    description?: (string | null);
+    image_id?: (string | null);
+};
+
+export type ItemsReadItemsData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type ItemsReadItemsResponse = (ItemsPublic);
+
+export type ItemsCreateItemData = {
+    requestBody: ItemCreate;
+};
+
+export type ItemsCreateItemResponse = (ItemPublic);
+
+export type ItemsReadItemData = {
+    id: string;
+};
+
+export type ItemsReadItemResponse = (ItemPublic);
+
+export type ItemsUpdateItemData = {
+    id: string;
+    requestBody: ItemUpdate;
+};
+
+export type ItemsUpdateItemResponse = (ItemPublic);
+
+export type ItemsDeleteItemData = {
+    id: string;
+};
+
+export type ItemsDeleteItemResponse = (Message);

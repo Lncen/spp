@@ -3,7 +3,7 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from app.api.deps import (
     CurrentUser,
@@ -42,8 +42,17 @@ from app.modules.order.schemas import (
     OrderStatusUpdateRequest,
     SupplierOrderIdUpdateRequest,
 )
+from app.modules.system_log.application.audit_log_create import record_audit_log
 
 router = APIRouter(prefix="/orders", tags=["orders"])
+
+
+def _request_meta(request: Request) -> tuple[str | None, str | None, str | None]:
+    """从 HTTP 请求中提取审计所需的 ip / user_agent / request_id"""
+    ip = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+    request_id = request.headers.get("x-request-id")
+    return ip, user_agent, request_id
 
 
 @router.post("/", response_model=AdminOrdersPublic)
@@ -220,16 +229,32 @@ def fulfill_order_api(
 )
 def cancel_order_api(
     *,
+    request: Request,
     session: SessionDep,
     current_user: CurrentUser,
     order_id: uuid.UUID,
 ) -> Any:
     """管理员取消待处理订单"""
     db_order = get_order(session=session, order_id=order_id)
+    old_status = db_order.status
     db_order = cancel_order(
         session=session,
         db_order=db_order,
         operator_id=current_user.id,
+    )
+    ip, user_agent, request_id = _request_meta(request)
+    record_audit_log(
+        session=session,
+        actor=current_user,
+        action="order.cancel",
+        resource_type="order",
+        resource_id=db_order.order_no,
+        before={"status": old_status},
+        after={"status": db_order.status},
+        changes={"status": {"old": old_status, "new": db_order.status}},
+        ip=ip,
+        user_agent=user_agent,
+        request_id=request_id,
     )
     return to_order_public(session=session, orders=[db_order])[0]
 
@@ -241,6 +266,7 @@ def cancel_order_api(
 )
 def refund_order_api(
     *,
+    request: Request,
     session: SessionDep,
     current_user: CurrentUser,
     order_id: uuid.UUID,
@@ -248,11 +274,30 @@ def refund_order_api(
 ) -> Any:
     """管理员手动退款，按指定金额入账（仅超级管理员可用）"""
     db_order = get_order(session=session, order_id=order_id)
+    old_status = db_order.status
+    refund_amount = str(body.amount)
     db_order = refund_order(
         session=session,
         db_order=db_order,
         operator_id=current_user.id,
         amount=body.amount,
+    )
+    ip, user_agent, request_id = _request_meta(request)
+    record_audit_log(
+        session=session,
+        actor=current_user,
+        action="order.refund",
+        resource_type="order",
+        resource_id=db_order.order_no,
+        before={"status": old_status, "refund_amount": None},
+        after={"status": db_order.status, "refund_amount": refund_amount},
+        changes={
+            "status": {"old": old_status, "new": db_order.status},
+            "refund_amount": {"old": None, "new": refund_amount},
+        },
+        ip=ip,
+        user_agent=user_agent,
+        request_id=request_id,
     )
     return to_order_public(session=session, orders=[db_order])[0]
 
@@ -264,16 +309,33 @@ def refund_order_api(
 )
 def update_order_status_api(
     *,
+    request: Request,
     session: SessionDep,
+    current_user: CurrentUser,
     order_id: uuid.UUID,
     body: OrderStatusUpdateRequest,
 ) -> Any:
     """管理员手动设置订单状态（仅超级管理员可用）"""
     db_order = get_order(session=session, order_id=order_id)
+    old_status = db_order.status
     db_order = update_order_status(
         session=session,
         db_order=db_order,
         status=body.status,
+    )
+    ip, user_agent, request_id = _request_meta(request)
+    record_audit_log(
+        session=session,
+        actor=current_user,
+        action="order.update_status",
+        resource_type="order",
+        resource_id=db_order.order_no,
+        before={"status": old_status},
+        after={"status": db_order.status},
+        changes={"status": {"old": old_status, "new": db_order.status}},
+        ip=ip,
+        user_agent=user_agent,
+        request_id=request_id,
     )
     return to_order_public(session=session, orders=[db_order])[0]
 

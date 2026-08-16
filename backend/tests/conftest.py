@@ -32,6 +32,7 @@ from app.modules.product.product.models import (
     ProductSupplier,
 )
 from app.modules.supplier.models import Supplier
+from app.modules.system_log.models import AuditLog, SystemLog
 from app.modules.user.models import User
 from app.modules.wallet.models import Wallet, WalletTransaction
 from tests.utils.user import authentication_token_from_email
@@ -183,6 +184,8 @@ def db() -> Generator[Session]:
                 OrderParam.__table__,
                 Wallet.__table__,
                 WalletTransaction.__table__,
+                SystemLog.__table__,
+                AuditLog.__table__,
             ],
         )
         yield session
@@ -211,6 +214,10 @@ def db() -> Generator[Session]:
         statement = delete(WalletTransaction)
         session.execute(statement)
         statement = delete(Wallet)
+        session.execute(statement)
+        statement = delete(SystemLog)
+        session.execute(statement)
+        statement = delete(AuditLog)
         session.execute(statement)
         statement = delete(Image)
         session.execute(statement)

@@ -148,6 +148,147 @@ export const AdminOrdersPublicSchema = {
     description: '管理员批量下单响应'
 } as const;
 
+export const AuditLogPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        actor_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Actor Id'
+        },
+        actor_identifier: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Actor Identifier'
+        },
+        action: {
+            type: 'string',
+            title: 'Action'
+        },
+        resource_type: {
+            type: 'string',
+            title: 'Resource Type'
+        },
+        resource_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Resource Id'
+        },
+        before: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Before'
+        },
+        after: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'After'
+        },
+        changes: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Changes'
+        },
+        ip: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Ip'
+        },
+        user_agent: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'User Agent'
+        },
+        request_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Request Id'
+        },
+        event_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'action', 'resource_type', 'before', 'after', 'changes', 'created_at'],
+    title: 'AuditLogPublic',
+    description: '操作审计对外展示结构'
+} as const;
+
+export const AuditLogsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/AuditLogPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'AuditLogsPublic',
+    description: '操作审计分页列表'
+} as const;
+
 export const AutomationEventCreateSchema = {
     properties: {
         event_type: {
@@ -1673,170 +1814,6 @@ export const IntervalSchedulePublicSchema = {
     type: 'object',
     title: 'IntervalSchedulePublic',
     description: 'interval 配置响应'
-} as const;
-
-export const ItemCreateSchema = {
-    properties: {
-        title: {
-            type: 'string',
-            maxLength: 255,
-            minLength: 1,
-            title: 'Title'
-        },
-        description: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 255
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Description'
-        }
-    },
-    type: 'object',
-    required: ['title'],
-    title: 'ItemCreate',
-    description: '创建物品请求'
-} as const;
-
-export const ItemPublicSchema = {
-    properties: {
-        title: {
-            type: 'string',
-            maxLength: 255,
-            minLength: 1,
-            title: 'Title'
-        },
-        description: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 255
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Description'
-        },
-        id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Id'
-        },
-        owner_id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Owner Id'
-        },
-        created_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Created At'
-        },
-        image_id: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'uuid'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Image Id'
-        },
-        image_url: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Image Url'
-        }
-    },
-    type: 'object',
-    required: ['title', 'id', 'owner_id'],
-    title: 'ItemPublic',
-    description: '物品公开响应'
-} as const;
-
-export const ItemUpdateSchema = {
-    properties: {
-        title: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 255,
-                    minLength: 1
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Title'
-        },
-        description: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 255
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Description'
-        },
-        image_id: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'uuid'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: '配图图片 ID'
-        }
-    },
-    type: 'object',
-    title: 'ItemUpdate',
-    description: '更新物品请求（全部可选）'
-} as const;
-
-export const ItemsPublicSchema = {
-    properties: {
-        data: {
-            items: {
-                '$ref': '#/components/schemas/ItemPublic'
-            },
-            type: 'array',
-            title: 'Data'
-        },
-        count: {
-            type: 'integer',
-            title: 'Count'
-        }
-    },
-    type: 'object',
-    required: ['data', 'count'],
-    title: 'ItemsPublic',
-    description: '物品列表响应'
 } as const;
 
 export const LevelPublicSchema = {
@@ -5699,6 +5676,196 @@ export const SyncStatusSchema = {
     enum: [1, 2],
     title: 'SyncStatus',
     description: '上游同步状态'
+} as const;
+
+export const SystemLogPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        level: {
+            type: 'string',
+            title: 'Level'
+        },
+        event_type: {
+            type: 'string',
+            title: 'Event Type'
+        },
+        module: {
+            type: 'string',
+            title: 'Module'
+        },
+        actor_type: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Actor Type'
+        },
+        actor_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Actor Id'
+        },
+        resource_type: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Resource Type'
+        },
+        resource_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Resource Id'
+        },
+        event_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Id'
+        },
+        request_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Request Id'
+        },
+        trace_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Trace Id'
+        },
+        business_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Business Id'
+        },
+        task_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Task Id'
+        },
+        status: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Status'
+        },
+        error_code: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error Code'
+        },
+        error_message: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error Message'
+        },
+        context: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Context'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'level', 'event_type', 'module', 'context', 'created_at'],
+    title: 'SystemLogPublic',
+    description: '系统日志对外展示结构'
+} as const;
+
+export const SystemLogsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/SystemLogPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'SystemLogsPublic',
+    description: '系统日志分页列表'
 } as const;
 
 export const TaskOptionSchema = {
