@@ -136,7 +136,7 @@ export function CustomerServiceDialog() {
       open={open}
       onOpenChange={(value) => !value && closeCustomerService()}
     >
-      <DialogContent className="overflow-hidden p-0 md:h-[600px] md:max-w-[900px] lg:max-w-[1000px]">
+      <DialogContent className="overflow-hidden p-0 md:h-[650px] md:max-w-[700px] lg:max-w-[780px]">
         <DialogTitle className="sr-only">客服</DialogTitle>
         <DialogDescription className="sr-only">
           客服会话工作台
