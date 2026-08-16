@@ -75,14 +75,17 @@ export const UserActionsMenu = ({ user }: UserActionsMenuProps) => {
             </RouterLink>
           </DropdownMenuItem>
           <DropdownMenuItem
-            disabled={startConversationMutation.isPending}
+            disabled={isCurrentUser || startConversationMutation.isPending}
             onSelect={(event) => event.preventDefault()}
             onClick={() => startConversationMutation.mutate()}
           >
             <MessagesSquare />
             发起会话
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => openAfterMenuClose(setNotifyOpen)}>
+          <DropdownMenuItem
+            disabled={isCurrentUser}
+            onSelect={() => openAfterMenuClose(setNotifyOpen)}
+          >
             <Bell />
             发送通知
           </DropdownMenuItem>

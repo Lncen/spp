@@ -13,10 +13,10 @@ const DEFAULT_CUE_VOLUME = 0.15
 let audioContext: AudioContext | null = null
 let cueVolume = DEFAULT_CUE_VOLUME
 
-/** 设置新消息提示音音量（0~1），供全局设置同步 */
+/** 设置新消息提示音音量（0~2，0 静音，2 为 2 倍），供全局设置同步 */
 export function setMessageCueVolume(volume: number): void {
   cueVolume = Number.isFinite(volume)
-    ? Math.min(1, Math.max(0, volume))
+    ? Math.min(2, Math.max(0, volume))
     : DEFAULT_CUE_VOLUME
 }
 

@@ -88,7 +88,7 @@ DEFAULT_SETTINGS: dict[str, dict[str, Any]] = {
     },
     MESSAGE_CUE_VOLUME: {
         "value": 0.15,
-        "description": "新消息提示音音量（0~1，0 为静音）",
+        "description": "新消息提示音音量（0~2，0 为静音，2 为 2 倍音量）",
         "type": SettingType.NOTIFICATION,
     },
 }

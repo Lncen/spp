@@ -65,7 +65,7 @@ export const SettingRow = ({ setting }: SettingRowProps) => {
           <input
             type="range"
             min={0}
-            max={1}
+            max={2}
             step={0.05}
             value={volume}
             disabled={mutation.isPending}
