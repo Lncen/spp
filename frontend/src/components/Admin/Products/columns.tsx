@@ -123,13 +123,13 @@ export const columns: ColumnDef<ProductPublic>[] = [
       <span className="font-mono text-sm">{formatPrice(row.original)}</span>
     ),
   },
-  {
-    id: "loss_price",
-    header: "损耗",
-    cell: ({ row }) => (
-      <span className="font-mono text-sm">{formatLossPrice(row.original)}</span>
-    ),
-  },
+  // {
+  //   id: "loss_price",
+  //   header: "损耗",
+  //   cell: ({ row }) => (
+  //     <span className="font-mono text-sm">{formatLossPrice(row.original)}</span>
+  //   ),
+  // },
   {
     id: "stock",
     header: "库存",
