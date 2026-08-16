@@ -36,6 +36,9 @@ ORDER_RETENTION_DAYS = "order_retention_days"
 # 钱包流水数据保留天数
 WALLET_TRANSACTION_RETENTION_DAYS = "wallet_transaction_retention_days"
 
+# 新消息提示音音量（0~1，0 为静音）
+MESSAGE_CUE_VOLUME = "message_cue_volume"
+
 # 每个键包含：value 默认值、description 说明
 DEFAULT_SETTINGS: dict[str, dict[str, Any]] = {
     "maintenance_mode": {
@@ -82,6 +85,11 @@ DEFAULT_SETTINGS: dict[str, dict[str, Any]] = {
         "value": 7,
         "description": "钱包流水数据保留天数，到期后物理删除",
         "type": SettingType.WALLET,
+    },
+    MESSAGE_CUE_VOLUME: {
+        "value": 0.15,
+        "description": "新消息提示音音量（0~1，0 为静音）",
+        "type": SettingType.NOTIFICATION,
     },
 }
 

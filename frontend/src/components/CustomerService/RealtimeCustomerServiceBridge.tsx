@@ -6,6 +6,8 @@ import type { ConversationsPublic, MessagePublic } from "@/client"
 import { CS_CONVERSATIONS_QUERY_KEY } from "@/components/CustomerService/CustomerServiceProvider"
 import { MY_UNREAD_SUMMARY_QUERY_KEY } from "@/components/Notifications/constants"
 import useAuth from "@/hooks/useAuth"
+import { useMessageCueVolume } from "@/hooks/useMessageCueVolume"
+import { notifyNewMessage, playMessageCue } from "@/lib/new-message-alert"
 import { flashTabTitle } from "@/lib/tab-title-flash"
 import { REALTIME_EVENT_CUSTOMER_SERVICE_MESSAGE_CREATED } from "@/realtime/events"
 import { useRealtime } from "@/realtime/RealtimeProvider"
@@ -20,6 +22,7 @@ export function RealtimeCustomerServiceBridge() {
   const { socket } = useRealtime()
   const { user } = useAuth()
   const currentUserId = user?.id
+  useMessageCueVolume()
 
   useEffect(() => {
     if (!socket) return
@@ -27,8 +30,6 @@ export function RealtimeCustomerServiceBridge() {
     const handleCreated = (payload: MessagePublic) => {
       // 自己发的消息不提醒
       if (payload.sender_id === currentUserId) return
-      // 页面不在前台时闪烁任务栏标签
-      flashTabTitle()
       queryClient.invalidateQueries({
         queryKey: CS_CONVERSATIONS_QUERY_KEY,
       })
@@ -45,6 +46,10 @@ export function RealtimeCustomerServiceBridge() {
       const name =
         conversation?.user_name ??
         (payload.sender_role === "admin" ? "客服" : "用户")
+      // 页面不在前台时闪烁任务栏标签 + 系统通知 + 提示音
+      flashTabTitle()
+      notifyNewMessage(name, payload.content)
+      playMessageCue()
       toast(name, {
         description: payload.content,
       })

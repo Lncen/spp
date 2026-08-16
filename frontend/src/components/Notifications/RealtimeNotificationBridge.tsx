@@ -7,6 +7,8 @@ import {
   MY_NOTIFICATIONS_UNREAD_QUERY_KEY,
   MY_UNREAD_SUMMARY_QUERY_KEY,
 } from "@/components/Notifications/constants"
+import { useMessageCueVolume } from "@/hooks/useMessageCueVolume"
+import { notifyNewMessage, playMessageCue } from "@/lib/new-message-alert"
 import { flashTabTitle } from "@/lib/tab-title-flash"
 import { REALTIME_EVENT_NOTIFICATION_CREATED } from "@/realtime/events"
 import { useRealtime } from "@/realtime/RealtimeProvider"
@@ -28,6 +30,7 @@ type NotificationCreatedPayload = {
 export function RealtimeNotificationBridge() {
   const queryClient = useQueryClient()
   const { socket } = useRealtime()
+  useMessageCueVolume()
 
   useEffect(() => {
     if (!socket) return
@@ -35,6 +38,8 @@ export function RealtimeNotificationBridge() {
     const handleCreated = (payload: NotificationCreatedPayload) => {
       // 页面不在前台时闪烁任务栏标签
       flashTabTitle()
+      notifyNewMessage(payload.title, payload.content || undefined)
+      playMessageCue()
       queryClient.invalidateQueries({
         queryKey: MY_NOTIFICATIONS_UNREAD_QUERY_KEY,
       })
