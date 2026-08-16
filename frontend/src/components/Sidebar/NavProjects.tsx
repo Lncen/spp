@@ -49,7 +49,9 @@ export function NavProjects({ projects }: { projects: Project[] }) {
                   <item.icon />
                   <span>{item.name}</span>
                   {item.badge ? (
-                    <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>
+                    <SidebarMenuBadge className="bg-emerald-500 text-white">
+                      {item.badge}
+                    </SidebarMenuBadge>
                   ) : null}
                 </button>
               ) : (

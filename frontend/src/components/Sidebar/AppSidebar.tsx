@@ -8,7 +8,6 @@ import {
   FolderTree,
   Home,
   Image,
-  LifeBuoy,
   ListTodo,
   Medal,
   Package,
@@ -106,7 +105,7 @@ const navGroups: ItemGroup[] = [
 ]
 
 export function AppSidebar() {
-  const { openCustomerService } = useCustomerService()
+  const { openNotifications } = useCustomerService()
   const { user: currentUser } = useAuth()
   const isSuperuser = currentUser?.is_superuser ?? false
 
@@ -115,16 +114,15 @@ export function AppSidebar() {
     queryFn: () => NotificationsService.readUnreadSummary(),
     enabled: Boolean(currentUser),
   })
-  const totalUnread = unreadData?.total_unread ?? 0
 
   const groups = isSuperuser ? navGroups : []
 
   const projects: Project[] = [
     {
-      name: "客服",
-      icon: LifeBuoy,
-      badge: totalUnread,
-      onClick: () => openCustomerService(),
+      name: "通知",
+      icon: Bell,
+      badge: unreadData?.total_unread,
+      onClick: () => openNotifications(),
     },
   ]
 

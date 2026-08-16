@@ -64,15 +64,15 @@ def mark_messages_read(
     *,
     session: Session,
     conversation_id: uuid.UUID,
-    reader_role: str,
+    reader_id: uuid.UUID,
     now: datetime,
 ) -> int:
-    """将对方发来且未读的消息标记为已读，返回更新条数"""
+    """将他人发来且当前查看者未读的消息标记为已读，返回更新条数"""
     result = session.exec(
         update(ConversationMessage)
         .where(
             col(ConversationMessage.conversation_id) == conversation_id,
-            col(ConversationMessage.sender_role) != reader_role,
+            col(ConversationMessage.sender_id) != reader_id,
             col(ConversationMessage.read_at).is_(None),
         )
         .values(read_at=now)

@@ -86,9 +86,9 @@ def count_unread_messages(
     *,
     session: Session,
     conversation_ids: list[uuid.UUID],
-    reader_role: str,
+    reader_id: uuid.UUID,
 ) -> dict[uuid.UUID, int]:
-    """批量统计各会话中对方发来且未读的消息数（按查看者角色区分对方）"""
+    """批量统计各会话中他人发来且当前查看者未读的消息数（不区分发送方角色）"""
     if not conversation_ids:
         return {}
     rows = session.exec(
@@ -98,7 +98,7 @@ def count_unread_messages(
         )
         .where(
             col(ConversationMessage.conversation_id).in_(conversation_ids),
-            col(ConversationMessage.sender_role) != reader_role,
+            col(ConversationMessage.sender_id) != reader_id,
             col(ConversationMessage.read_at).is_(None),
         )
         .group_by(ConversationMessage.conversation_id)
@@ -111,15 +111,14 @@ def count_unread_total(
     session: Session,
     user_id: uuid.UUID,
     is_superuser: bool,
-    reader_role: str,
 ) -> int:
-    """统计当前查看者全部会话的未读消息总数（管理端统计全部会话）"""
+    """统计当前查看者可见会话中他人发来且未读的消息总数（管理端统计全部会话，不区分发送方角色）"""
     stmt = (
         select(func.count())
         .select_from(ConversationMessage)
         .join(Conversation, Conversation.id == ConversationMessage.conversation_id)
         .where(
-            col(ConversationMessage.sender_role) != reader_role,
+            col(ConversationMessage.sender_id) != user_id,
             col(ConversationMessage.read_at).is_(None),
         )
     )

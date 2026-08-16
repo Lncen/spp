@@ -11,7 +11,6 @@ from app.modules.customer_service.application.conversation_manage import (
     delete_conversation,
     get_or_create_conversation,
     list_conversations,
-    reader_role_for,
     to_conversation_public,
     update_conversation_status,
 )
@@ -83,7 +82,7 @@ def create_conversation_endpoint(
         session=session,
         conversation=conversation,
         include_user_info=current_user.is_superuser,
-        reader_role=reader_role_for(current_user),
+        reader_id=current_user.id,
     )
 
 
@@ -147,7 +146,7 @@ def read_conversation(
         session=session,
         conversation=conversation,
         include_user_info=current_user.is_superuser,
-        reader_role=reader_role_for(current_user),
+        reader_id=current_user.id,
     )
 
 
@@ -172,7 +171,7 @@ def update_status_endpoint(
         session=session,
         conversation=conversation,
         include_user_info=True,
-        reader_role=reader_role_for(current_user),
+        reader_id=current_user.id,
     )
 
 

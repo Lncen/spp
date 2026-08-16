@@ -43,8 +43,11 @@ def user_room(user_id: uuid.UUID | str) -> str:
 
 sio = socketio.AsyncServer(
     async_mode="asgi",
-    cors_allowed_origins=settings.all_cors_origins,
-    transports=["websocket"],
+    # CORS 由 FastAPI 应用的 CORSMiddleware 统一处理；
+    # 若此处再配置，engineio 与中间件会各写一份 Access-Control-Allow-Origin，
+    # 导致 polling 传输被浏览器以“重复 CORS 头”拦截，实时通道无法建立
+    cors_allowed_origins=[],
+    transports=["websocket", "polling"],
     client_manager=socketio.AsyncRedisManager(
         get_redis_url(settings.REDIS_SOCKETIO_DB),
     ),

@@ -7,6 +7,7 @@ import {
   MY_NOTIFICATIONS_UNREAD_QUERY_KEY,
   MY_UNREAD_SUMMARY_QUERY_KEY,
 } from "@/components/Notifications/constants"
+import { flashTabTitle } from "@/lib/tab-title-flash"
 import { REALTIME_EVENT_NOTIFICATION_CREATED } from "@/realtime/events"
 import { useRealtime } from "@/realtime/RealtimeProvider"
 
@@ -32,6 +33,8 @@ export function RealtimeNotificationBridge() {
     if (!socket) return
 
     const handleCreated = (payload: NotificationCreatedPayload) => {
+      // 页面不在前台时闪烁任务栏标签
+      flashTabTitle()
       queryClient.invalidateQueries({
         queryKey: MY_NOTIFICATIONS_UNREAD_QUERY_KEY,
       })

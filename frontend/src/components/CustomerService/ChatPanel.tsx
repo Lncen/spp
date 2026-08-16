@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Send, Trash2 } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import {
   type ConversationPublic,
   CustomerServiceService,
   type MessagePublic,
+  type MessagesPublic,
 } from "@/client"
 import { formatDateTime } from "@/components/Admin/Automation/tasks/constants"
 import { CS_CONVERSATIONS_QUERY_KEY } from "@/components/CustomerService/CustomerServiceProvider"
@@ -77,10 +78,35 @@ export function ChatPanel({
       }),
   })
 
+  /** 把新消息合并进消息查询缓存，保证重开/切会话/refetch 不丢实时消息 */
+  const mergeMessageIntoCache = useCallback(
+    (message: MessagePublic) => {
+      queryClient.setQueryData<MessagesPublic>(
+        [...CS_MESSAGES_QUERY_KEY, conversationId],
+        (current) => {
+          if (!current) return current
+          if (current.data.some((item) => item.id === message.id)) {
+            return current
+          }
+          return {
+            ...current,
+            count: current.count + 1,
+            data: [message, ...current.data],
+          }
+        },
+      )
+    },
+    [conversationId, queryClient],
+  )
+
+  // 查询数据与本地消息按 id 去重合并，避免整体覆盖导致实时追加的消息丢失
   useEffect(() => {
-    if (messagesQuery.data) {
-      setMessages(messagesQuery.data.data)
-    }
+    if (!messagesQuery.data) return
+    setMessages((current) => {
+      const seen = new Set(current.map((item) => item.id))
+      const fresh = messagesQuery.data.data.filter((item) => !seen.has(item.id))
+      return fresh.length ? [...fresh, ...current] : current
+    })
   }, [messagesQuery.data])
 
   const sendMutation = useMutation({
@@ -90,11 +116,7 @@ export function ChatPanel({
         requestBody: { content },
       }),
     onSuccess: (message) => {
-      setMessages((current) =>
-        current.some((item) => item.id === message.id)
-          ? current
-          : [message, ...current],
-      )
+      mergeMessageIntoCache(message)
     },
   })
 
@@ -148,19 +170,14 @@ export function ChatPanel({
   useEffect(() => {
     if (!conversationId) return
     markReadMutation.mutate()
-    // biome-ignore lint/correctness/useExhaustiveDependencies: 仅在打开会话时触发一次已读
-  }, [conversationId])
+  }, [conversationId, markReadMutation.mutate])
 
   useEffect(() => {
     if (!socket) return
 
     const handleMessageCreated = (payload: MessagePublic) => {
       if (payload.conversation_id !== conversationId) return
-      setMessages((current) =>
-        current.some((item) => item.id === payload.id)
-          ? current
-          : [payload, ...current],
-      )
+      mergeMessageIntoCache(payload)
     }
     const handleMessageRead = (payload: {
       conversation_id: string
@@ -203,7 +220,7 @@ export function ChatPanel({
       )
       socket.off(REALTIME_EVENT_CUSTOMER_SERVICE_TYPING, handleTyping)
     }
-  }, [socket, conversationId, currentUserId])
+  }, [socket, conversationId, currentUserId, mergeMessageIntoCache])
 
   const handleInputChange = (value: string) => {
     setInput(value)

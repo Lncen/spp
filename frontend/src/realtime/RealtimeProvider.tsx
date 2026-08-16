@@ -30,7 +30,9 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     const apiUrl = new URL(import.meta.env.VITE_API_URL as string)
     const client = io(apiUrl.origin, {
       path: SOCKET_PATH,
-      transports: ["websocket"],
+      // polling 优先：握手阶段更稳，避免部分网络环境 WebSocket 升级失败导致
+      // 实时通道不可用；连接建立后 socket.io 会自动升级到 WebSocket
+      transports: ["polling", "websocket"],
       auth: { token },
     })
     setSocket(client)

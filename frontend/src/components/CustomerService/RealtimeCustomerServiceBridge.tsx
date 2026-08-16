@@ -6,6 +6,7 @@ import type { ConversationsPublic, MessagePublic } from "@/client"
 import { CS_CONVERSATIONS_QUERY_KEY } from "@/components/CustomerService/CustomerServiceProvider"
 import { MY_UNREAD_SUMMARY_QUERY_KEY } from "@/components/Notifications/constants"
 import useAuth from "@/hooks/useAuth"
+import { flashTabTitle } from "@/lib/tab-title-flash"
 import { REALTIME_EVENT_CUSTOMER_SERVICE_MESSAGE_CREATED } from "@/realtime/events"
 import { useRealtime } from "@/realtime/RealtimeProvider"
 
@@ -26,6 +27,8 @@ export function RealtimeCustomerServiceBridge() {
     const handleCreated = (payload: MessagePublic) => {
       // 自己发的消息不提醒
       if (payload.sender_id === currentUserId) return
+      // 页面不在前台时闪烁任务栏标签
+      flashTabTitle()
       queryClient.invalidateQueries({
         queryKey: CS_CONVERSATIONS_QUERY_KEY,
       })

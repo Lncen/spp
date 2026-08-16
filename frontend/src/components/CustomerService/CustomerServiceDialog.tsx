@@ -74,8 +74,12 @@ export function CustomerServiceDialog() {
   // 弹窗级实时监听：无论当前是否选中会话，都刷新会话列表
   useEffect(() => {
     if (!socket || !open) return
-    const invalidate = () =>
+    const invalidate = () => {
       queryClient.invalidateQueries({ queryKey: CS_CONVERSATIONS_QUERY_KEY })
+      queryClient.invalidateQueries({
+        queryKey: MY_UNREAD_SUMMARY_QUERY_KEY,
+      })
+    }
     const handleDeleted = (payload: { conversation_id: string }) => {
       invalidate()
       queryClient.invalidateQueries({

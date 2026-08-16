@@ -9,11 +9,8 @@ from app.modules.customer_service.application.realtime_publish import (
     conversation_participant_ids,
     publish_conversation_deleted,
 )
-from app.modules.customer_service.domain.constants import (
-    ConversationStatus,
-    SenderRole,
-)
-from app.modules.customer_service.models import Conversation
+from app.modules.customer_service.domain.constants import ConversationStatus
+from app.modules.customer_service.models import Conversation, ConversationMessage
 from app.modules.customer_service.repositories.conversation import (
     count_unread_messages,
     count_unread_total,
@@ -33,24 +30,51 @@ from app.modules.user.models import User
 
 
 def _user_display_name(user: User) -> str:
-    """接收对象展示名：全名 > 用户名 > 邮箱"""
-    return user.full_name or user.username or user.email
+    """发送者展示名：全名，为空时显示 用户 + ID 后 6 位"""
+    return user.full_name or f"用户{str(user.id)[-6:]}"
 
 
-def reader_role_for(user: User) -> str:
-    """当前查看者角色（未读消息按对方角色统计）"""
-    return SenderRole.ADMIN if user.is_superuser else SenderRole.USER
+def _latest_other_sender_names(
+    *,
+    session: Session,
+    conversation_ids: list[uuid.UUID],
+    reader_id: uuid.UUID,
+) -> dict[uuid.UUID, str]:
+    """各会话中最近一条他人发来消息的发送者展示名（发送人全名，为空显示 用户 + ID 后 6 位）"""
+    names: dict[uuid.UUID, str] = {}
+    if not conversation_ids:
+        return names
+    rows = session.exec(
+        select(
+            ConversationMessage.conversation_id,
+            User.id,
+            User.full_name,
+        )
+        .join(User, User.id == ConversationMessage.sender_id)
+        .where(
+            col(ConversationMessage.conversation_id).in_(conversation_ids),
+            col(ConversationMessage.sender_id) != reader_id,
+        )
+        .order_by(
+            ConversationMessage.created_at.desc(),
+            ConversationMessage.id.desc(),
+        )
+    ).all()
+    for row in rows:
+        conversation_id = row[0]
+        if conversation_id not in names:
+            names[conversation_id] = row[2] or f"用户{str(row[1])[-6:]}"
+    return names
 
 
 def get_total_conversation_unread(*, session: Session, user: User) -> int:
-    """当前查看者全部会话的未读消息总数（侧边栏角标汇总用）"""
+    """当前查看者全部会话中他人发来且未读的消息总数（侧边栏角标汇总用，不区分角色）"""
     if user.id is None:
         return 0
     return count_unread_total(
         session=session,
         user_id=user.id,
         is_superuser=user.is_superuser,
-        reader_role=reader_role_for(user),
     )
 
 
@@ -109,7 +133,7 @@ def list_conversations(
             session=session,
             conversations=conversations,
             include_user_info=current_user.is_superuser,
-            reader_role=reader_role_for(current_user),
+            reader_id=current_user.id,
         ),
         count=count,
     )
@@ -120,14 +144,14 @@ def to_conversation_public(
     session: Session,
     conversation: Conversation,
     include_user_info: bool,
-    reader_role: str,
+    reader_id: uuid.UUID,
 ) -> ConversationPublic:
     """单条会话展示结构"""
     return _to_conversation_items(
         session=session,
         conversations=[conversation],
         include_user_info=include_user_info,
-        reader_role=reader_role,
+        reader_id=reader_id,
     )[0]
 
 
@@ -136,7 +160,7 @@ def _to_conversation_items(
     session: Session,
     conversations: list[Conversation],
     include_user_info: bool,
-    reader_role: str,
+    reader_id: uuid.UUID,
 ) -> list[ConversationPublic]:
     """组装会话展示结构列表；管理端附带用户展示名与在线状态"""
     user_ids = {
@@ -161,15 +185,34 @@ def _to_conversation_items(
         for conversation in conversations
         if conversation.id is not None
     ]
+    owner_conversation_ids = [
+        conversation.id
+        for conversation in conversations
+        if conversation.id is not None
+        and conversation.user_id is not None
+        and conversation.user_id == reader_id
+    ]
+    counterpart_names = _latest_other_sender_names(
+        session=session,
+        conversation_ids=owner_conversation_ids,
+        reader_id=reader_id,
+    )
     unread_counts = count_unread_messages(
         session=session,
         conversation_ids=conversation_ids,
-        reader_role=reader_role,
+        reader_id=reader_id,
     )
 
     items: list[ConversationPublic] = []
     for conversation in conversations:
-        user = users.get(conversation.user_id) if conversation.user_id else None
+        if (
+            conversation.user_id is not None
+            and conversation.user_id == reader_id
+        ):
+            user_name = counterpart_names.get(conversation.id, "客服")
+        else:
+            user = users.get(conversation.user_id) if conversation.user_id else None
+            user_name = _user_display_name(user) if user else None
         items.append(
             ConversationPublic(
                 id=conversation.id,
@@ -178,7 +221,7 @@ def _to_conversation_items(
                 last_message_at=conversation.last_message_at,
                 last_message_preview=conversation.last_message_preview,
                 created_at=conversation.created_at,
-                user_name=_user_display_name(user) if user else None,
+                user_name=user_name,
                 user_online=(
                     online.get(str(conversation.user_id), False)
                     if conversation.user_id

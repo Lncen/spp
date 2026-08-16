@@ -9,7 +9,6 @@ from sqlmodel import Session, col, select
 
 from app.modules.customer_service.application.conversation_manage import (
     list_active_superuser_ids,
-    reader_role_for,
     to_conversation_public,
 )
 from app.modules.customer_service.application.realtime_publish import (
@@ -140,7 +139,7 @@ def get_messages(
         session=session,
         conversation=conversation,
         include_user_info=user.is_superuser,
-        reader_role=reader_role_for(user),
+        reader_id=user.id,
     )
     return MessagesPublic(
         data=[
@@ -158,7 +157,7 @@ def mark_conversation_read(
     conversation_id: uuid.UUID,
     reader: User,
 ) -> Conversation:
-    """标记会话中对方发来的消息为已读，并实时通知对方"""
+    """标记会话中他人发来的消息为已读，并实时通知对方"""
     conversation = _get_participant_conversation(
         session=session,
         conversation_id=conversation_id,
@@ -168,7 +167,7 @@ def mark_conversation_read(
     updated = mark_messages_read(
         session=session,
         conversation_id=conversation.id,
-        reader_role=reader_role,
+        reader_id=reader.id,
         now=datetime.now(UTC),
     )
     session.commit()
