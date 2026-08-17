@@ -108,4 +108,4 @@ class TaskStatusPublic(SQLModel):
 
     status: str = Field(title="任务状态")
     success: bool | None = Field(default=None, title="是否成功")
-    result: dict[str, Any] | None = Field(default=None, title="任务结果")
+    result: Any | None = Field(default=None, title="任务结果")

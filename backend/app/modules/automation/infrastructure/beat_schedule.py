@@ -70,13 +70,21 @@ init_tasks = {
         ),
         "schedule": crontab(hour=4, minute=0),
     },
-    # 自动化任务池扫描 —— 每 3 分钟认领到期任务并执行
+    # 自动化任务池扫描 —— 每 30 秒认领到期任务并执行
     "自动化_任务池扫描": {
         "task": (
             "app.modules.automation.infrastructure.tasks."
             "automation_task_scan"
         ),
         "schedule": timedelta(seconds=30),
+    },
+    # 自动化事件补发 —— 每分钟扫描未完成或失败的事件
+    "自动化_事件补发": {
+        "task": (
+            "app.modules.automation.infrastructure.tasks."
+            "redispatch_stale_automation_events"
+        ),
+        "schedule": timedelta(minutes=1),
     },
     # 钱包流水数据清理 —— 每天凌晨 4:30 执行
     "钱包_历史数据清理": {

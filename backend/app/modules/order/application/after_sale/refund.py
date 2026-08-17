@@ -13,7 +13,7 @@ from app.modules.order.domain.refund import calc_refund_amount
 from app.modules.order.models import Order
 from app.modules.order.repositories.stock import restore_stock
 from app.modules.wallet.application.wallet_adjust import adjust_balance
-from app.modules.wallet.application.wallet_query import get_wallet_by_user_id
+from app.modules.wallet.application.wallet_query import get_or_create_user_wallet
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def refund_to_wallet(
     operator_id: uuid.UUID | None = None,
 ) -> None:
     """按指定金额退款入账，只写流水不提交"""
-    wallet = get_wallet_by_user_id(session=session, user_id=db_order.user_id)
+    wallet = get_or_create_user_wallet(session=session, user_id=db_order.user_id)
     if not wallet:
         raise HTTPException(status_code=400, detail="钱包不存在")
     adjust_balance(
@@ -62,6 +62,7 @@ def refund_order(
     )
     db_order.status = OrderStatus.REFUNDED
     db_order.refunded_at = datetime.now(UTC)
+    db_order.refunded_amount = amount
     session.add(db_order)
     session.commit()
     session.refresh(db_order)
@@ -76,12 +77,7 @@ def auto_refund_order(
         return False
     amount = calc_refund_amount(db_order=db_order)
     if amount > Decimal("0"):
-        wallet = get_wallet_by_user_id(session=session, user_id=db_order.user_id)
-        if not wallet:
-            logger.warning(
-                "订单 %s 用户钱包不存在，跳过自动退款", db_order.order_no
-            )
-            return False
+        wallet = get_or_create_user_wallet(session=session, user_id=db_order.user_id)
         adjust_balance(
             session=session,
             wallet=wallet,
@@ -99,6 +95,7 @@ def auto_refund_order(
             product_id=db_order.product_id,
             quantity=db_order.quantity,
         )
+    db_order.refunded_amount = amount
     db_order.status = OrderStatus.REFUNDED
     db_order.refunded_at = datetime.now(UTC)
     if upstream_status == OrderStatus.CANCELED:

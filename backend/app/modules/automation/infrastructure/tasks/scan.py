@@ -11,6 +11,7 @@ from app.modules.automation.infrastructure.executors import (
     ExecutorTerminalError,
     get_executor,
 )
+from app.modules.automation.models import AutomationTask
 from app.modules.automation.repositories.task import (
     claim_due_tasks,
     mark_failed,
@@ -59,6 +60,7 @@ def automation_task_scan() -> dict:
             )
             stats["claimed"] = len(tasks)
             for task in tasks:
+                claim_token = task.claimed_at
                 # 记录开始执行时间并推进心跳，防止长批次执行中任务被其他实例误判为失联
                 task.started_at = datetime.now(UTC)
                 task.updated_at = datetime.now(UTC)
@@ -69,29 +71,53 @@ def automation_task_scan() -> dict:
                     executor = executor_cls()
                     # 幂等预检查：业务目标已达成时直接标记成功，避免重复副作用
                     if executor.check_already_done(task=task):
-                        mark_success(session=session, task=task)
-                        stats["success"] += 1
+                        if mark_success(
+                            session=session,
+                            task=task,
+                            expected_claimed_at=claim_token,
+                        ):
+                            stats["success"] += 1
                         continue
                     executor.execute(task=task)
                 except Exception as exc:  # noqa: BLE001
                     session.rollback()
-                    session.refresh(task)
-                    before = task.retry_count
-                    mark_failed(
+                    current_task = session.get(
+                        AutomationTask,
+                        task.id,
+                        populate_existing=True,
+                    )
+                    if current_task is None:
+                        continue
+                    before = current_task.retry_count
+                    should_retry = (
+                        not isinstance(exc, ExecutorTerminalError)
+                        and before < current_task.max_retry
+                    )
+                    marked = mark_failed(
                         session=session,
-                        task=task,
+                        task=current_task,
                         error_message=str(exc),
                         now=datetime.now(UTC),
                         terminal=isinstance(exc, ExecutorTerminalError),
+                        expected_claimed_at=claim_token,
                     )
-                    if task.retry_count > before:
-                        stats["retried"] += 1
-                    else:
-                        stats["failed"] += 1
-                    logger.warning("自动化任务 %s 执行失败: %s", task.id, exc)
+                    if marked:
+                        if should_retry:
+                            stats["retried"] += 1
+                        else:
+                            stats["failed"] += 1
+                    logger.warning(
+                        "自动化任务 %s 执行失败: %s",
+                        current_task.id,
+                        exc,
+                    )
                 else:
-                    mark_success(session=session, task=task)
-                    stats["success"] += 1
+                    if mark_success(
+                        session=session,
+                        task=task,
+                        expected_claimed_at=claim_token,
+                    ):
+                        stats["success"] += 1
     except Exception as exc:  # noqa: BLE001
         stats["errors"].append(str(exc))
         logger.exception("自动化任务池扫描异常")

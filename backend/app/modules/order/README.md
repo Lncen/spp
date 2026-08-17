@@ -97,3 +97,7 @@ backend/app/modules/order/
    防止上游重复下单。
 5. **创建链路零改动**：条件验证、防重复、扣库存、扣款、落库、`order.paid` 事件均在 `create.py`，
    与自动化履约链路解耦。
+6. **下单成功后不即时查单**：API 履约下单成功（拿到上游单号）即置为 `PROCESSING`，
+   不立即调用上游查单接口；后续状态由 `sync_order_status_periodic` 定时同步
+   （与手动 `/orders/{id}/sync-status` 共用同一编排），避免批量下单高峰时
+   新单查询延迟或失败导致本地状态停留在 `PENDING`。

@@ -69,6 +69,7 @@ class OrderPublic(SQLModel):
     supplier_name: str | None = None
     sku_id: str | None = None
     can_refund: bool
+    refunded_amount: Decimal
 
 
 class OrderListItem(SQLModel):

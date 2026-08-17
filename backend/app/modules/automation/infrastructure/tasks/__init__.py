@@ -13,6 +13,9 @@ from app.modules.automation.infrastructure.tasks.cleanup import (
 from app.modules.automation.infrastructure.tasks.expired_data import (
     cleanup_expired_data,
 )
+from app.modules.automation.infrastructure.tasks.event_redispatch import (
+    redispatch_stale_automation_events,
+)
 from app.modules.automation.infrastructure.tasks.notification_cleanup import (
     cleanup_notification_records,
 )
@@ -53,6 +56,7 @@ __all__ = [
     "dispatch_upstream_products_sync",
     "enqueue_delivery",
     "requeue_stale_notification_deliveries",
+    "redispatch_stale_automation_events",
     "sync_order_status_periodic",
     "sync_product_status",
     "sync_upstream_products",

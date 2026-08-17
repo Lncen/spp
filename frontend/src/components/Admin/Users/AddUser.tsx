@@ -33,8 +33,12 @@ import { handleError } from "@/utils"
 
 const formSchema = z
   .object({
-    email: z.email({ message: "邮箱格式不正确" }),
-    username: z.string().optional(),
+    email: z.email({ message: "邮箱格式不正确" }).optional().or(z.literal("")),
+    username: z
+      .string()
+      .min(1, { message: "请输入用户名" })
+      .min(6, { message: "用户名至少 6 个字符" })
+      .max(20, { message: "用户名最多 20 个字符" }),
     full_name: z.string().optional(),
     password: z
       .string()
@@ -113,14 +117,13 @@ const AddUser = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      邮箱 <span className="text-destructive">*</span>
+                      邮箱
                     </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="邮箱"
                         type="email"
                         {...field}
-                        required
                       />
                     </FormControl>
                     <FormMessage />
@@ -133,9 +136,16 @@ const AddUser = () => {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>用户名</FormLabel>
+                    <FormLabel>
+                      用户名<span className="text-destructive">*</span>
+                    </FormLabel>
                     <FormControl>
-                      <Input placeholder="用户名" type="text" {...field} />
+                      <Input 
+                        placeholder="用户名" 
+                        type="username" 
+                        {...field}
+                        required
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

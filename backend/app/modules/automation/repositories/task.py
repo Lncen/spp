@@ -22,6 +22,31 @@ TERMINAL_STATUSES = (
 )
 
 
+def _lock_running_task_for_terminal(
+    *,
+    session: Session,
+    task: AutomationTask,
+    expected_claimed_at: datetime | None,
+) -> AutomationTask | None:
+    """终端写入前锁定任务行，确认仍由当前 worker 认领，避免失联恢复竞态。"""
+    if expected_claimed_at is None:
+        return task
+
+    locked = session.exec(
+        select(AutomationTask)
+        .where(AutomationTask.id == task.id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    ).first()
+    if (
+        locked is None
+        or locked.status != AutomationTaskStatus.RUNNING
+        or locked.claimed_at != expected_claimed_at
+    ):
+        return None
+    return locked
+
+
 def create_task(
     *,
     session: Session,
@@ -211,13 +236,26 @@ def _move_to_archive(*, session: Session, task: AutomationTask) -> None:
     session.delete(task)
 
 
-def mark_success(*, session: Session, task: AutomationTask) -> None:
+def mark_success(
+    *,
+    session: Session,
+    task: AutomationTask,
+    expected_claimed_at: datetime | None = None,
+) -> bool:
     """标记任务执行成功并立即归档。"""
-    task.status = AutomationTaskStatus.SUCCESS
-    task.last_error = None
-    task.finished_at = datetime.now(UTC)
-    _move_to_archive(session=session, task=task)
+    locked = _lock_running_task_for_terminal(
+        session=session,
+        task=task,
+        expected_claimed_at=expected_claimed_at,
+    )
+    if locked is None:
+        return False
+    locked.status = AutomationTaskStatus.SUCCESS
+    locked.last_error = None
+    locked.finished_at = datetime.now(UTC)
+    _move_to_archive(session=session, task=locked)
     session.commit()
+    return True
 
 
 def mark_failed(
@@ -227,25 +265,34 @@ def mark_failed(
     error_message: str,
     now: datetime,
     terminal: bool = False,
-) -> None:
+    expected_claimed_at: datetime | None = None,
+) -> bool:
     """标记任务执行失败：默认未达重试上限则回退 pending；terminal=True 表示业务已终态，跳过重试直接失败归档。"""
-    task.last_error = error_message[:MAX_ERROR_MESSAGE_LENGTH]
+    locked = _lock_running_task_for_terminal(
+        session=session,
+        task=task,
+        expected_claimed_at=expected_claimed_at,
+    )
+    if locked is None:
+        return False
+    locked.last_error = error_message[:MAX_ERROR_MESSAGE_LENGTH]
     if not terminal and should_retry(
-        retry_count=task.retry_count,
-        max_retry=task.max_retry,
+        retry_count=locked.retry_count,
+        max_retry=locked.max_retry,
     ):
-        task.retry_count += 1
-        task.status = AutomationTaskStatus.PENDING
-        task.execute_at = now
-        task.finished_at = None
-        task.claimed_at = None
-        task.started_at = None
-        session.add(task)
+        locked.retry_count += 1
+        locked.status = AutomationTaskStatus.PENDING
+        locked.execute_at = now
+        locked.finished_at = None
+        locked.claimed_at = None
+        locked.started_at = None
+        session.add(locked)
     else:
-        task.status = AutomationTaskStatus.FAILED
-        task.finished_at = now
-        _move_to_archive(session=session, task=task)
+        locked.status = AutomationTaskStatus.FAILED
+        locked.finished_at = now
+        _move_to_archive(session=session, task=locked)
     session.commit()
+    return True
 
 
 def reset_task(*, session: Session, task: AutomationTask) -> None:

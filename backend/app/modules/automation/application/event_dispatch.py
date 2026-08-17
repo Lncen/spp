@@ -6,6 +6,7 @@ from sqlmodel import Session
 
 from app.core.db import engine
 from app.modules.automation.domain.constants import AutomationEventStatus
+from app.modules.automation.domain.validation import validate_rule_config
 from app.modules.automation.models import AutomationEvent, AutomationTask
 from app.modules.automation.repositories.rule import (
     list_enabled_rules_by_event,
@@ -13,6 +14,8 @@ from app.modules.automation.repositories.rule import (
 from app.modules.automation.repositories.task import create_task
 
 MAX_ERROR_LENGTH = 2000
+BASE_REDISPATCH_DELAY_SECONDS = 60
+MAX_REDISPATCH_DELAY_SECONDS = 3600
 
 
 def dispatch_event(*, event: AutomationEvent) -> list[AutomationTask]:
@@ -30,8 +33,9 @@ def dispatch_event(*, event: AutomationEvent) -> list[AutomationTask]:
             )
             tasks = []
             for rule in rules:
+                validate_rule_config(rule.config)
                 config = dict(rule.config)
-                task_options = config.pop("task_options", {})
+                task_options = config.pop("task_options", {}) or {}
                 payload = {**db_event.payload, **config}
                 delay_seconds = int(task_options.get("delay_seconds", 0) or 0)
                 execute_at = (
@@ -53,6 +57,8 @@ def dispatch_event(*, event: AutomationEvent) -> list[AutomationTask]:
             db_event.status = AutomationEventStatus.DISPATCHED
             db_event.dispatch_attempts += 1
             db_event.dispatched_at = datetime.now(UTC)
+            db_event.last_error = None
+            db_event.next_dispatch_at = None
             session.commit()
             for task in tasks:
                 session.refresh(task)
@@ -62,6 +68,14 @@ def dispatch_event(*, event: AutomationEvent) -> list[AutomationTask]:
             db_event.status = AutomationEventStatus.FAILED
             db_event.dispatch_attempts += 1
             db_event.last_error = str(exc)[:MAX_ERROR_LENGTH]
+            retry_delay = min(
+                MAX_REDISPATCH_DELAY_SECONDS,
+                BASE_REDISPATCH_DELAY_SECONDS
+                * (2 ** max(0, db_event.dispatch_attempts - 1)),
+            )
+            db_event.next_dispatch_at = datetime.now(UTC) + timedelta(
+                seconds=retry_delay
+            )
             session.add(db_event)
             session.commit()
             raise

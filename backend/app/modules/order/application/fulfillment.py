@@ -132,7 +132,12 @@ def fulfill_claimed_order(
     db_order: Order,
     fail_limit: int | None = None,
 ) -> Order:
-    """执行已认领订单的履约：调用上游并回写结果，失败按结果是否明确分流"""
+    """执行已认领订单的履约：调用上游并回写结果，失败按结果是否明确分流
+
+    API 订单下单成功即保持 PROCESSING（record_upstream_order_created 已置位），
+    不再立即查询上游状态，后续状态由 sync_order_status_periodic 定时同步；
+    非 API 订单按原逻辑直接回写终态。
+    """
     is_api = db_order.fulfillment_type == RedeemType.AUTO_API
     now = datetime.now(UTC)
     if fail_limit is None:
@@ -146,7 +151,8 @@ def fulfill_claimed_order(
         fail_limit=fail_limit,
     )
     db_order.fulfill_failed_count = 0  # 上游下单成功，清零失败计数
-    _finalize(session=session, db_order=db_order, is_api=is_api, now=now)
+    if not is_api:
+        _finalize(session=session, db_order=db_order, is_api=is_api, now=now)
     session.add(db_order)
     session.commit()
     session.refresh(db_order)

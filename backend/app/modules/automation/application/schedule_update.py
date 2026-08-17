@@ -3,11 +3,7 @@
 from kombu.utils.json import dumps
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from sqlalchemy_celery_beat.models import (
-    CrontabSchedule,
-    IntervalSchedule,
-    PeriodicTask,
-)
+from sqlalchemy_celery_beat.models import PeriodicTask
 
 from app.modules.automation.domain.validation import validate_schedule_input
 from app.modules.automation.repositories.schedule import (
@@ -43,13 +39,15 @@ def update_schedule(
     if schedule_type is not None or crontab_in is not None or interval_in is not None:
         current_type = task_schedule_type(task)
         new_type = schedule_type or current_type
-        if new_type != current_type:
+        changing_type = new_type != current_type
+        has_schedule_config = crontab_in is not None or interval_in is not None
+        if changing_type or has_schedule_config:
             validate_schedule_input(
                 schedule_type=new_type,
                 crontab=crontab_in,
                 interval=interval_in,
             )
-            old_model = task.schedule_model
+        if has_schedule_config:
             new_model = build_schedule_model(
                 session=session,
                 schedule_type=new_type,
@@ -57,16 +55,13 @@ def update_schedule(
                 interval_in=interval_in,
             )
             task.schedule_model = new_model
-            if old_model is not None:
-                session.delete(old_model)
-        else:
-            current = task.schedule_model
-            if isinstance(current, CrontabSchedule) and crontab_in is not None:
-                for key, value in crontab_in.model_dump().items():
-                    setattr(current, key, value)
-            elif isinstance(current, IntervalSchedule) and interval_in is not None:
-                current.every = interval_in.every
-                current.period = interval_in.period.value
+
+    nullable_update_fields = {"description"}
+    update_dict = {
+        key: value
+        for key, value in update_dict.items()
+        if value is not None or key in nullable_update_fields
+    }
 
     for field, value in update_dict.items():
         if field in {"args", "kwargs"} and value is not None:

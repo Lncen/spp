@@ -83,6 +83,7 @@ def _local_cancel_order(
             status=OrderStatus.REFUNDED,
             refunded_at=now,
             canceled_at=now,
+            refunded_amount=db_order.total_amount,
         )
     )
     if result.rowcount != 1:

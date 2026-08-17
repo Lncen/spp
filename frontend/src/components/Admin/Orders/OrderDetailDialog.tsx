@@ -337,7 +337,7 @@ export const OrderDetailDialog = ({
                     <div className="grid grid-cols-3 divide-x">
                       <div className="flex flex-col items-center gap-1 px-2">
                         <span className="text-sm text-muted-foreground">
-                          商品金额
+                          成交金额
                         </span>
                         <span className="text-lg font-semibold">
                           {formatAmount(order.subtotal)}

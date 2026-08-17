@@ -167,6 +167,14 @@ class Order(BaseModelMixin, SQLModel, table=True):
         decimal_places=8,
         title="成本价快照",
     )
+    refunded_amount: Decimal = Field(
+        default=Decimal("0"),
+        max_digits=18,
+        decimal_places=8,
+        nullable=False,
+        title="已退款金额",
+        description="订单累计实际退款金额，部分退款时可小于订单实付金额",
+    )
     loss_price: Decimal = Field(
         default=Decimal("0"),
         max_digits=18,

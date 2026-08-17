@@ -158,7 +158,8 @@ Authorization: Bearer <superuser-token>
 
 ### 6. 任务池执行与重试
 
-- beat 每 3 分钟触发 `automation_task_scan`：恢复失联 running（超过 10 分钟）→ 原子认领到期 pending → 执行 Executor → 成功标记 / 失败重试；
+- beat 每 30 秒触发 `automation_task_scan`：恢复失联 running（超过 10 分钟）→ 原子认领到期 pending → 执行 Executor → 成功标记 / 失败重试；
+- 事件补发任务 `redispatch_stale_automation_events` 每分钟扫描未完成或失败的事件，按退避时间补发；
 - 失败任务按 `max_retry` 自动重试，重试耗尽进入 `failed` 终态；
 - **业务终态即失败**：执行器抛出 `ExecutorTerminalError`（如订单已转人工确认）时跳过重试，任务直接进入 `failed` 终态，不会被误标为成功；
 - **终态即归档**：`success` / `failed` / `canceled` 任务完成（或取消）时立即移入归档表 `automation_task_archives`，主表仅保留 `pending` / `running`；
@@ -217,6 +218,7 @@ backend/app/modules/automation/
 │   └── tasks/                      # Celery 定时任务（全项目任务统一收敛，按职责拆分）
 │       ├── __init__.py             # 统一导出全部任务
 │       ├── scan.py                 # automation_task_scan：扫描任务池并执行
+│       ├── event_redispatch.py     # redispatch_stale_automation_events：失败/中断事件补发
 │       ├── cleanup.py              # cleanup_automation_task_archives：归档/事件清理
 │       ├── order_status.py         # sync_order_status_periodic：订单状态同步
 │       ├── order_cleanup.py        # cleanup_completed_orders：已完成订单数据清理
@@ -305,7 +307,7 @@ backend/app/modules/automation/
 1. **职责归位**：业务动作按文件拆分在 `application/`；Celery 交互（`discover_tasks`、`celery_app.tasks`、`AsyncResult`、`send_task`）在 `infrastructure/celery.py`，beat 初始配置在 `infrastructure/beat_schedule.py`；表操作与孤儿调度清理在 `repositories/schedule.py`；枚举与配对约束在 `domain/`。
 2. **依赖方向**：API → Application → Domain / Infrastructure → Repository，保持单向。
 3. **对外接口不变**：原 schedules 路由路径、响应模型、字段名与重构前一致；新增 /automation/tasks 管理面。
-4. **任务池执行链路**：beat 每 3 分钟触发 `automation_task_scan`，先恢复失联的 running 任务（超过 10 分钟未推进视为 worker 崩溃），再以 `UPDATE ... RETURNING` 原子认领到期 pending 任务（多 worker 并发只返回本事务真正认领的行，杜绝重复执行）→ Executor 执行 → 成功标记 / 失败按 `max_retry` 回退重试或进入 failed；业务终态（`ExecutorTerminalError`）跳过重试直接失败归档。
+4. **任务池执行链路**：beat 每 30 秒触发 `automation_task_scan`，先恢复失联的 running 任务（超过 10 分钟未推进视为 worker 崩溃），再以 `UPDATE ... RETURNING` 原子认领到期 pending 任务（多 worker 并发只返回本事务真正认领的行，杜绝重复执行）→ Executor 执行 → 成功标记 / 失败按 `max_retry` 回退重试或进入 failed；业务终态（`ExecutorTerminalError`）跳过重试直接失败归档。
 5. **新增表需迁移**：`automation_tasks` 为新增表，迁移文件按项目规范另行生成。
 6. **事件驱动链路**：业务模块 `event_bus.publish` 落库事件 → 自动化监听器按启用规则生成任务 → 任务池执行；payload 合并规则为 `事件载荷 + 规则配置（配置优先）`。
 7. **终态即归档**：`mark_success` / `mark_failed`（重试耗尽或业务终态）/ `cancel_task` 在同一事务内将任务移入 `automation_task_archives`（原任务 ID 存入 `task_id`，追加 `archived_at`），主表保持精简；失败任务可经 `retry` 接口从归档恢复重新入队（重试计数清零）。

@@ -34,7 +34,7 @@ from app.modules.product.product.models import ProductPricing
 from app.modules.setting.application.setting_query import get_setting
 from app.modules.user.models import User
 from app.modules.wallet.application.wallet_adjust import adjust_balance
-from app.modules.wallet.application.wallet_query import get_wallet_by_user_id
+from app.modules.wallet.application.wallet_query import get_or_create_user_wallet
 from app.modules.wallet.models import Wallet
 
 logger = logging.getLogger(__name__)
@@ -273,7 +273,7 @@ def create_orders(
     body: AdminOrdersCreate,
 ) -> AdminOrdersPublic:
     """批量创建用户订单：逐单校验钱包并扣款，逐单独立返回创建状态"""
-    wallet = get_wallet_by_user_id(session=session, user_id=user.id)
+    wallet = get_or_create_user_wallet(session=session, user_id=user.id)
     return _create_orders_batch(
         session=session,
         user=user,

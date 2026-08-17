@@ -620,6 +620,7 @@ def test_cancel_order_locally_refunds_unfulfilled_order(
     assert content["status"] == 8
     assert content["canceled_at"] is not None
     assert content["refunded_at"] is not None
+    assert Decimal(content["refunded_amount"]) == Decimal("20.00")
     assert _wallet_balance(client, headers) == Decimal("100.00")
     assert _product_stock(client, product["id"], superuser_token_headers) == 100
 
@@ -713,6 +714,7 @@ def test_fulfill_manual_order_and_refund(
     content = refund.json()
     assert content["status"] == 8
     assert content["refunded_at"] is not None
+    assert Decimal(content["refunded_amount"]) == Decimal("20.00")
     assert _wallet_balance(client, headers) == Decimal("100.00")
     # 已完成订单手动退款不回补库存
     assert _product_stock(client, product["id"], superuser_token_headers) == 99
@@ -1068,6 +1070,7 @@ def test_cancel_order_after_manual_fulfill_locally_refunds(
     assert response.status_code == 200
     assert response.json()["status"] == 8
     assert response.json()["refunded_at"] is not None
+    assert Decimal(response.json()["refunded_amount"]) == Decimal("20.00")
     assert _wallet_balance(client, headers) == Decimal("100.00")
     assert _product_stock(client, product["id"], superuser_token_headers) == 100
 
@@ -1149,6 +1152,7 @@ def test_api_refund_application_auto_refunds_on_upstream_refunded(
     content = sync.json()
     assert content["status"] == 8
     assert content["refunded_at"] is not None
+    assert Decimal(content["refunded_amount"]) == Decimal("40.00")
     assert content["start_quantity"] == 2
     assert content["current_quantity"] == 2
     assert _wallet_balance(client, headers) == Decimal("100.00")

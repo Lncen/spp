@@ -91,7 +91,10 @@ def publish(
         session.commit()
         session.refresh(event)
     dispatch_event(event)
-    return event
+    # 分发过程会使用另一个 Session 更新事件状态；重新查库后再返回，
+    # 避免调用方拿到的 event 仍停留在落库时的 pending 状态。
+    with Session(engine) as session:
+        return session.get(AutomationEvent, event.id) or event
 
 
 def _listeners_for(event_type: str) -> list[Listener]:

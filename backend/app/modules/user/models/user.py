@@ -31,9 +31,8 @@ class User(BaseModelMixin, SQLModel, table=True):
         description="用户登录名，必须唯一且长度不超过255个字符",
     )
 
-    email: EmailStr = Field(
-        unique=True,
-        index=True,
+    email: EmailStr | None = Field(
+        default=None,
         max_length=255,
         title="电子邮箱",
         description="用户的登录邮箱，必须唯一且长度不超过255个字符",

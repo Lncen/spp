@@ -1,14 +1,19 @@
 """自动化模块：自动化事件数据访问层"""
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import HTTPException
-from sqlalchemy import delete
+from sqlalchemy import and_, delete, or_, update
 from sqlmodel import Session, func, select
 
+from app.modules.automation.domain.constants import AutomationEventStatus
 from app.modules.automation.models import AutomationEvent
+
+REDISPATCH_GRACE_SECONDS = 60
+MAX_DISPATCH_ATTEMPTS = 5
+REDISPATCH_RESERVE_SECONDS = 300
 
 
 def create_event(
@@ -77,3 +82,73 @@ def purge_events(
     )
     session.commit()
     return len(ids)
+
+
+def claim_events_for_redispatch(
+    *,
+    session: Session,
+    now: datetime,
+    limit: int,
+) -> list[AutomationEvent]:
+    """原子认领需要补发的事件，多 worker 并发时只认领本事务真正更新的行。"""
+    grace_cutoff = now - timedelta(seconds=REDISPATCH_GRACE_SECONDS)
+    retryable_statuses = [
+        AutomationEventStatus.PENDING,
+        AutomationEventStatus.DISPATCHING,
+        AutomationEventStatus.FAILED,
+    ]
+    ids = session.exec(
+        select(AutomationEvent.id)
+        .where(
+            AutomationEvent.status.in_(retryable_statuses),
+            AutomationEvent.dispatch_attempts < MAX_DISPATCH_ATTEMPTS,
+            or_(
+                and_(
+                    AutomationEvent.next_dispatch_at.is_(None),
+                    AutomationEvent.created_at <= grace_cutoff,
+                ),
+                and_(
+                    AutomationEvent.next_dispatch_at.is_not(None),
+                    AutomationEvent.next_dispatch_at <= now,
+                ),
+            ),
+        )
+        .order_by(AutomationEvent.created_at.asc())
+        .limit(limit)
+    ).all()
+    if not ids:
+        return []
+
+    claimed_ids = session.execute(
+        update(AutomationEvent)
+        .where(
+            AutomationEvent.id.in_(ids),
+            AutomationEvent.status.in_(retryable_statuses),
+            AutomationEvent.dispatch_attempts < MAX_DISPATCH_ATTEMPTS,
+            or_(
+                and_(
+                    AutomationEvent.next_dispatch_at.is_(None),
+                    AutomationEvent.created_at <= grace_cutoff,
+                ),
+                and_(
+                    AutomationEvent.next_dispatch_at.is_not(None),
+                    AutomationEvent.next_dispatch_at <= now,
+                ),
+            ),
+        )
+        .values(
+            status=AutomationEventStatus.DISPATCHING,
+            processing_at=now,
+            next_dispatch_at=now + timedelta(seconds=REDISPATCH_RESERVE_SECONDS),
+        )
+        .returning(AutomationEvent.id)
+    ).scalars().all()
+    session.commit()
+    if not claimed_ids:
+        return []
+
+    return session.exec(
+        select(AutomationEvent)
+        .where(AutomationEvent.id.in_(claimed_ids))
+        .order_by(AutomationEvent.created_at.asc())
+    ).all()

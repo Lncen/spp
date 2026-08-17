@@ -11,6 +11,7 @@ TASK_LABELS: dict[str, str] = {
     "app.modules.automation.infrastructure.tasks.cleanup_expired_data": "celery_清理过期数据",
     "app.modules.automation.infrastructure.tasks.cleanup_automation_task_archives" : "自动化_清理自动化任务归档数据",
     "app.modules.automation.infrastructure.tasks.automation_task_scan": "自动化_任务池扫描",
+    "app.modules.automation.infrastructure.tasks.redispatch_stale_automation_events": "自动化_事件补发",
     "app.modules.automation.infrastructure.tasks.sync_order_status_periodic": "订单_同步订单状态",
     "app.modules.automation.infrastructure.tasks.sync_product_status": "商品_同步商品状态",
     "app.modules.automation.infrastructure.tasks.sync_upstream_products": "供应商_同步供应商商品",
