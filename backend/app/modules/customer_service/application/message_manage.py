@@ -1,12 +1,12 @@
 """客服模块：消息应用服务（发送 / 查询 / 已读）"""
 
 import uuid
-from datetime import UTC, datetime
 
 from fastapi import HTTPException
 from sqlalchemy import func
 from sqlmodel import Session, col, select
 
+from app.core.time import get_datetime_cn
 from app.modules.customer_service.application.conversation_manage import (
     list_active_superuser_ids,
     to_conversation_public,
@@ -82,7 +82,7 @@ def send_message(
     if sender.id is None:
         raise HTTPException(status_code=400, detail="用户 ID 缺失")
     sender_role = SenderRole.ADMIN if sender.is_superuser else SenderRole.USER
-    now = datetime.now(UTC)
+    now = get_datetime_cn()
     message = create_message(
         session=session,
         conversation_id=conversation.id,
@@ -168,7 +168,7 @@ def mark_conversation_read(
         session=session,
         conversation_id=conversation.id,
         reader_id=reader.id,
-        now=datetime.now(UTC),
+        now=get_datetime_cn(),
     )
     session.commit()
     if updated:

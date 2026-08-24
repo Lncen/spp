@@ -25,13 +25,7 @@ def _to_public(meta: dict) -> BackupPublic:
         created_at=meta.get("created_at"),
         size=int(meta.get("size") or 0),
         order_hours=int(meta.get("order_hours") or 0),
-        counts=BackupCounts(
-            users=int(counts.get("users") or 0),
-            wallets=int(counts.get("wallets") or 0),
-            orders=int(counts.get("orders") or 0),
-            order_params=int(counts.get("order_params") or 0),
-            suppliers=int(counts.get("suppliers") or 0),
-        ),
+        counts=BackupCounts.model_validate(counts),
     )
 
 

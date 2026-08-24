@@ -200,6 +200,12 @@ class Order(BaseModelMixin, SQLModel, table=True):
         title="供应商 ID",
         description="下单时商品货源快照，供应商删除后置空",
     )
+    supplier_name: str | None = Field(
+        default=None,
+        max_length=255,
+        title="供应商名称快照",
+        description="下单时供应商名称快照，供应商删除后保留",
+    )
     sku_id: str | None = Field(
         default=None,
         max_length=255,

@@ -1,6 +1,5 @@
 """自动化模块：过期数据清理定时任务"""
 
-from datetime import datetime
 from pathlib import Path
 
 from celery import shared_task
@@ -8,6 +7,7 @@ from sqlmodel import Session
 
 from app.core.config import settings
 from app.core.db import engine
+from app.core.time import get_datetime_cn
 
 
 @shared_task(
@@ -39,7 +39,7 @@ def cleanup_expired_data() -> dict:
         # 2. 清理磁盘上孤立的临时文件（超过 24 小时未被引用的上传文件）
         tmp_dir = Path(settings.UPLOAD_DIR) / "tmp"
         if tmp_dir.exists():
-            tmp_cutoff = datetime.now().timestamp() - 86400  # 24 小时
+            tmp_cutoff = get_datetime_cn().timestamp() - 86400  # 24 小时
             for f in tmp_dir.iterdir():
                 if f.is_file() and f.stat().st_mtime < tmp_cutoff:
                     f.unlink(missing_ok=True)

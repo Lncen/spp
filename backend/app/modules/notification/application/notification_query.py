@@ -1,10 +1,10 @@
 """通知中心：通知查询与已读应用服务"""
 
 import uuid
-from datetime import UTC, datetime
 
 from sqlmodel import Session
 
+from app.core.time import get_datetime_cn
 from app.modules.customer_service.application.conversation_manage import (
     get_total_conversation_unread,
 )
@@ -86,7 +86,7 @@ def mark_my_notification_read(
     mark_notification_read(
         session=session,
         notification=notification,
-        now=datetime.now(UTC),
+        now=get_datetime_cn(),
     )
     session.commit()
     session.refresh(notification)
@@ -98,7 +98,7 @@ def mark_my_all_read(*, session: Session, user_id: uuid.UUID) -> int:
     updated = mark_all_read(
         session=session,
         user_id=user_id,
-        now=datetime.now(UTC),
+        now=get_datetime_cn(),
     )
     session.commit()
     return updated

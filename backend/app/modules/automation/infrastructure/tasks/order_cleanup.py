@@ -1,12 +1,13 @@
 """自动化模块：已完成订单数据定期清理 Celery 任务"""
 
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 
 from celery import shared_task
 from sqlmodel import Session
 
 from app.core.db import engine
+from app.core.time import get_datetime_cn
 from app.modules.order.repositories.order import purge_completed_orders
 from app.modules.setting.application.setting_query import get_setting
 from app.modules.setting.domain.constants import ORDER_RETENTION_DAYS
@@ -35,7 +36,7 @@ def cleanup_completed_orders() -> dict:
     try:
         with Session(engine) as session:
             retention_days = _get_retention_days(session=session)
-            before = datetime.now(UTC) - timedelta(days=retention_days)
+            before = get_datetime_cn() - timedelta(days=retention_days)
             while True:
                 purged = purge_completed_orders(
                     session=session,

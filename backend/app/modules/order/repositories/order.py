@@ -29,6 +29,7 @@ from app.modules.product.product.models import (
 )
 from app.modules.supplier.models import Supplier
 from app.modules.supplier.schemas import PlatformEnum
+from app.modules.user.models import User
 
 
 def get_order(*, session: Session, order_id: uuid.UUID) -> Order:
@@ -60,7 +61,7 @@ def list_orders(
 ) -> tuple[list[Order], int]:
     """分页查询全部订单，可按状态、用户与关键字过滤
 
-    keyword 精确匹配订单 ID、订单号或下单参数值。
+    keyword 精确匹配订单 ID、订单号、下单参数值或用户名。
     """
     conditions = []
     if status is not None:
@@ -74,6 +75,9 @@ def list_orders(
                 select(OrderParam.order_id).where(
                     OrderParam.value == keyword
                 )
+            ),
+            Order.user_id.in_(
+                select(User.id).where(User.username == keyword)
             ),
         ]
         try:
@@ -180,6 +184,12 @@ def _load_order_snapshot(
     supplier_sku = _validate_supplier_available(session=session, product=product)
     _validate_quantity(inventory=inventory, quantity=order_in.quantity)
 
+    supplier_id = supplier_sku.supplier_id if supplier_sku else None
+    supplier_name = None
+    if supplier_id is not None:
+        supplier = session.get(Supplier, supplier_id)
+        supplier_name = supplier.name if supplier else None
+
     buy_params = session.exec(
         select(ProductBuyParam).where(ProductBuyParam.product_id == product.id)
     ).all()
@@ -191,7 +201,8 @@ def _load_order_snapshot(
         "product": product,
         "inventory": inventory,
         "fulfillment": fulfillment,
-        "supplier_id": supplier_sku.supplier_id if supplier_sku else None,
+        "supplier_id": supplier_id,
+        "supplier_name": supplier_name,
         "sku_id": supplier_sku.sku_id if supplier_sku else None,
         "quantity": order_in.quantity,
         "params": params_snapshot,

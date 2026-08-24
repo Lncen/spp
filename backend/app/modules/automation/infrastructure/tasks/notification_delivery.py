@@ -2,7 +2,7 @@
 
 import logging
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from typing import Any
 
 from celery import shared_task  # type: ignore[import-untyped]
@@ -10,6 +10,7 @@ from sqlmodel import Session
 
 from app.core.config import settings
 from app.core.db import engine
+from app.core.time import get_datetime_cn
 from app.modules.notification.domain.constants import (
     DEFAULT_MAX_ATTEMPTS,
     DeliveryStatus,
@@ -79,7 +80,7 @@ def deliver_notification(self: Any, delivery_id: str) -> None:
             raise exc
 
         delivery.status = DeliveryStatus.SENT
-        delivery.sent_at = datetime.now(UTC)
+        delivery.sent_at = get_datetime_cn()
         session.add(delivery)
         session.commit()
 
@@ -109,7 +110,7 @@ def enqueue_delivery(delivery_id: str) -> bool:
 )
 def requeue_stale_notification_deliveries() -> int:
     """兜底扫描：恢复超时未推进的投递记录并重新入队，防止消息丢失导致永不发送"""
-    now = datetime.now(UTC)
+    now = get_datetime_cn()
     cutoff = now - timedelta(minutes=settings.NOTIFICATION_STALE_MINUTES)
     with Session(engine) as session:
         stale_ids = recover_stale_deliveries(

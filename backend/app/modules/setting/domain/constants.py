@@ -93,7 +93,7 @@ DEFAULT_SETTINGS: dict[str, dict[str, Any]] = {
         "type": SettingType.WALLET,
     },
     BACKUP_DIR: {
-        "value": "",
+        "value": "/app/backups",
         "description": "数据备份保存目录；留空时使用环境变量 BACKUP_DIR",
         "type": SettingType.SYSTEM,
     },
@@ -103,7 +103,7 @@ DEFAULT_SETTINGS: dict[str, dict[str, Any]] = {
         "type": SettingType.SYSTEM,
     },
     MESSAGE_CUE_VOLUME: {
-        "value": 0.15,
+        "value": 1,
         "description": "新消息提示音音量（0~2，0 为静音，2 为 2 倍音量）",
         "type": SettingType.NOTIFICATION,
     },

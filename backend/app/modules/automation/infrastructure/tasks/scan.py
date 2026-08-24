@@ -1,12 +1,13 @@
 """自动化模块：任务池扫描执行 Celery 任务"""
 
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 
 from celery import shared_task
 from sqlmodel import Session
 
 from app.core.db import engine
+from app.core.time import get_datetime_cn
 from app.modules.automation.infrastructure.executors import (
     ExecutorTerminalError,
     get_executor,
@@ -50,20 +51,20 @@ def automation_task_scan() -> dict:
         with Session(engine) as session:
             stats["recovered"] = recover_stale_running_tasks(
                 session=session,
-                before=datetime.now(UTC)
+                before=get_datetime_cn()
                 - timedelta(minutes=STALE_RUNNING_MINUTES),
             )
             tasks = claim_due_tasks(
                 session=session,
                 limit=SCAN_LIMIT,
-                now=datetime.now(UTC),
+                now=get_datetime_cn(),
             )
             stats["claimed"] = len(tasks)
             for task in tasks:
                 claim_token = task.claimed_at
                 # 记录开始执行时间并推进心跳，防止长批次执行中任务被其他实例误判为失联
-                task.started_at = datetime.now(UTC)
-                task.updated_at = datetime.now(UTC)
+                task.started_at = get_datetime_cn()
+                task.updated_at = get_datetime_cn()
                 session.add(task)
                 session.commit()
                 try:
@@ -97,7 +98,7 @@ def automation_task_scan() -> dict:
                         session=session,
                         task=current_task,
                         error_message=str(exc),
-                        now=datetime.now(UTC),
+                        now=get_datetime_cn(),
                         terminal=isinstance(exc, ExecutorTerminalError),
                         expected_claimed_at=claim_token,
                     )

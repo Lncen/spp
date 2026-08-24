@@ -1,13 +1,14 @@
 """自动化模块：自动化任务数据访问层"""
 
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
 from fastapi import HTTPException
 from sqlalchemy import delete, update
 from sqlmodel import Session, func, select
 
+from app.core.time import get_datetime_cn
 from app.modules.automation.domain.constants import AutomationTaskStatus
 from app.modules.automation.domain.execution import should_retry
 from app.modules.automation.models import AutomationTask, AutomationTaskArchive
@@ -65,7 +66,7 @@ def create_task(
         event_id=event_id,
         rule_id=rule_id,
         priority=priority,
-        execute_at=execute_at or datetime.now(UTC),
+        execute_at=execute_at or get_datetime_cn(),
         max_retry=max_retry,
     )
     session.add(task)
@@ -203,7 +204,7 @@ def recover_stale_running_tasks(
         )
         .values(
             status=AutomationTaskStatus.PENDING,
-            execute_at=datetime.now(UTC),
+            execute_at=get_datetime_cn(),
             claimed_at=None,
             started_at=None,
         )
@@ -230,7 +231,7 @@ def _move_to_archive(*, session: Session, task: AutomationTask) -> None:
         started_at=task.started_at,
         finished_at=task.finished_at,
         created_at=task.created_at,
-        archived_at=datetime.now(UTC),
+        archived_at=get_datetime_cn(),
     )
     session.add(archive)
     session.delete(task)
@@ -252,7 +253,7 @@ def mark_success(
         return False
     locked.status = AutomationTaskStatus.SUCCESS
     locked.last_error = None
-    locked.finished_at = datetime.now(UTC)
+    locked.finished_at = get_datetime_cn()
     _move_to_archive(session=session, task=locked)
     session.commit()
     return True
@@ -301,7 +302,7 @@ def reset_task(*, session: Session, task: AutomationTask) -> None:
         raise ValueError("仅失败任务可手动重试")
     task.status = AutomationTaskStatus.PENDING
     task.retry_count = 0
-    task.execute_at = datetime.now(UTC)
+    task.execute_at = get_datetime_cn()
     task.last_error = None
     task.claimed_at = None
     task.started_at = None
@@ -317,7 +318,7 @@ def cancel_task(*, session: Session, task: AutomationTask) -> None:
         raise ValueError("仅待执行任务可取消")
     task.status = AutomationTaskStatus.CANCELED
     task.last_error = None
-    task.finished_at = datetime.now(UTC)
+    task.finished_at = get_datetime_cn()
     _move_to_archive(session=session, task=task)
     session.commit()
 
@@ -351,7 +352,7 @@ def requeue_failed_task(
         rule_id=archived.rule_id,
         status=AutomationTaskStatus.PENDING,
         priority=archived.priority,
-        execute_at=datetime.now(UTC),
+        execute_at=get_datetime_cn(),
         retry_count=0,
         max_retry=archived.max_retry,
         payload=archived.payload,

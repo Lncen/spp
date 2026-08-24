@@ -6,7 +6,8 @@ from typing import Any
 from sqlalchemy import JSON, DateTime, String
 from sqlmodel import Field, SQLModel
 
-from app.core.mixin.models import UUIDPrimaryKeyMixin, get_datetime_utc
+from app.core.mixin.models import UUIDPrimaryKeyMixin
+from app.core.time import get_datetime_cn
 from app.modules.automation.domain.constants import AutomationEventStatus
 
 
@@ -53,24 +54,24 @@ class AutomationEvent(UUIDPrimaryKeyMixin, SQLModel, table=True):
         sa_type=DateTime(timezone=True),
         index=True,
         title="下次分发时间",
-        description="分发失败后的计划补发时间（UTC），暂由补发机制使用",
+        description="分发失败后的计划补发时间（北京时间），暂由补发机制使用",
     )
     created_at: datetime = Field(
-        default_factory=get_datetime_utc,
+        default_factory=get_datetime_cn,
         sa_type=DateTime(timezone=True),
         nullable=False,
         title="创建时间",
-        description="事件落库时间（UTC）",
+        description="事件落库时间（北京时间）",
     )
     processing_at: datetime | None = Field(
         default=None,
         sa_type=DateTime(timezone=True),
         title="处理时间",
-        description="开始分发的时刻（UTC）",
+        description="开始分发的时刻（北京时间）",
     )
     dispatched_at: datetime | None = Field(
         default=None,
         sa_type=DateTime(timezone=True),
         title="分发完成时间",
-        description="分发完成的时刻（UTC）",
+        description="分发完成的时刻（北京时间）",
     )

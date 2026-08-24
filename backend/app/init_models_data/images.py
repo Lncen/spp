@@ -1,9 +1,9 @@
 """图片分类初始数据"""
 import uuid
-from datetime import UTC, datetime
 
 from sqlmodel import Session, select
 
+from app.core.time import get_datetime_cn
 from app.modules.image.models import ImageCategory
 
 CATEGORIES_DATA = [
@@ -15,7 +15,7 @@ CATEGORIES_DATA = [
 
 def seed_image_categories(*, session: Session) -> None:
     """播种默认图片分类，幂等安全（已存在则跳过）"""
-    now = datetime.now(UTC)
+    now = get_datetime_cn()
 
     # 遍历每一条分类数据
     for data in CATEGORIES_DATA:

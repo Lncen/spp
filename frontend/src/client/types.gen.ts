@@ -326,6 +326,18 @@ export type BackupCounts = {
     orders?: number;
     order_params?: number;
     suppliers?: number;
+    product_categories?: number;
+    price_templates?: number;
+    price_template_rules?: number;
+    products?: number;
+    product_suppliers?: number;
+    product_pricings?: number;
+    product_inventories?: number;
+    product_fulfillments?: number;
+    product_buy_params?: number;
+    image_categories?: number;
+    images?: number;
+    images_files?: number;
 };
 
 /**
@@ -1393,6 +1405,18 @@ export type RestoreResultPublic = {
     orders: EntityRestoreStats;
     order_params: EntityRestoreStats;
     suppliers: EntityRestoreStats;
+    product_categories: EntityRestoreStats;
+    price_templates: EntityRestoreStats;
+    price_template_rules: EntityRestoreStats;
+    products: EntityRestoreStats;
+    product_suppliers: EntityRestoreStats;
+    product_pricings: EntityRestoreStats;
+    product_inventories: EntityRestoreStats;
+    product_fulfillments: EntityRestoreStats;
+    product_buy_params: EntityRestoreStats;
+    image_categories: EntityRestoreStats;
+    images: EntityRestoreStats;
+    images_files: EntityRestoreStats;
 };
 
 /**

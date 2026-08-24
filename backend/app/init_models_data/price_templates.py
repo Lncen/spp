@@ -1,10 +1,10 @@
 """价格模板初始数据"""
 
 import uuid
-from datetime import UTC, datetime
 
 from sqlmodel import Session, select
 
+from app.core.time import get_datetime_cn
 from app.init_models_data.levels import LEVEL_UUIDS
 from app.modules.price_template.constants import DEFAULT_DISCOUNT_RATE
 from app.modules.price_template.models import PriceTemplate, PriceTemplateRule
@@ -21,7 +21,7 @@ def seed_price_templates(*, session: Session) -> None:
     if existing:
         return
 
-    now = datetime.now(UTC)
+    now = get_datetime_cn()
     session.add(
         PriceTemplate(
             id=DEFAULT_PRICE_TEMPLATE_UUID,

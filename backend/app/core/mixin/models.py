@@ -1,12 +1,10 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 
 from sqlalchemy import DateTime
 from sqlmodel import Field
 
-
-def get_datetime_utc() -> datetime:
-    return datetime.now(UTC)
+from app.core.time import get_datetime_cn
 
 
 class TimestampMixin:
@@ -15,19 +13,19 @@ class TimestampMixin:
     注意：此类不包含 table=True，仅作为混入类使用。
     """
     created_at: datetime | None = Field(
-        default_factory=get_datetime_utc,
+        default_factory=get_datetime_cn,
         sa_type=DateTime(timezone=True), # type: ignore
         nullable=False,
         title="创建时间",
-        description="记录创建时的 UTC 时间，由系统自动生成，不可修改"
+        description="记录创建时的北京时间（Asia/Shanghai），由系统自动生成，不可修改"
     )
     updated_at: datetime | None = Field(
-        default_factory=get_datetime_utc,
+        default_factory=get_datetime_cn,
         sa_type=DateTime(timezone=True), # type: ignore
         nullable=False,
-        sa_column_kwargs={"onupdate": get_datetime_utc},
+        sa_column_kwargs={"onupdate": get_datetime_cn},
         title="更新时间",
-        description="记录最近一次修改时的 UTC 时间，每次数据更新时由系统自动刷新"
+        description="记录最近一次修改时的北京时间（Asia/Shanghai），每次数据更新时由系统自动刷新"
     )
 
 
@@ -75,7 +73,7 @@ class SoftDeleteMixin:
         sa_type=DateTime(timezone=True), # type: ignore
         nullable=True,
         title="删除时间",
-        description="记录被逻辑删除时的 UTC 时间，未删除时为 None"
+        description="记录被逻辑删除时的北京时间（Asia/Shanghai），未删除时为 None"
     )
 
 

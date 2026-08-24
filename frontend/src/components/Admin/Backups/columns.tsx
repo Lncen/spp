@@ -18,6 +18,10 @@ function countsLabel(backup: BackupPublic): string {
     `订单 ${counts.orders}`,
     `参数 ${counts.order_params}`,
     `供应商 ${counts.suppliers}`,
+    `商品分类 ${counts.product_categories}`,
+    `价格模板 ${counts.price_templates}`,
+    `商品 ${counts.products}`,
+    `图片 ${counts.images}`,
   ].join(" · ")
 }
 

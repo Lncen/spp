@@ -4,7 +4,7 @@ import hashlib
 import logging
 import secrets
 from collections.abc import Callable
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from typing import Any
 
 from redis.asyncio import Redis as AsyncRedis
@@ -14,6 +14,7 @@ from app.core.config import settings
 from app.core.event_bus import publish
 from app.core.redis import get_redis, run_redis_sync
 from app.core.security import verify_password
+from app.core.time import get_datetime_cn
 from app.modules.auth.models import RefreshToken
 from app.modules.setting.application.setting_query import get_setting
 from app.modules.user.models import User
@@ -123,7 +124,7 @@ def issue_refresh_token(*, session: Session, user: User) -> str:
         RefreshToken(
             token_hash=_hash_refresh_token(token),
             user_id=user.id,
-            expires_at=datetime.now(UTC)
+            expires_at=get_datetime_cn()
             + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
         )
     )
@@ -133,7 +134,7 @@ def issue_refresh_token(*, session: Session, user: User) -> str:
 
 def rotate_refresh_token(*, session: Session, token: str) -> tuple[str, User] | None:
     """校验刷新令牌并旋转：旧令牌立即作废，返回新令牌与用户"""
-    now = datetime.now(UTC)
+    now = get_datetime_cn()
     row = session.exec(
         select(RefreshToken).where(
             RefreshToken.token_hash == _hash_refresh_token(token),
@@ -167,6 +168,6 @@ def revoke_refresh_token(*, session: Session, token: str) -> None:
         )
     ).first()
     if row is not None and row.revoked_at is None:
-        row.revoked_at = datetime.now(UTC)
+        row.revoked_at = get_datetime_cn()
         session.add(row)
         session.commit()

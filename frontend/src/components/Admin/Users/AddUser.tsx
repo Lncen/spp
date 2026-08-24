@@ -5,7 +5,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { type UserCreate, UsersService } from "@/client"
+import { UsersService } from "@/client"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -76,8 +76,10 @@ const AddUser = () => {
   })
 
   const mutation = useMutation({
-    mutationFn: (data: UserCreate) =>
-      UsersService.createUser({ requestBody: data }),
+    mutationFn: (data: FormData) =>
+      UsersService.createUser({
+        requestBody: { ...data, email: data.email || "" },
+      }),
     onSuccess: () => {
       showSuccessToast("用户创建成功")
       form.reset()
@@ -116,15 +118,9 @@ const AddUser = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      邮箱
-                    </FormLabel>
+                    <FormLabel>邮箱</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="邮箱"
-                        type="email"
-                        {...field}
-                      />
+                      <Input placeholder="邮箱" type="email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -140,9 +136,9 @@ const AddUser = () => {
                       用户名<span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="用户名" 
-                        type="username" 
+                      <Input
+                        placeholder="用户名"
+                        type="username"
                         {...field}
                         required
                       />

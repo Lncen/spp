@@ -1,10 +1,11 @@
 """自动化模块：事件分发应用服务（按规则生成任务）"""
 
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 
 from sqlmodel import Session
 
 from app.core.db import engine
+from app.core.time import get_datetime_cn
 from app.modules.automation.domain.constants import AutomationEventStatus
 from app.modules.automation.domain.validation import validate_rule_config
 from app.modules.automation.models import AutomationEvent, AutomationTask
@@ -25,7 +26,7 @@ def dispatch_event(*, event: AutomationEvent) -> list[AutomationTask]:
         if db_event is None:
             return []
         db_event.status = AutomationEventStatus.DISPATCHING
-        db_event.processing_at = datetime.now(UTC)
+        db_event.processing_at = get_datetime_cn()
         try:
             rules = list_enabled_rules_by_event(
                 session=session,
@@ -39,7 +40,7 @@ def dispatch_event(*, event: AutomationEvent) -> list[AutomationTask]:
                 payload = {**db_event.payload, **config}
                 delay_seconds = int(task_options.get("delay_seconds", 0) or 0)
                 execute_at = (
-                    datetime.now(UTC) + timedelta(seconds=delay_seconds)
+                    get_datetime_cn() + timedelta(seconds=delay_seconds)
                     if delay_seconds > 0
                     else None
                 )
@@ -56,7 +57,7 @@ def dispatch_event(*, event: AutomationEvent) -> list[AutomationTask]:
                 tasks.append(task)
             db_event.status = AutomationEventStatus.DISPATCHED
             db_event.dispatch_attempts += 1
-            db_event.dispatched_at = datetime.now(UTC)
+            db_event.dispatched_at = get_datetime_cn()
             db_event.last_error = None
             db_event.next_dispatch_at = None
             session.commit()
@@ -73,7 +74,7 @@ def dispatch_event(*, event: AutomationEvent) -> list[AutomationTask]:
                 BASE_REDISPATCH_DELAY_SECONDS
                 * (2 ** max(0, db_event.dispatch_attempts - 1)),
             )
-            db_event.next_dispatch_at = datetime.now(UTC) + timedelta(
+            db_event.next_dispatch_at = get_datetime_cn() + timedelta(
                 seconds=retry_delay
             )
             session.add(db_event)

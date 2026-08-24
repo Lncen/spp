@@ -2,7 +2,6 @@
 
 import logging
 import uuid
-from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -10,6 +9,7 @@ from fastapi import HTTPException
 from sqlmodel import Session, select
 
 from app.core.event_bus import create_event_in_session, dispatch_event
+from app.core.time import get_datetime_cn
 from app.modules.automation.models import AutomationEvent
 from app.modules.order.application.query import to_order_public
 from app.modules.order.domain.constants import OrderStatus
@@ -119,8 +119,9 @@ def build_order(
         fulfillment_type=data["fulfillment"].fulfillment_type,
         can_refund=data["fulfillment"].can_refund,
         supplier_id=data["supplier_id"],
+        supplier_name=data["supplier_name"],
         sku_id=data["sku_id"],
-        paid_at=datetime.now(UTC),
+        paid_at=get_datetime_cn(),
     )
 
 

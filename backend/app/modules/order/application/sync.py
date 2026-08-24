@@ -6,10 +6,11 @@
 """
 
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 
 from sqlmodel import Session
 
+from app.core.time import get_datetime_cn
 from app.modules.order.application.after_sale.refund import auto_refund_order
 from app.modules.order.application.order_state import (
     resolve_supplier_id,
@@ -122,7 +123,7 @@ def sync_orders_status(*, session: Session, db_orders: list[Order]) -> list[Orde
     upstream_orders = _query_upstream_orders(
         session=session, orders=syncable
     )
-    now = datetime.now(UTC)
+    now = get_datetime_cn()
     changed = _apply_upstream_statuses(
         session=session,
         syncable=syncable,

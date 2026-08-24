@@ -282,8 +282,14 @@ export const OrderDetailDialog = ({
                   <StatusTimeline
                     steps={[
                       { label: "支付", time: order.paid_at },
-                      { label: "处理中", time: order.processing_at },
-                      { label: "已完成", time: order.completed_at },
+                      { 
+                        label: order.canceled_at ? "已取消" : "处理中", 
+                        time: order.canceled_at || order.processing_at 
+                      },
+                      { 
+                        label: order.refunded_at ? "已退款" : "已完成", 
+                        time: order.refunded_at || order.completed_at 
+                      },
                     ]}
                   />
                 </div>
@@ -378,6 +384,9 @@ export const OrderDetailDialog = ({
                   <DetailRow label="SKU">{order.sku_id || "-"}</DetailRow>
                   <DetailRow label="履约失败次数">
                     {order.fulfill_failed_count ?? 0}
+                  </DetailRow>
+                  <DetailRow label="备注">
+                    {order.remark || "-"}
                   </DetailRow>
                 </div>
               </section>

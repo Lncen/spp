@@ -1,10 +1,10 @@
 """用户等级初始数据"""
 
 import uuid
-from datetime import UTC, datetime
 
 from sqlmodel import Session, select
 
+from app.core.time import get_datetime_cn
 from app.modules.level.models import UserLevel
 
 
@@ -48,7 +48,7 @@ def seed_levels(*, session: Session) -> uuid.UUID:
         ).first()
         return default.id if default else DEFAULT_LEVEL_UUID
 
-    now = datetime.now(UTC)
+    now = get_datetime_cn()
     for data in LEVELS_DATA:
         level_obj = UserLevel(
             id=LEVEL_UUIDS[data["level"]],

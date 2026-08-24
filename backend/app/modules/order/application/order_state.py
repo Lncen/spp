@@ -5,11 +5,12 @@
 """
 
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 
 from sqlalchemy import update
 from sqlmodel import Session, select
 
+from app.core.time import get_datetime_cn
 from app.modules.order.domain.constants import OrderStatus
 from app.modules.order.infrastructure.notification import notify_order_exception
 from app.modules.order.models import Order
@@ -57,7 +58,7 @@ def resolve_fulfill_target(
 
 def claim_order(*, session: Session, db_order: Order) -> bool:
     """原子认领订单（PAID → PROCESSING），防止并发重复履约"""
-    now = datetime.now(UTC)
+    now = get_datetime_cn()
     result = session.exec(
         update(Order)
         .where(
@@ -107,7 +108,7 @@ def rollback_claim_on_failure(
 def mark_unknown_outcome(*, session: Session, db_order: Order) -> None:
     """结果未知：标记异常转人工确认，不自动重试"""
     db_order.status = OrderStatus.EXCEPTION
-    db_order.failed_at = datetime.now(UTC)
+    db_order.failed_at = get_datetime_cn()
     note = "履约结果未知，需人工确认上游是否已下单"
     db_order.remark = (
         f"{db_order.remark}；{note}"[:255] if db_order.remark else note

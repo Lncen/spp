@@ -26,10 +26,8 @@ def record_audit_log(
     event_id: uuid.UUID | None = None,
 ) -> AuditLog:
     """写入一条操作审计记录并提交，供关键管理操作调用"""
-    actor_identifier = None
-    if actor is not None:
-        actor_identifier = actor.email or actor.username
 
+    actor_identifier = (actor.email or actor.username or "system") if actor is not None else "system"
     audit_log = create_audit_log(
         session=session,
         actor_id=actor.id if actor else None,

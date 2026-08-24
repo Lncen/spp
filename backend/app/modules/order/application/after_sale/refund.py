@@ -2,12 +2,12 @@
 
 import logging
 import uuid
-from datetime import UTC, datetime
 from decimal import Decimal
 
 from fastapi import HTTPException
 from sqlmodel import Session
 
+from app.core.time import get_datetime_cn
 from app.modules.order.domain.constants import OrderStatus
 from app.modules.order.domain.refund import calc_refund_amount
 from app.modules.order.models import Order
@@ -61,7 +61,7 @@ def refund_order(
         operator_id=operator_id,
     )
     db_order.status = OrderStatus.REFUNDED
-    db_order.refunded_at = datetime.now(UTC)
+    db_order.refunded_at = get_datetime_cn()
     db_order.refunded_amount = amount
     session.add(db_order)
     session.commit()
@@ -97,8 +97,8 @@ def auto_refund_order(
         )
     db_order.refunded_amount = amount
     db_order.status = OrderStatus.REFUNDED
-    db_order.refunded_at = datetime.now(UTC)
+    db_order.refunded_at = get_datetime_cn()
     if upstream_status == OrderStatus.CANCELED:
-        db_order.canceled_at = datetime.now(UTC)
+        db_order.canceled_at = get_datetime_cn()
     session.add(db_order)
     return True

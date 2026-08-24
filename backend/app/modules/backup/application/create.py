@@ -1,14 +1,28 @@
 """创建数据备份应用服务"""
 
-from datetime import UTC, datetime, timedelta
+import base64
+from datetime import timedelta
+from pathlib import Path
 from typing import Any
 
 from sqlmodel import Session, select
 
 from app.core.config import settings
+from app.core.time import get_datetime_cn
 from app.modules.backup.domain.serialization import (
+    IMAGE_CATEGORY_FIELDS,
+    IMAGE_FIELDS,
     ORDER_FIELDS,
     ORDER_PARAM_FIELDS,
+    PRICE_TEMPLATE_FIELDS,
+    PRICE_TEMPLATE_RULE_FIELDS,
+    PRODUCT_BUY_PARAM_FIELDS,
+    PRODUCT_CATEGORY_FIELDS,
+    PRODUCT_FIELDS,
+    PRODUCT_FULFILLMENT_FIELDS,
+    PRODUCT_INVENTORY_FIELDS,
+    PRODUCT_PRICING_FIELDS,
+    PRODUCT_SUPPLIER_FIELDS,
     SUPPLIER_FIELDS,
     USER_FIELDS,
     WALLET_FIELDS,
@@ -21,7 +35,18 @@ from app.modules.backup.infrastructure.storage import (
     write_backup,
 )
 from app.modules.backup.schemas import BackupCounts, BackupPublic
+from app.modules.image.models import Image, ImageCategory
 from app.modules.order.models import Order, OrderParam
+from app.modules.price_template.models import PriceTemplate, PriceTemplateRule
+from app.modules.product.category.models import ProductCategory
+from app.modules.product.product.models import (
+    Product,
+    ProductBuyParam,
+    ProductFulfillment,
+    ProductInventory,
+    ProductPricing,
+    ProductSupplier,
+)
 from app.modules.supplier.models import Supplier
 from app.modules.user.models import User
 from app.modules.wallet.models import Wallet
@@ -36,8 +61,57 @@ def _collect_backup_data(
     users = session.exec(select(User)).all()
     wallets = session.exec(select(Wallet)).all()
     suppliers = session.exec(select(Supplier)).all()
+    product_categories = session.exec(select(ProductCategory)).all()
+    price_templates = session.exec(select(PriceTemplate)).all()
+    price_template_rules = session.exec(select(PriceTemplateRule)).all()
+    products = session.exec(select(Product)).all()
+    product_ids = [product.id for product in products]
+    product_suppliers: list[ProductSupplier] = []
+    product_pricings: list[ProductPricing] = []
+    product_inventories: list[ProductInventory] = []
+    product_fulfillments: list[ProductFulfillment] = []
+    product_buy_params: list[ProductBuyParam] = []
+    if product_ids:
+        product_suppliers = session.exec(
+            select(ProductSupplier).where(
+                ProductSupplier.product_id.in_(product_ids)
+            )
+        ).all()
+        product_pricings = session.exec(
+            select(ProductPricing).where(ProductPricing.product_id.in_(product_ids))
+        ).all()
+        product_inventories = session.exec(
+            select(ProductInventory).where(
+                ProductInventory.product_id.in_(product_ids)
+            )
+        ).all()
+        product_fulfillments = session.exec(
+            select(ProductFulfillment).where(
+                ProductFulfillment.product_id.in_(product_ids)
+            )
+        ).all()
+        product_buy_params = session.exec(
+            select(ProductBuyParam).where(
+                ProductBuyParam.product_id.in_(product_ids)
+            )
+        ).all()
+    image_categories = session.exec(select(ImageCategory)).all()
+    images = session.exec(select(Image)).all()
 
-    since = datetime.now(UTC) - timedelta(hours=order_hours)
+    image_files: list[dict[str, Any]] = []
+    for image in images:
+        abs_path = Path(settings.UPLOAD_DIR) / image.file_path
+        if abs_path.is_file():
+            content = base64.b64encode(abs_path.read_bytes()).decode("ascii")
+            image_files.append(
+                {
+                    "file_path": image.file_path,
+                    "filename": image.filename,
+                    "content": content,
+                }
+            )
+
+    since = get_datetime_cn() - timedelta(hours=order_hours)
     orders = session.exec(
         select(Order).where(Order.created_at >= since)
     ).all()
@@ -58,6 +132,45 @@ def _collect_backup_data(
         "suppliers": [
             model_to_record(supplier, SUPPLIER_FIELDS) for supplier in suppliers
         ],
+        "product_categories": [
+            model_to_record(category, PRODUCT_CATEGORY_FIELDS)
+            for category in product_categories
+        ],
+        "price_templates": [
+            model_to_record(template, PRICE_TEMPLATE_FIELDS)
+            for template in price_templates
+        ],
+        "price_template_rules": [
+            model_to_record(rule, PRICE_TEMPLATE_RULE_FIELDS)
+            for rule in price_template_rules
+        ],
+        "products": [model_to_record(product, PRODUCT_FIELDS) for product in products],
+        "product_suppliers": [
+            model_to_record(row, PRODUCT_SUPPLIER_FIELDS)
+            for row in product_suppliers
+        ],
+        "product_pricings": [
+            model_to_record(row, PRODUCT_PRICING_FIELDS)
+            for row in product_pricings
+        ],
+        "product_inventories": [
+            model_to_record(row, PRODUCT_INVENTORY_FIELDS)
+            for row in product_inventories
+        ],
+        "product_fulfillments": [
+            model_to_record(row, PRODUCT_FULFILLMENT_FIELDS)
+            for row in product_fulfillments
+        ],
+        "product_buy_params": [
+            model_to_record(row, PRODUCT_BUY_PARAM_FIELDS)
+            for row in product_buy_params
+        ],
+        "image_categories": [
+            model_to_record(category, IMAGE_CATEGORY_FIELDS)
+            for category in image_categories
+        ],
+        "images": [model_to_record(image, IMAGE_FIELDS) for image in images],
+        "images_files": image_files,
     }
     counts = BackupCounts(
         users=len(data["users"]),
@@ -65,6 +178,18 @@ def _collect_backup_data(
         orders=len(data["orders"]),
         order_params=len(data["order_params"]),
         suppliers=len(data["suppliers"]),
+        product_categories=len(data["product_categories"]),
+        price_templates=len(data["price_templates"]),
+        price_template_rules=len(data["price_template_rules"]),
+        products=len(data["products"]),
+        product_suppliers=len(data["product_suppliers"]),
+        product_pricings=len(data["product_pricings"]),
+        product_inventories=len(data["product_inventories"]),
+        product_fulfillments=len(data["product_fulfillments"]),
+        product_buy_params=len(data["product_buy_params"]),
+        image_categories=len(data["image_categories"]),
+        images=len(data["images"]),
+        images_files=len(data["images_files"]),
     )
     return data, counts
 
@@ -77,7 +202,7 @@ def create_backup(*, session: Session) -> BackupPublic:
         order_hours=order_hours,
     )
     directory = ensure_backup_dir(session=session)
-    created_at = datetime.now(UTC)
+    created_at = get_datetime_cn()
     file_path, filename = write_backup(
         directory=directory,
         created_at=created_at,

@@ -11,7 +11,11 @@ from app.modules.user.application.user_create import create_user
 from app.modules.user.models import User
 from app.modules.user.schemas import UserCreate
 
-engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
+# 数据库会话统一使用中国时区，保证 timestamptz 读取后即北京时间
+engine = create_engine(
+    str(settings.SQLALCHEMY_DATABASE_URI),
+    connect_args={"options": "-c timezone=Asia/Shanghai"},
+)
 
 
 # make sure all SQLModel models are imported (app.models) before initializing DB

@@ -6,12 +6,13 @@ automation 仅通过执行器 / 定时任务触发本模块编排。
 """
 
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 
 from fastapi import HTTPException
 from sqlmodel import Session
 
 from app.core.config import settings
+from app.core.time import get_datetime_cn
 from app.modules.order.application.order_state import (
     claim_order,
     finalize_fulfillment,
@@ -139,7 +140,7 @@ def fulfill_claimed_order(
     非 API 订单按原逻辑直接回写终态。
     """
     is_api = db_order.fulfillment_type == RedeemType.AUTO_API
-    now = datetime.now(UTC)
+    now = get_datetime_cn()
     if fail_limit is None:
         fail_limit = settings.ORDER_FULFILL_FAIL_LIMIT
 
@@ -234,7 +235,7 @@ def update_order_status(
         raise HTTPException(status_code=400, detail="当前状态不允许手动设置")
     if status == OrderStatus.PAID and db_order.status != OrderStatus.EXCEPTION:
         raise HTTPException(status_code=400, detail="仅异常订单可恢复为已付款")
-    now = datetime.now(UTC)
+    now = get_datetime_cn()
     db_order.status = status
     if status == OrderStatus.PROCESSING:
         db_order.processing_at = now

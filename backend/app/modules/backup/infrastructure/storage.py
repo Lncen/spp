@@ -11,6 +11,7 @@ from typing import Any
 from sqlmodel import Session
 
 from app.core.config import settings
+from app.core.time import get_datetime_cn
 from app.modules.backup.domain.constants import (
     BACKUP_FILE_SUFFIX,
     BACKUP_META_SUFFIX,
@@ -144,7 +145,7 @@ def delete_backup_file(file_path: Path) -> None:
 
 def cleanup_old_backups(directory: Path, retention_days: int) -> int:
     """删除超过保留期的备份文件，返回删除数量。"""
-    cutoff = datetime.now(UTC) - timedelta(days=max(1, retention_days))
+    cutoff = get_datetime_cn() - timedelta(days=max(1, retention_days))
     deleted = 0
     for file_path in directory.glob(f"*{BACKUP_FILE_SUFFIX}"):
         meta_path = file_path.with_name(f"{file_path.name}{BACKUP_META_SUFFIX}")

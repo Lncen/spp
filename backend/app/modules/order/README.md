@@ -37,7 +37,7 @@ backend/app/modules/order/
 │   ├── fulfillment.py              # 履约编排（认领 → 上游下单 → 分流）+ 手动状态维护
 │   ├── sync.py                     # 上游状态同步 / 退单申请服务
 │   ├── order_state.py              # 履约状态转换规则（认领/回滚/转异常/终态/上游状态映射）
-│   ├── query.py                    # 订单查询（关键字匹配订单 ID / 订单号 / 下单参数）
+│   ├── query.py                    # 订单查询（关键字匹配订单 ID / 订单号 / 下单参数 / 用户名）
 │   └── after_sale/
 │       ├── cancel.py               # 取消订单：本地退款 / 发布售后事件申请上游退单
 │       └── refund.py               # 退款入账 / 上游退单自动退款

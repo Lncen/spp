@@ -1,12 +1,13 @@
 """自动化模块：归档与事件数据定期清理 Celery 任务"""
 
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 
 from celery import shared_task
 from sqlmodel import Session
 
 from app.core.db import engine
+from app.core.time import get_datetime_cn
 from app.modules.automation.repositories.event import purge_events
 from app.modules.automation.repositories.task import (
     archive_finished_tasks,
@@ -43,7 +44,7 @@ def cleanup_automation_task_archives() -> dict:
     try:
         with Session(engine) as session:
             retention_days = _get_retention_days(session=session)
-            before = datetime.now(UTC) - timedelta(days=retention_days)
+            before = get_datetime_cn() - timedelta(days=retention_days)
             while True:
                 archived = archive_finished_tasks(
                     session=session,

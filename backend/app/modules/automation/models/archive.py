@@ -7,7 +7,8 @@ from typing import Any
 from sqlalchemy import JSON, DateTime, String
 from sqlmodel import Field, SQLModel
 
-from app.core.mixin.models import UUIDPrimaryKeyMixin, get_datetime_utc
+from app.core.mixin.models import UUIDPrimaryKeyMixin
+from app.core.time import get_datetime_cn
 from app.modules.automation.domain.constants import AutomationTaskStatus
 
 
@@ -62,7 +63,7 @@ class AutomationTaskArchive(UUIDPrimaryKeyMixin, SQLModel, table=True):
         description="数值越大越优先执行",
     )
     execute_at: datetime = Field(
-        default_factory=get_datetime_utc,
+        default_factory=get_datetime_cn,
         sa_type=DateTime(timezone=True),
         index=True,
         nullable=False,
@@ -87,35 +88,35 @@ class AutomationTaskArchive(UUIDPrimaryKeyMixin, SQLModel, table=True):
         description="最近一次失败原因",
     )
     created_at: datetime = Field(
-        default_factory=get_datetime_utc,
+        default_factory=get_datetime_cn,
         sa_type=DateTime(timezone=True),
         nullable=False,
         title="创建时间",
-        description="任务创建时间（UTC）",
+        description="任务创建时间（北京时间）",
     )
     claimed_at: datetime | None = Field(
         default=None,
         sa_type=DateTime(timezone=True),
         title="认领时间",
-        description="worker 原子认领任务的时刻（UTC）",
+        description="worker 原子认领任务的时刻（北京时间）",
     )
     started_at: datetime | None = Field(
         default=None,
         sa_type=DateTime(timezone=True),
         title="开始执行时间",
-        description="Executor 开始执行的时刻（UTC）",
+        description="Executor 开始执行的时刻（北京时间）",
     )
     finished_at: datetime | None = Field(
         default=None,
         sa_type=DateTime(timezone=True),
         title="完成时间",
-        description="成功或失败终态时刻（UTC）",
+        description="成功或失败终态时刻（北京时间）",
     )
     archived_at: datetime = Field(
-        default_factory=get_datetime_utc,
+        default_factory=get_datetime_cn,
         sa_type=DateTime(timezone=True),
         index=True,
         nullable=False,
         title="归档时间",
-        description="移入归档表的时刻（UTC），超过保留期后被物理删除",
+        description="移入归档表的时刻（北京时间），超过保留期后被物理删除",
     )

@@ -2,12 +2,13 @@
 
 import logging
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 from sqlalchemy import update
 from sqlmodel import Session
 
 from app.core.db import engine
+from app.core.time import get_datetime_cn
 from app.modules.automation.infrastructure.executors.base import (
     BaseExecutor,
     ExecutorTerminalError,
@@ -67,7 +68,7 @@ class SubmitSupplierOrderExecutor(BaseExecutor):
             )
             .values(
                 status=OrderStatus.EXCEPTION,
-                failed_at=datetime.now(UTC),
+                failed_at=get_datetime_cn(),
             )
         )
         marked = result.rowcount == 1
@@ -125,7 +126,7 @@ class SubmitSupplierOrderExecutor(BaseExecutor):
                 if self._mark_stale_claim(
                     session=session,
                     db_order=db_order,
-                    before=datetime.now(UTC) - timedelta(minutes=CLAIM_STALE_MINUTES),
+                    before=get_datetime_cn() - timedelta(minutes=CLAIM_STALE_MINUTES),
                 ):
                     raise ExecutorTerminalError(
                         f"订单 {db_order.order_no} 认领超时，已转人工确认"

@@ -1,13 +1,13 @@
 """供应商模块：数据访问层"""
 
 import uuid
-from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
 from fastapi import HTTPException
 from sqlmodel import Session, col, func, select
 
+from app.core.time import get_datetime_cn
 from app.modules.price_template.constants import DEFAULT_DISCOUNT_RATE
 from app.modules.product.constants import (
     ProductStatus,
@@ -139,7 +139,7 @@ def update_matched_product(
     if category_id is not None and category_id != db_product.category_id:
         db_product.category_id = category_id
     db_product.sync_status = SyncStatus.SUCCESS
-    db_product.synced_at = datetime.now(UTC)
+    db_product.synced_at = get_datetime_cn()
     session.add(db_product)
     if upstream_name is not None:
         db_supplier = session.exec(
@@ -176,7 +176,7 @@ def create_synced_product(
         sort=0,
         type=product_type,
         sync_status=SyncStatus.SUCCESS,
-        synced_at=datetime.now(UTC),
+        synced_at=get_datetime_cn(),
     )
     session.add(product)
     session.flush()
@@ -232,6 +232,6 @@ def mark_product_sync_failed(*, session: Session, product_id: uuid.UUID) -> None
     if db_product is None:
         return
     db_product.sync_status = SyncStatus.FAILED
-    db_product.synced_at = datetime.now(UTC)
+    db_product.synced_at = get_datetime_cn()
     session.add(db_product)
     session.commit()

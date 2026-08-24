@@ -52,6 +52,14 @@ export function RestoreBackupDialog({
         statsText("订单", result.orders),
         statsText("订单参数", result.order_params),
         statsText("供应商", result.suppliers),
+        statsText("商品分类", result.product_categories),
+        statsText("价格模板", result.price_templates),
+        statsText("价格规则", result.price_template_rules),
+        statsText("商品", result.products),
+        statsText("商品配置", result.product_suppliers),
+        statsText("图片分类", result.image_categories),
+        statsText("图片", result.images),
+        statsText("图片文件", result.images_files),
       ]
       showSuccessToast(lines.join("；"))
       onOpenChange(false)

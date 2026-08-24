@@ -2,7 +2,6 @@
 
 import hashlib
 import uuid
-from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 
@@ -10,6 +9,7 @@ from PIL import Image as PILImage
 from PIL import ImageOps
 
 from app.core.config import settings
+from app.core.time import get_datetime_cn
 
 
 _EXT_TO_FORMAT = {
@@ -27,7 +27,7 @@ def compute_sha256(file_bytes: bytes) -> str:
 
 def get_upload_path(ext: str = ".webp") -> tuple[Path, str]:
     """生成文件存储路径：{UPLOAD_DIR}/images/{yyyy}/{mm}/{uuid}{ext}"""
-    now = datetime.now()
+    now = get_datetime_cn()
     rel_dir = f"images/{now.year:04d}/{now.month:02d}"
     filename = f"{uuid.uuid4().hex}{ext}"
     rel_path = f"{rel_dir}/{filename}"

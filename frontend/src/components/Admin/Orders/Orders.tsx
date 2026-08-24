@@ -141,7 +141,7 @@ export function Orders({ userId }: { userId: string | undefined }) {
                 setSearchInput(event.target.value)
                 setPagination((current) => ({ ...current, pageIndex: 0 }))
               }}
-              placeholder="搜索订单 ID / 订单号 / 下单参数"
+              placeholder="搜索订单 ID / 订单号 / 下单参数 / 用户名"
               className="w-52 pl-9"
             />
           </div>

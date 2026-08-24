@@ -3,6 +3,7 @@
 import uuid
 from decimal import Decimal
 from typing import Any
+from urllib.parse import quote
 
 import pytest
 from fastapi.testclient import TestClient
@@ -210,6 +211,36 @@ def test_create_order_fixed_price(
     assert Decimal(consume["amount"]) == Decimal("-20.00")
     assert consume["ref_type"] == "order"
     assert consume["ref_id"] == order["id"]
+
+
+def test_create_order_records_supplier_name(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    """创建订单时在订单表记录供应商名称快照"""
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    supplier = create_random_supplier(db)
+    product = _create_ready_product(client, superuser_token_headers, price_mode="fixed")
+    response = client.put(
+        f"{settings.API_V1_STR}/products/{product['id']}",
+        headers=superuser_token_headers,
+        json={"supplier": {"supplier_id": str(supplier.id), "sku_id": "SKU-001"}},
+    )
+    assert response.status_code == 200
+
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert response.status_code == 200
+    order = _first_order_result(response)
+    assert order["supplier_name"] == supplier.name
+
+    db_order = db.exec(select(Order).where(Order.id == order["id"])).one()
+    assert db_order.supplier_name == supplier.name
 
 
 def test_create_order_coefficient_price_includes_loss(
@@ -1816,7 +1847,7 @@ def test_admin_order_list_filters_by_keyword(
     db: Session,
     superuser_token_headers: dict[str, str],
 ) -> None:
-    headers, _ = _create_wallet_user(client, db)
+    headers, user = _create_wallet_user(client, db)
     _fund_wallet(client, headers, superuser_token_headers)
     product = _create_ready_product(client, superuser_token_headers, price_mode="fixed")
 
@@ -1873,6 +1904,18 @@ def test_admin_order_list_filters_by_keyword(
     content_id = response_id.json()
     assert content_id["count"] == 1
     assert content_id["data"][0]["id"] == order_a["id"]
+
+    # 按用户名精确匹配
+    response_user = client.get(
+        f"{settings.API_V1_STR}/orders/?keyword={quote(user.username)}",
+        headers=superuser_token_headers,
+    )
+    assert response_user.status_code == 200
+    content_user = response_user.json()
+    assert content_user["count"] == 2
+    assert all(
+        item["username"] == user.username for item in content_user["data"]
+    )
 
 
 def test_admin_create_order_syncs_order_params_for_query(

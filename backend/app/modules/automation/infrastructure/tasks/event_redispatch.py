@@ -1,12 +1,12 @@
 """自动化模块：失败或中断事件补发 Celery 任务。"""
 
 import logging
-from datetime import UTC, datetime
 
 from celery import shared_task
 from sqlmodel import Session
 
 from app.core.db import engine
+from app.core.time import get_datetime_cn
 from app.modules.automation.application.event_dispatch import dispatch_event
 from app.modules.automation.repositories.event import (
     claim_events_for_redispatch,
@@ -26,7 +26,7 @@ REDISPATCH_BATCH_LIMIT = 100
 )
 def redispatch_stale_automation_events() -> dict:
     """扫描并补发长期未完成或失败的自动化事件。"""
-    now = datetime.now(UTC)
+    now = get_datetime_cn()
     with Session(engine) as session:
         events = claim_events_for_redispatch(
             session=session,

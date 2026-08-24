@@ -1,11 +1,10 @@
 """自动化模块：过期刷新令牌清理 Celery 任务"""
 
-from datetime import UTC, datetime
-
 from celery import shared_task  # type: ignore[import-untyped]
 from sqlmodel import Session, delete
 
 from app.core.db import engine
+from app.core.time import get_datetime_cn
 from app.modules.auth.models import RefreshToken
 
 
@@ -18,7 +17,7 @@ from app.modules.auth.models import RefreshToken
 )
 def cleanup_expired_refresh_tokens() -> dict[str, int]:
     """清理已过期或已撤销的刷新令牌，防止表无限增长"""
-    now = datetime.now(UTC)
+    now = get_datetime_cn()
     with Session(engine) as session:
         expired = session.exec(
             delete(RefreshToken).where(

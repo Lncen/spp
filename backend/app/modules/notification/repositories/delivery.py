@@ -1,11 +1,12 @@
 """通知中心：渠道投递记录数据访问"""
 
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 
 from fastapi import HTTPException
 from sqlmodel import Session, col, update
 
+from app.core.time import get_datetime_cn
 from app.modules.notification.domain.constants import (
     DEFAULT_MAX_ATTEMPTS,
     DeliveryStatus,
@@ -77,7 +78,7 @@ def claim_delivery_for_sending(
         .values(
             status=DeliveryStatus.SENDING,
             attempt_count=NotificationDelivery.attempt_count + 1,
-            updated_at=datetime.now(UTC),
+            updated_at=get_datetime_cn(),
         )
     )
     if result.rowcount == 0:

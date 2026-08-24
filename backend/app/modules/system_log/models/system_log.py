@@ -7,7 +7,8 @@ from typing import Any
 from sqlalchemy import JSON, DateTime
 from sqlmodel import Field, SQLModel
 
-from app.core.mixin.models import UUIDPrimaryKeyMixin, get_datetime_utc
+from app.core.mixin.models import UUIDPrimaryKeyMixin
+from app.core.time import get_datetime_cn
 
 
 class SystemLog(UUIDPrimaryKeyMixin, SQLModel, table=True):
@@ -122,10 +123,10 @@ class SystemLog(UUIDPrimaryKeyMixin, SQLModel, table=True):
         description="事件载荷快照，便于从订单/用户/任务反查完整上下文",
     )
     created_at: datetime = Field(
-        default_factory=get_datetime_utc,
+        default_factory=get_datetime_cn,
         sa_type=DateTime(timezone=True),  # type: ignore[call-overload]
         index=True,
         nullable=False,
         title="创建时间",
-        description="日志落库时间（UTC）",
+        description="日志落库时间（北京时间）",
     )

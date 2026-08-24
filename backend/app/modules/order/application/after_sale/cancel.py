@@ -2,13 +2,14 @@
 
 import logging
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 
 from fastapi import HTTPException
 from sqlalchemy import update
 from sqlmodel import Session
 
 from app.core.event_bus import create_event_in_session, dispatch_event
+from app.core.time import get_datetime_cn
 from app.modules.automation.models import AutomationEvent
 from app.modules.order.application.after_sale.refund import refund_to_wallet
 from app.modules.order.domain.constants import OrderStatus
@@ -107,7 +108,7 @@ def cancel_order(
         OrderStatus.EXCEPTION,
     ):
         raise HTTPException(status_code=400, detail="当前状态不可申请退单")
-    now = datetime.now(UTC)
+    now = get_datetime_cn()
     is_api = db_order.fulfillment_type == RedeemType.AUTO_API
     if is_api:
         # can_refund 约束的是能否向供应商申请退单，仅对 API 商品生效

@@ -7,7 +7,8 @@ from typing import Any
 from sqlalchemy import JSON, DateTime
 from sqlmodel import Field, SQLModel
 
-from app.core.mixin.models import UUIDPrimaryKeyMixin, get_datetime_utc
+from app.core.mixin.models import UUIDPrimaryKeyMixin
+from app.core.time import get_datetime_cn
 
 
 class AuditLog(UUIDPrimaryKeyMixin, SQLModel, table=True):
@@ -94,10 +95,10 @@ class AuditLog(UUIDPrimaryKeyMixin, SQLModel, table=True):
         description="如由事件间接触发，可关联 AutomationEvent ID",
     )
     created_at: datetime = Field(
-        default_factory=get_datetime_utc,
+        default_factory=get_datetime_cn,
         sa_type=DateTime(timezone=True),  # type: ignore[call-overload]
         index=True,
         nullable=False,
         title="操作时间",
-        description="审计记录落库时间（UTC）",
+        description="审计记录落库时间（北京时间）",
     )

@@ -132,6 +132,10 @@ def db() -> Generator[Session]:
                     "VARCHAR(255)"
                 ),
                 ("ALTER TABLE orders ADD COLUMN IF NOT EXISTS supplier_id UUID"),
+                (
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS supplier_name "
+                    "VARCHAR(255)"
+                ),
                 ("ALTER TABLE orders ADD COLUMN IF NOT EXISTS sku_id VARCHAR(255)"),
                 (
                     "ALTER TABLE orders ADD COLUMN IF NOT EXISTS can_refund "

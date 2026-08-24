@@ -1,12 +1,13 @@
 """自动化模块：钱包流水数据定期清理 Celery 任务"""
 
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 
 from celery import shared_task
 from sqlmodel import Session
 
 from app.core.db import engine
+from app.core.time import get_datetime_cn
 from app.modules.setting.application.setting_query import get_setting
 from app.modules.setting.domain.constants import WALLET_TRANSACTION_RETENTION_DAYS
 from app.modules.wallet.repositories.wallet import purge_old_transactions
@@ -35,7 +36,7 @@ def cleanup_wallet_transactions() -> dict:
     try:
         with Session(engine) as session:
             retention_days = _get_retention_days(session=session)
-            before = datetime.now(UTC) - timedelta(days=retention_days)
+            before = get_datetime_cn() - timedelta(days=retention_days)
             while True:
                 purged = purge_old_transactions(
                     session=session,
