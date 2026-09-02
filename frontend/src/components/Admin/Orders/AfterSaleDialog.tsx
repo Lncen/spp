@@ -216,18 +216,64 @@ export const AfterSaleDialog = ({
           ) : (
             <>
               <section className="flex flex-col gap-3">
-                <SectionTitle>订单信息</SectionTitle>
+                <SectionTitle>
+                  <span className="flex items-center gap-1 text-sm">
+                    <span className="font-mono">订单号：{order.order_no}</span>
+                    <CopyButton text={order.order_no} />
+                  </span>
+                </SectionTitle>
                 <Card>
                   <CardContent className="flex flex-col">
-                    <DetailRow label="订单号">
-                      <span className="flex items-center gap-2">
-                        <span className="font-mono">{order.order_no}</span>
-                        <CopyButton text={order.order_no} />
+                    <DetailRow label="用户">{order.username || "-"}</DetailRow>
+                    <DetailRow label="参数">
+                      {order.params && Object.keys(order.params).length > 0 ? (
+                        <div className="flex flex-col gap-2 w-full">
+                          {Object.entries(order.params).map(([key, value]) => (
+                            <div key={key} className="flex items-center gap-2">
+                              <span className="font-medium text-gray-600">
+                                {key}:
+                              </span>
+                              {typeof value === "string" &&
+                              value.startsWith("http") ? (
+                                <>
+                                  <a
+                                    href={value}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-500 underline flex-1 truncate"
+                                  >
+                                    {value}
+                                  </a>
+                                  <CopyButton text={value} />
+                                </>
+                              ) : (
+                                <>
+                                  <span className="flex-1">
+                                    {String(value)}
+                                  </span>
+                                  <CopyButton text={String(value)} />
+                                </>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        "-"
+                      )}
+                    </DetailRow>
+                    <DetailRow label="供应商">
+                      {order.supplier_name || "-"}
+                    </DetailRow>
+                    <DetailRow label="上游单号">
+                      <span className="flex-1">
+                          {String(order.supplier_order_id) || "-"}
                       </span>
+                      <CopyButton text={String(order.supplier_order_id)} />
                     </DetailRow>
                     <DetailRow label="商品">{order.product_name}</DetailRow>
                     <DetailRow label="数量">× {order.quantity}</DetailRow>
-                    <DetailRow label="用户">{order.username || "-"}</DetailRow>
+                    <DetailRow label="金额">{order.total_amount}</DetailRow>
+
                     <DetailRow label="订单状态">
                       <Badge
                         variant={
@@ -238,6 +284,7 @@ export const AfterSaleDialog = ({
                         {orderStatusLabel(order.status)}
                       </Badge>
                     </DetailRow>
+                    <DetailRow label="备注">{order.remark || "-"}</DetailRow>
                   </CardContent>
                 </Card>
               </section>

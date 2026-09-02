@@ -206,10 +206,7 @@ export const OrderDetailDialog = ({
   open,
   onOpenChange,
 }: OrderDetailDialogProps) => {
-  const {
-    data: order,
-    isLoading,
-  } = useQuery({
+  const { data: order, isLoading } = useQuery({
     queryKey: ["orders", "detail", orderId],
     queryFn: () => OrdersService.readOrder({ orderId }),
     enabled: open,
@@ -282,13 +279,13 @@ export const OrderDetailDialog = ({
                   <StatusTimeline
                     steps={[
                       { label: "支付", time: order.paid_at },
-                      { 
-                        label: order.canceled_at ? "已取消" : "处理中", 
-                        time: order.canceled_at || order.processing_at 
+                      {
+                        label: order.canceled_at ? "已取消" : "处理中",
+                        time: order.canceled_at || order.processing_at,
                       },
-                      { 
-                        label: order.refunded_at ? "已退款" : "已完成", 
-                        time: order.refunded_at || order.completed_at 
+                      {
+                        label: order.refunded_at ? "已退款" : "已完成",
+                        time: order.refunded_at || order.completed_at,
                       },
                     ]}
                   />
@@ -296,7 +293,7 @@ export const OrderDetailDialog = ({
               </section>
 
               <section className="flex flex-col gap-3">
-                <SectionTitle>商品信息</SectionTitle>
+                <SectionTitle>订单</SectionTitle>
                 <Card>
                   <CardContent className="flex flex-col gap-2 ">
                     <div className="flex items-start justify-between gap-4">
@@ -309,7 +306,9 @@ export const OrderDetailDialog = ({
                     </div>
                     <ProductId id={order.product_id} />
                     <div className="mt-2 flex flex-col">
-                      <DetailRow label="初始数量">{order.start_quantity}</DetailRow>
+                      <DetailRow label="初始数量">
+                        {order.start_quantity}
+                      </DetailRow>
                       <DetailRow label="当前数量">
                         {order.current_quantity}
                       </DetailRow>
@@ -323,9 +322,22 @@ export const OrderDetailDialog = ({
                         {REDEEM_TYPE_LABELS[order.fulfillment_type] ??
                           order.fulfillment_type}
                       </DetailRow>
+                      <DetailRow label="备注">
+                        {order.remark || "-"}
+                      </DetailRow>
                     </div>
                   </CardContent>
                 </Card>
+              </section>
+              <section className="flex flex-col gap-3">
+                <SectionTitle>售后</SectionTitle>
+                {Number(order.refunded_amount) !== 0 && (
+                  <Card>
+                    <CardContent>
+                      退款：{Number(order.refunded_amount)}
+                    </CardContent>
+                  </Card>
+                )}
               </section>
               <section className="flex flex-col gap-3">
                 <SectionTitle>下单参数</SectionTitle>
@@ -385,9 +397,7 @@ export const OrderDetailDialog = ({
                   <DetailRow label="履约失败次数">
                     {order.fulfill_failed_count ?? 0}
                   </DetailRow>
-                  <DetailRow label="备注">
-                    {order.remark || "-"}
-                  </DetailRow>
+                  <DetailRow label="备注">{order.remark || "-"}</DetailRow>
                 </div>
               </section>
 

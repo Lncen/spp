@@ -6,7 +6,9 @@ import { getCurrentUserQueryOptions } from "@/hooks/useAuth"
 export const Route = createFileRoute("/_layout/products")({
   component: RouteComponent,
   beforeLoad: async ({ context }) => {
-    const user = await context.queryClient.ensureQueryData(getCurrentUserQueryOptions())
+    const user = await context.queryClient.ensureQueryData(
+      getCurrentUserQueryOptions(),
+    )
     if (!user.is_superuser) {
       throw redirect({
         to: "/",

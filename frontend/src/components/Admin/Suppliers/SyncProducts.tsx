@@ -7,7 +7,7 @@ import {
   RefreshCw,
   Search,
 } from "lucide-react"
-import { useMemo, useState, type CSSProperties } from "react"
+import { type CSSProperties, useMemo, useState } from "react"
 
 import type {
   ProductCategoryTreePublic,

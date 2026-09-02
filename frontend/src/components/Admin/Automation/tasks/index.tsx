@@ -90,7 +90,6 @@ export function TasksSection() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-
         <div className="flex items-center gap-2">
           <Select value={status} onValueChange={handleStatusChange}>
             <SelectTrigger className="w-36">

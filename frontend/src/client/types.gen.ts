@@ -816,6 +816,7 @@ export type OrderPublic = {
     supplier_name?: (string | null);
     sku_id?: (string | null);
     can_refund: boolean;
+    refunded_amount: string;
 };
 
 /**
@@ -1716,9 +1717,7 @@ export type TaskOptionsPublic = {
 export type TaskStatusPublic = {
     status: string;
     success?: (boolean | null);
-    result?: ({
-    [key: string]: unknown;
-} | null);
+    result?: (unknown | null);
 };
 
 /**
@@ -2863,73 +2862,3 @@ export type WalletsAdjustWalletBalanceData = {
 };
 
 export type WalletsAdjustWalletBalanceResponse = (WalletTransactionPublic);
-
-/**
- * 创建物品请求
- */
-export type ItemCreate = {
-    title: string;
-    description?: (string | null);
-};
-
-/**
- * 物品公开响应
- */
-export type ItemPublic = {
-    title: string;
-    description?: (string | null);
-    id: string;
-    owner_id: string;
-    created_at?: (string | null);
-    image_id?: (string | null);
-    image_url?: (string | null);
-};
-
-/**
- * 物品列表响应
- */
-export type ItemsPublic = {
-    data: Array<ItemPublic>;
-    count: number;
-};
-
-/**
- * 更新物品请求（全部可选）
- */
-export type ItemUpdate = {
-    title?: (string | null);
-    description?: (string | null);
-    image_id?: (string | null);
-};
-
-export type ItemsReadItemsData = {
-    limit?: number;
-    skip?: number;
-};
-
-export type ItemsReadItemsResponse = (ItemsPublic);
-
-export type ItemsCreateItemData = {
-    requestBody: ItemCreate;
-};
-
-export type ItemsCreateItemResponse = (ItemPublic);
-
-export type ItemsReadItemData = {
-    id: string;
-};
-
-export type ItemsReadItemResponse = (ItemPublic);
-
-export type ItemsUpdateItemData = {
-    id: string;
-    requestBody: ItemUpdate;
-};
-
-export type ItemsUpdateItemResponse = (ItemPublic);
-
-export type ItemsDeleteItemData = {
-    id: string;
-};
-
-export type ItemsDeleteItemResponse = (Message);

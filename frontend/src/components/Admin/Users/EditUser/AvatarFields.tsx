@@ -13,10 +13,7 @@ interface AvatarFieldsProps {
 
 const NONE_VALUE = "none"
 
-export function AvatarFields({
-  avatarImages,
-  isLoading,
-}: AvatarFieldsProps) {
+export function AvatarFields({ avatarImages, isLoading }: AvatarFieldsProps) {
   const { control, watch } = useFormContext<FormData>()
   const avatarId = watch("avatar_id")
   const selectedAvatar = avatarImages?.data.find(

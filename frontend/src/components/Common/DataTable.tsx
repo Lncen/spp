@@ -145,8 +145,7 @@ export function DataTable<TData, TValue>({
                 rowCount,
               )}{" "}
               条，共{" "}
-              <span className="font-medium text-foreground">{rowCount}</span>{" "}
-              条
+              <span className="font-medium text-foreground">{rowCount}</span> 条
             </div>
             <div className="flex items-center gap-x-2">
               <p className="text-sm text-muted-foreground">每页行数</p>

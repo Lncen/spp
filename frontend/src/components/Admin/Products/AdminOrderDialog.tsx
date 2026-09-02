@@ -12,7 +12,6 @@ import type {
 import { OrdersService } from "@/client"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import {
   Dialog,
   DialogClose,
@@ -26,6 +25,7 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LoadingButton } from "@/components/ui/loading-button"
+import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import useCustomToast from "@/hooks/useCustomToast"
@@ -358,7 +358,7 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
               </div>
             </div>
           </DialogHeader>
-           <Separator />
+          <Separator />
           <div className="max-h-[70vh] space-y-5 overflow-y-auto pr-1">
             <Tabs
               value={mode}
@@ -370,11 +370,7 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
             >
               <TabsList className="gap-3">
                 <TabsTrigger value="normal">下单-可多链接</TabsTrigger>
-                {isBatch && (
-                  <>
-                    <TabsTrigger value="random">随机数量</TabsTrigger>
-                  </>
-                )}
+                {isBatch && <TabsTrigger value="random">随机数量</TabsTrigger>}
               </TabsList>
               <TabsContent value="normal">
                 <div className="grid gap-1.5">
@@ -463,17 +459,16 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
                             <span className="text-destructive"> *</span>
                           )}
                         </Label>
-                          <Textarea
-                            {...sharedProps}
-                            rows={4}
-                            onChange={(event) =>
-                              setParamValues((current) => ({
-                                ...current,
-                                [param.key]: event.target.value,
-                              }))
-                            }
-                          />
-                    
+                        <Textarea
+                          {...sharedProps}
+                          rows={4}
+                          onChange={(event) =>
+                            setParamValues((current) => ({
+                              ...current,
+                              [param.key]: event.target.value,
+                            }))
+                          }
+                        />
                       </div>
                     )
                   })}

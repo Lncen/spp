@@ -1115,6 +1115,66 @@ export const BackupCountsSchema = {
             type: 'integer',
             title: 'Suppliers',
             default: 0
+        },
+        product_categories: {
+            type: 'integer',
+            title: 'Product Categories',
+            default: 0
+        },
+        price_templates: {
+            type: 'integer',
+            title: 'Price Templates',
+            default: 0
+        },
+        price_template_rules: {
+            type: 'integer',
+            title: 'Price Template Rules',
+            default: 0
+        },
+        products: {
+            type: 'integer',
+            title: 'Products',
+            default: 0
+        },
+        product_suppliers: {
+            type: 'integer',
+            title: 'Product Suppliers',
+            default: 0
+        },
+        product_pricings: {
+            type: 'integer',
+            title: 'Product Pricings',
+            default: 0
+        },
+        product_inventories: {
+            type: 'integer',
+            title: 'Product Inventories',
+            default: 0
+        },
+        product_fulfillments: {
+            type: 'integer',
+            title: 'Product Fulfillments',
+            default: 0
+        },
+        product_buy_params: {
+            type: 'integer',
+            title: 'Product Buy Params',
+            default: 0
+        },
+        image_categories: {
+            type: 'integer',
+            title: 'Image Categories',
+            default: 0
+        },
+        images: {
+            type: 'integer',
+            title: 'Images',
+            default: 0
+        },
+        images_files: {
+            type: 'integer',
+            title: 'Images Files',
+            default: 0
         }
     },
     type: 'object',
@@ -2778,10 +2838,15 @@ export const OrderPublicSchema = {
         can_refund: {
             type: 'boolean',
             title: 'Can Refund'
+        },
+        refunded_amount: {
+            type: 'string',
+            pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+            title: 'Refunded Amount'
         }
     },
     type: 'object',
-    required: ['id', 'order_no', 'user_id', 'status', 'total_amount', 'currency', 'product_id', 'product_name', 'quantity', 'start_quantity', 'current_quantity', 'unit_price', 'subtotal', 'base_price', 'cost_price', 'loss_price', 'params', 'fulfillment_type', 'can_refund'],
+    required: ['id', 'order_no', 'user_id', 'status', 'total_amount', 'currency', 'product_id', 'product_name', 'quantity', 'start_quantity', 'current_quantity', 'unit_price', 'subtotal', 'base_price', 'cost_price', 'loss_price', 'params', 'fulfillment_type', 'can_refund', 'refunded_amount'],
     title: 'OrderPublic',
     description: '订单响应'
 } as const;
@@ -5049,10 +5114,46 @@ export const RestoreResultPublicSchema = {
         },
         suppliers: {
             '$ref': '#/components/schemas/EntityRestoreStats'
+        },
+        product_categories: {
+            '$ref': '#/components/schemas/EntityRestoreStats'
+        },
+        price_templates: {
+            '$ref': '#/components/schemas/EntityRestoreStats'
+        },
+        price_template_rules: {
+            '$ref': '#/components/schemas/EntityRestoreStats'
+        },
+        products: {
+            '$ref': '#/components/schemas/EntityRestoreStats'
+        },
+        product_suppliers: {
+            '$ref': '#/components/schemas/EntityRestoreStats'
+        },
+        product_pricings: {
+            '$ref': '#/components/schemas/EntityRestoreStats'
+        },
+        product_inventories: {
+            '$ref': '#/components/schemas/EntityRestoreStats'
+        },
+        product_fulfillments: {
+            '$ref': '#/components/schemas/EntityRestoreStats'
+        },
+        product_buy_params: {
+            '$ref': '#/components/schemas/EntityRestoreStats'
+        },
+        image_categories: {
+            '$ref': '#/components/schemas/EntityRestoreStats'
+        },
+        images: {
+            '$ref': '#/components/schemas/EntityRestoreStats'
+        },
+        images_files: {
+            '$ref': '#/components/schemas/EntityRestoreStats'
         }
     },
     type: 'object',
-    required: ['users', 'wallets', 'orders', 'order_params', 'suppliers'],
+    required: ['users', 'wallets', 'orders', 'order_params', 'suppliers', 'product_categories', 'price_templates', 'price_template_rules', 'products', 'product_suppliers', 'product_pricings', 'product_inventories', 'product_fulfillments', 'product_buy_params', 'image_categories', 'images', 'images_files'],
     title: 'RestoreResultPublic',
     description: '合并恢复结果'
 } as const;
@@ -6066,10 +6167,7 @@ export const TaskStatusPublicSchema = {
         },
         result: {
             anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
+                {},
                 {
                     type: 'null'
                 }

@@ -2,10 +2,7 @@ import { z } from "zod"
 
 export const formSchema = z
   .object({
-    email: z
-      .email({ message: "邮箱格式不正确" })
-      .optional()
-      .or(z.literal("")),
+    email: z.email({ message: "邮箱格式不正确" }).optional().or(z.literal("")),
     username: z
       .string()
       .min(1, { message: "请输入用户名" })

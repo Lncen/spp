@@ -12,7 +12,9 @@ export const Route = createFileRoute("/_layout/orders")({
   component: RouteComponent,
   validateSearch: ordersSearchSchema,
   beforeLoad: async ({ context }) => {
-    const user = await context.queryClient.ensureQueryData(getCurrentUserQueryOptions())
+    const user = await context.queryClient.ensureQueryData(
+      getCurrentUserQueryOptions(),
+    )
     if (!user.is_superuser) {
       throw redirect({
         to: "/",
