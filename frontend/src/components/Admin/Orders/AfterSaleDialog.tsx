@@ -181,16 +181,23 @@ export const AfterSaleDialog = ({
   const submitMutation = useMutation({
     mutationFn: async () => {
       if (!order || !type) return
+      const note = remark.trim() || undefined
       if (type === "cancel") {
-        return OrdersService.cancelOrderApi({ orderId: order.id })
+        return OrdersService.cancelOrderApi({
+          orderId: order.id,
+          requestBody: { remark: note },
+        })
       }
       if (type === "refund") {
         return OrdersService.refundOrderApi({
           orderId: order.id,
-          requestBody: { amount },
+          requestBody: { amount, remark: note },
         })
       }
-      return OrdersService.fulfillOrderApi({ orderId: order.id })
+      return OrdersService.fulfillOrderApi({
+        orderId: order.id,
+        requestBody: { remark: note },
+      })
     },
     onSuccess: () => {
       showSuccessToast(`订单 ${order?.product_name ?? ""} 售后处理成功`)

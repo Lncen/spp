@@ -38,6 +38,7 @@ from app.modules.order.schemas import (
     AdminOrdersPublic,
     OrderPublic,
     OrderRefundRequest,
+    OrderRemarkRequest,
     OrdersPublic,
     OrderStatusUpdateRequest,
     SupplierOrderIdUpdateRequest,
@@ -211,6 +212,7 @@ def fulfill_order_api(
     session: SessionDep,
     current_user: CurrentUser,
     order_id: uuid.UUID,
+    body: OrderRemarkRequest | None = None,
 ) -> Any:
     """履约订单（仅超级管理员可用）"""
     db_order = get_order(session=session, order_id=order_id)
@@ -218,6 +220,7 @@ def fulfill_order_api(
         session=session,
         db_order=db_order,
         operator_id=current_user.id,
+        remark=body.remark if body else None,
     )
     return to_order_public(session=session, orders=[db_order])[0]
 
@@ -233,6 +236,7 @@ def cancel_order_api(
     session: SessionDep,
     current_user: CurrentUser,
     order_id: uuid.UUID,
+    body: OrderRemarkRequest | None = None,
 ) -> Any:
     """管理员取消待处理订单"""
     db_order = get_order(session=session, order_id=order_id)
@@ -241,6 +245,7 @@ def cancel_order_api(
         session=session,
         db_order=db_order,
         operator_id=current_user.id,
+        remark=body.remark if body else None,
     )
     ip, user_agent, request_id = _request_meta(request)
     record_audit_log(
@@ -281,6 +286,7 @@ def refund_order_api(
         db_order=db_order,
         operator_id=current_user.id,
         amount=body.amount,
+        remark=body.remark,
     )
     ip, user_agent, request_id = _request_meta(request)
     record_audit_log(

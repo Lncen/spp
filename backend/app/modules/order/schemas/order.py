@@ -106,6 +106,23 @@ class OrderRefundRequest(SQLModel):
         title="退款金额",
         description="退款金额不能超过订单金额",
     )
+    remark: str | None = Field(
+        default=None,
+        max_length=255,
+        title="处理备注",
+        description="订单售后处理备注，写入订单备注",
+    )
+
+
+class OrderRemarkRequest(SQLModel):
+    """管理员订单售后处理请求"""
+
+    remark: str | None = Field(
+        default=None,
+        max_length=255,
+        title="处理备注",
+        description="订单售后处理备注，写入订单备注",
+    )
 
 
 class OrderStatusUpdateRequest(SQLModel):

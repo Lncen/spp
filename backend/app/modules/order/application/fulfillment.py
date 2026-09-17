@@ -14,13 +14,12 @@ from sqlmodel import Session
 from app.core.config import settings
 from app.core.time import get_datetime_cn
 from app.modules.order.application.order_state import (
-    claim_order,
     finalize_fulfillment,
     mark_unknown_outcome,
     record_upstream_order_created,
     resolve_fulfill_target,
     rollback_claim_on_failure,
-    to_order_status,
+    to_order_status, recover_order,
 )
 from app.modules.order.application.sync import sync_orders_status
 from app.modules.order.domain.constants import OrderStatus
@@ -72,7 +71,7 @@ def _create_upstream_order(
         )
         session.add(db_order)
     except SupplierClientUnknownError as exc:
-        mark_unknown_outcome(session=session, db_order=db_order)
+        mark_unknown_outcome(session=session, db_order=db_order, note=str(exc))
         raise FulfillmentUnknownError(
             f"供应商履约结果未知，订单已转人工确认: {exc}"
         ) from exc
@@ -132,6 +131,7 @@ def fulfill_claimed_order(
     session: Session,
     db_order: Order,
     fail_limit: int | None = None,
+    remark: str | None = None,
 ) -> Order:
     """执行已认领订单的履约：调用上游并回写结果，失败按结果是否明确分流
 
@@ -154,6 +154,8 @@ def fulfill_claimed_order(
     db_order.fulfill_failed_count = 0  # 上游下单成功，清零失败计数
     if not is_api:
         _finalize(session=session, db_order=db_order, is_api=is_api, now=now)
+    if remark is not None:
+        db_order.remark = remark
     session.add(db_order)
     session.commit()
     session.refresh(db_order)
@@ -166,16 +168,20 @@ def fulfill_order(
     db_order: Order,
     operator_id: uuid.UUID | None = None,  # noqa: ARG001
     fail_limit: int | None = None,
+    remark: str | None = None,
 ) -> Order:
     """履约订单（同步）：先原子认领再执行，防止并发重复履约
 
     明确失败回滚重试；结果未知（超时/断连）转人工确认。
     """
-    if not claim_order(session=session, db_order=db_order):
+    if not recover_order(session=session, db_order=db_order):
         raise HTTPException(status_code=400, detail="当前状态不可履约")
     try:
         return fulfill_claimed_order(
-            session=session, db_order=db_order, fail_limit=fail_limit
+            session=session,
+            db_order=db_order,
+            fail_limit=fail_limit,
+            remark=remark,
         )
     except FulfillmentUnknownError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc

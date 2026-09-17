@@ -1427,6 +1427,7 @@ export class OrdersService {
      * 履约订单（仅超级管理员可用）
      * @param data The data for the request.
      * @param data.orderId
+     * @param data.requestBody
      * @returns OrderPublic Successful Response
      * @throws ApiError
      */
@@ -1437,6 +1438,8 @@ export class OrdersService {
             path: {
                 order_id: data.orderId
             },
+            body: data.requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: 'Validation Error'
             }
@@ -1448,6 +1451,7 @@ export class OrdersService {
      * 管理员取消待处理订单
      * @param data The data for the request.
      * @param data.orderId
+     * @param data.requestBody
      * @returns OrderPublic Successful Response
      * @throws ApiError
      */
@@ -1458,6 +1462,8 @@ export class OrdersService {
             path: {
                 order_id: data.orderId
             },
+            body: data.requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: 'Validation Error'
             }

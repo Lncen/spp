@@ -55,26 +55,6 @@ def resolve_fulfill_target(
         raise SupplierClientError("供应商不存在")
     return supplier_id, sku_id
 
-
-def claim_order(*, session: Session, db_order: Order) -> bool:
-    """原子认领订单（PAID → PROCESSING），防止并发重复履约"""
-    now = get_datetime_cn()
-    result = session.exec(
-        update(Order)
-        .where(
-            Order.id == db_order.id,
-            Order.status == OrderStatus.PAID,
-            Order.supplier_order_id.is_(None),
-        )
-        .values(status=OrderStatus.PROCESSING, processing_at=now)
-    )
-    claimed = result.rowcount == 1
-    session.commit()
-    if claimed:
-        session.refresh(db_order)
-    return claimed
-
-
 def record_upstream_order_created(*, db_order: Order, supplier_order_id: str) -> None:
     """回写上游订单号并置为处理中（不提交）"""
     db_order.supplier_order_id = supplier_order_id
@@ -105,11 +85,10 @@ def rollback_claim_on_failure(
         notify_order_exception(db_order=db_order)
 
 
-def mark_unknown_outcome(*, session: Session, db_order: Order) -> None:
+def mark_unknown_outcome(*, session: Session, db_order: Order,note) -> None:
     """结果未知：标记异常转人工确认，不自动重试"""
     db_order.status = OrderStatus.EXCEPTION
     db_order.failed_at = get_datetime_cn()
-    note = "履约结果未知，需人工确认上游是否已下单"
     db_order.remark = (
         f"{db_order.remark}；{note}"[:255] if db_order.remark else note
     )
@@ -149,3 +128,45 @@ def to_order_status(upstream_order_id: str | None, raw_status: int) -> OrderStat
         raise SupplierClientError(
             f"上游订单 {upstream_order_id} 返回未知状态 {raw_status}"
         ) from exc
+
+
+def _update_order_status(
+    *,
+    session: Session,
+    db_order: Order,
+    from_status: OrderStatus,
+) -> bool:
+    """原子更新订单状态，防止并发重复操作"""
+    now = get_datetime_cn()
+    result = session.exec(
+        update(Order)
+        .where(
+            Order.id == db_order.id,
+            Order.status == from_status,
+            Order.supplier_order_id.is_(None),
+        )
+        .values(status=OrderStatus.PROCESSING, processing_at=now)
+    )
+    updated = result.rowcount == 1
+    session.commit()
+    if updated:
+        session.refresh(db_order)
+    return updated
+
+
+def claim_order(*, session: Session, db_order: Order) -> bool:
+    """原子认领订单（PAID → PROCESSING），防止并发重复履约"""
+    return _update_order_status(
+        session=session,
+        db_order=db_order,
+        from_status=OrderStatus.PAID,
+    )
+
+
+def recover_order(*, session: Session, db_order: Order) -> bool:
+    """恢复异常订单（EXCEPTION → PROCESSING）"""
+    return _update_order_status(
+        session=session,
+        db_order=db_order,
+        from_status=OrderStatus.EXCEPTION,
+    )

@@ -827,6 +827,20 @@ export type OrderRefundRequest = {
      * 退款金额不能超过订单金额
      */
     amount: (number | string);
+    /**
+     * 订单售后处理备注，写入订单备注
+     */
+    remark?: (string | null);
+};
+
+/**
+ * 管理员订单售后处理请求
+ */
+export type OrderRemarkRequest = {
+    /**
+     * 订单售后处理备注，写入订单备注
+     */
+    remark?: (string | null);
 };
 
 /**
@@ -2450,12 +2464,14 @@ export type OrdersReadOrderResponse = (OrderPublic);
 
 export type OrdersFulfillOrderApiData = {
     orderId: string;
+    requestBody?: (OrderRemarkRequest | null);
 };
 
 export type OrdersFulfillOrderApiResponse = (OrderPublic);
 
 export type OrdersCancelOrderApiData = {
     orderId: string;
+    requestBody?: (OrderRemarkRequest | null);
 };
 
 export type OrdersCancelOrderApiResponse = (OrderPublic);

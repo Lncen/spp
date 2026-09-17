@@ -48,6 +48,7 @@ def _local_cancel_order(
     db_order: Order,
     operator_id: uuid.UUID | None,
     now: datetime,
+    remark: str | None = None,
 ) -> Order:
     """本地取消订单：全额退款并回补库存，原子防并发履约
 
@@ -77,15 +78,18 @@ def _local_cancel_order(
     ]
     if db_order.fulfillment_type == RedeemType.AUTO_API:
         conditions.append(Order.supplier_order_id.is_(None))
+    values: dict[str, object] = {
+        "status": OrderStatus.REFUNDED,
+        "refunded_at": now,
+        "canceled_at": now,
+        "refunded_amount": db_order.total_amount,
+    }
+    if remark is not None:
+        values["remark"] = remark
     result = session.exec(
         update(Order)
         .where(*conditions)
-        .values(
-            status=OrderStatus.REFUNDED,
-            refunded_at=now,
-            canceled_at=now,
-            refunded_amount=db_order.total_amount,
-        )
+        .values(**values)
     )
     if result.rowcount != 1:
         raise HTTPException(status_code=400, detail="当前状态不可取消")
@@ -99,6 +103,7 @@ def cancel_order(
     session: Session,
     db_order: Order,
     operator_id: uuid.UUID | None = None,
+    remark: str | None = None,
 ) -> Order:
     """退单：本地/自动/手动商品直接本地退款，API 商品按是否已上游下单分流"""
     if db_order.status not in (
@@ -126,6 +131,8 @@ def cancel_order(
             # 已向上游下单：申请售后中，由 automation 事件触发上游退单申请
             db_order.status = OrderStatus.APPLYING_AFTER_SALE
             db_order.canceled_at = now
+            if remark is not None:
+                db_order.remark = remark
             session.add(db_order)
             event = _queue_after_sale_event(session=session, db_order=db_order)
             session.commit()
@@ -137,4 +144,5 @@ def cancel_order(
         db_order=db_order,
         operator_id=operator_id,
         now=now,
+        remark=remark,
     )

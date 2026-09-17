@@ -48,6 +48,7 @@ def refund_order(
     db_order: Order,
     amount: Decimal,
     operator_id: uuid.UUID | None = None,
+    remark: str | None = None,
 ) -> Order:
     """管理员手动退款：仅已完成订单可用，金额由管理员核对且不能超过订单金额"""
     if db_order.status != OrderStatus.COMPLETED:
@@ -63,6 +64,8 @@ def refund_order(
     db_order.status = OrderStatus.REFUNDED
     db_order.refunded_at = get_datetime_cn()
     db_order.refunded_amount = amount
+    if remark is not None:
+        db_order.remark = remark
     session.add(db_order)
     session.commit()
     session.refresh(db_order)

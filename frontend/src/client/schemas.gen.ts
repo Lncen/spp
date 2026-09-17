@@ -2866,12 +2866,46 @@ export const OrderRefundRequestSchema = {
             ],
             title: '退款金额',
             description: '退款金额不能超过订单金额'
+        },
+        remark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '处理备注',
+            description: '订单售后处理备注，写入订单备注'
         }
     },
     type: 'object',
     required: ['amount'],
     title: 'OrderRefundRequest',
     description: '管理员手动退款请求'
+} as const;
+
+export const OrderRemarkRequestSchema = {
+    properties: {
+        remark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '处理备注',
+            description: '订单售后处理备注，写入订单备注'
+        }
+    },
+    type: 'object',
+    title: 'OrderRemarkRequest',
+    description: '管理员订单售后处理请求'
 } as const;
 
 export const OrderStatusSchema = {
