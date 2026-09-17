@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Depends
 
 from app.api.deps import get_current_active_superuser
-from app.modules.automation.application.task_status import get_task_status
+from app.modules.automation.application.schedule import get_task_status
 from app.modules.automation.schemas import TaskStatusPublic
 
 router = APIRouter(prefix="/schedules/tasks", tags=["schedules"])

@@ -97,6 +97,17 @@ def list_synced_sku_map(
     return {row.sku_id: row.product_id for row in local_rows if row.sku_id}
 
 
+def list_supplier_sku_map(*, session: Session) -> dict[uuid.UUID, list[str]]:
+    """按供应商聚合已同步商品的上游 SKU，供定时分发同步任务使用"""
+    sku_map: dict[uuid.UUID, list[str]] = {}
+    rows = session.exec(select(ProductSupplier)).all()
+    for row in rows:
+        if not row.sku_id or row.supplier_id is None:
+            continue
+        sku_map.setdefault(row.supplier_id, []).append(row.sku_id)
+    return sku_map
+
+
 def find_matched_supplier_row(
     *, session: Session, supplier_id: uuid.UUID | str, sku_id: str
 ) -> ProductSupplier | None:

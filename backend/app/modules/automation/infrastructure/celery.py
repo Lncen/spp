@@ -19,6 +19,7 @@ TASK_LABELS: dict[str, str] = {
     "app.modules.automation.infrastructure.tasks.cleanup_completed_orders": "订单_清理已完成订单",
     "app.modules.automation.infrastructure.tasks.cleanup_wallet_transactions": "钱包_清理历史流水",
     "app.modules.automation.infrastructure.tasks.requeue_stale_notification_deliveries": "通知_投递兜底扫描",
+    "app.modules.automation.infrastructure.tasks.deliver_notification": "通知_异步投递",
     "app.modules.automation.infrastructure.tasks.cleanup_notification_records": "通知_清理通知记录",
 }
 

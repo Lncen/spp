@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.deps import SessionDep, get_current_active_superuser
 from app.common.models import Message
-from app.modules.automation.application.task_status import get_task_status
+from app.modules.automation.application.schedule import get_task_status
 from app.modules.automation.schemas import TaskStatusPublic
 from app.modules.supplier.application.balance import refresh_supplier_balance
 from app.modules.supplier.application.create import (

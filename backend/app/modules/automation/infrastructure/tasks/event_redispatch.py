@@ -7,7 +7,7 @@ from sqlmodel import Session
 
 from app.core.db import engine
 from app.core.time import get_datetime_cn
-from app.modules.automation.application.event_dispatch import dispatch_event
+from app.modules.automation.application.event import dispatch_event
 from app.modules.automation.repositories.event import (
     claim_events_for_redispatch,
 )

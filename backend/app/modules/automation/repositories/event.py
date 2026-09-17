@@ -63,6 +63,22 @@ def list_events(
     return session.exec(stmt).all()
 
 
+def map_event_types(
+    *,
+    session: Session,
+    event_ids: set[uuid.UUID],
+) -> dict[uuid.UUID, str]:
+    """批量查询事件 ID → 事件类型，避免逐条查询造成 N+1。"""
+    if not event_ids:
+        return {}
+    return {
+        event.id: event.event_type
+        for event in session.exec(
+            select(AutomationEvent).where(AutomationEvent.id.in_(event_ids))
+        ).all()
+    }
+
+
 def purge_events(
     *,
     session: Session,

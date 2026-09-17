@@ -5,19 +5,19 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.deps import SessionDep, get_current_active_superuser
-from app.modules.automation.application.schedule_query import (
+from app.modules.automation.application.schedule import (
     get_schedule_public,
     list_schedules,
+    list_task_options,
+    run_schedule_now,
     to_schedule_public,
 )
-from app.modules.automation.application.schedule_run import run_schedule_now
-from app.modules.automation.application.schedule_toggle import (
+from app.modules.automation.application.schedule import (
     toggle_schedule as toggle_schedule_service,
 )
-from app.modules.automation.application.schedule_update import (
+from app.modules.automation.application.schedule import (
     update_schedule as update_schedule_service,
 )
-from app.modules.automation.application.task_options import list_task_options
 from app.modules.automation.schemas import (
     RunTaskPublic,
     SchedulePublic,

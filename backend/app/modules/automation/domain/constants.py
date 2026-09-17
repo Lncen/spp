@@ -5,6 +5,7 @@ from enum import StrEnum
 # 事件类型中文展示名（用于任务来源等前端展示），未知类型回退原始事件类型
 EVENT_TYPE_LABELS: dict[str, str] = {
     "order.paid": "订单支付",
+    "order.after_sale_applied": "订单申请售后",
     "order.fulfillment_failed": "订单履约失败",
 }
 
@@ -26,6 +27,14 @@ class AutomationTaskStatus(StrEnum):
     SUCCESS = "success"  # 执行成功
     FAILED = "failed"  # 执行失败（重试耗尽）
     CANCELED = "canceled"  # 已取消（人工取消，不再执行）
+
+
+# 终态任务：进入终态即移入归档表，任务池只保留待执行 / 执行中任务
+TERMINAL_TASK_STATUSES = (
+    AutomationTaskStatus.SUCCESS,
+    AutomationTaskStatus.FAILED,
+    AutomationTaskStatus.CANCELED,
+)
 
 
 class ScheduleType(StrEnum):

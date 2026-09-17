@@ -3,7 +3,7 @@
 import logging
 
 from app.core.event_bus import listen
-from app.modules.automation.application.event_dispatch import dispatch_event
+from app.modules.automation.application.event import dispatch_event
 from app.modules.automation.models import AutomationEvent
 
 logger = logging.getLogger(__name__)

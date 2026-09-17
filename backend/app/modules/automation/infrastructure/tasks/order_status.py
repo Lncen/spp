@@ -1,13 +1,11 @@
 """自动化模块：订单状态同步 Celery 定时任务"""
 
 from celery import shared_task
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.core.db import engine
 from app.modules.order.application.sync import sync_orders_status
-from app.modules.order.domain.constants import SYNCABLE_ORDER_STATUSES
-from app.modules.order.models import Order
-from app.modules.product.constants import RedeemType
+from app.modules.order.repositories.order import list_syncable_orders
 
 
 @shared_task(
@@ -19,13 +17,7 @@ def sync_order_status_periodic() -> dict:
     stats = {"checked": 0, "updated": 0, "unchanged": 0, "errors": []}
     try:
         with Session(engine) as session:
-            orders = session.exec(
-                select(Order).where(
-                    Order.fulfillment_type == RedeemType.AUTO_API,
-                    Order.supplier_order_id.is_not(None),
-                    Order.status.in_(tuple(SYNCABLE_ORDER_STATUSES)),
-                )
-            ).all()
+            orders = list_syncable_orders(session=session)
             stats["checked"] = len(orders)
             # 退单申请已改由 automation 事件驱动
             # （order.after_sale_applied → apply_supplier_refund 执行器），此处只同步状态

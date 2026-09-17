@@ -8,6 +8,11 @@ from sqlmodel import Session
 
 from app.core.db import engine
 from app.core.time import get_datetime_cn
+from app.modules.automation.application.task_execution import (
+    finish_task_successfully,
+    handle_task_failure,
+)
+from app.modules.automation.domain.constants import AutomationTaskStatus
 from app.modules.automation.infrastructure.executors import (
     ExecutorTerminalError,
     get_executor,
@@ -15,8 +20,6 @@ from app.modules.automation.infrastructure.executors import (
 from app.modules.automation.models import AutomationTask
 from app.modules.automation.repositories.task import (
     claim_due_tasks,
-    mark_failed,
-    mark_success,
     recover_stale_running_tasks,
 )
 
@@ -72,11 +75,12 @@ def automation_task_scan() -> dict:
                     executor = executor_cls()
                     # 幂等预检查：业务目标已达成时直接标记成功，避免重复副作用
                     if executor.check_already_done(task=task):
-                        if mark_success(
+                        applied = finish_task_successfully(
                             session=session,
                             task=task,
                             expected_claimed_at=claim_token,
-                        ):
+                        )
+                        if applied == AutomationTaskStatus.SUCCESS:
                             stats["success"] += 1
                         continue
                     executor.execute(task=task)
@@ -89,12 +93,7 @@ def automation_task_scan() -> dict:
                     )
                     if current_task is None:
                         continue
-                    before = current_task.retry_count
-                    should_retry = (
-                        not isinstance(exc, ExecutorTerminalError)
-                        and before < current_task.max_retry
-                    )
-                    marked = mark_failed(
+                    applied = handle_task_failure(
                         session=session,
                         task=current_task,
                         error_message=str(exc),
@@ -102,22 +101,22 @@ def automation_task_scan() -> dict:
                         terminal=isinstance(exc, ExecutorTerminalError),
                         expected_claimed_at=claim_token,
                     )
-                    if marked:
-                        if should_retry:
-                            stats["retried"] += 1
-                        else:
-                            stats["failed"] += 1
+                    if applied == AutomationTaskStatus.PENDING:
+                        stats["retried"] += 1
+                    elif applied == AutomationTaskStatus.FAILED:
+                        stats["failed"] += 1
                     logger.warning(
                         "自动化任务 %s 执行失败: %s",
                         current_task.id,
                         exc,
                     )
                 else:
-                    if mark_success(
+                    applied = finish_task_successfully(
                         session=session,
                         task=task,
                         expected_claimed_at=claim_token,
-                    ):
+                    )
+                    if applied == AutomationTaskStatus.SUCCESS:
                         stats["success"] += 1
     except Exception as exc:  # noqa: BLE001
         stats["errors"].append(str(exc))

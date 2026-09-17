@@ -10,11 +10,6 @@ from datetime import timedelta
 from celery.schedules import crontab  # type: ignore[import-untyped]
 
 init_tasks = {
-    # # 同步上游商品
-    # "同步上游商品": {
-    #     "task": "app.modules.automation.infrastructure.tasks.sync_upstream_products",
-    #     "schedule": timedelta(hours=1),
-    # },
     # 商品状态同步 —— 每 30 分钟执行一次
     "订单_同步订单状态": {
         "task": (

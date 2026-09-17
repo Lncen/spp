@@ -7,20 +7,20 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.deps import SessionDep, get_current_active_superuser
 from app.common.models import Message
-from app.modules.automation.application.rule_create import (
+from app.modules.automation.application.rule import (
     create_automation_rule as create_automation_rule_service,
 )
-from app.modules.automation.application.rule_delete import (
+from app.modules.automation.application.rule import (
     delete_automation_rule as delete_automation_rule_service,
 )
-from app.modules.automation.application.rule_query import (
+from app.modules.automation.application.rule import (
     get_automation_rule_public,
     list_automation_rules,
 )
-from app.modules.automation.application.rule_toggle import (
+from app.modules.automation.application.rule import (
     toggle_automation_rule as toggle_automation_rule_service,
 )
-from app.modules.automation.application.rule_update import (
+from app.modules.automation.application.rule import (
     update_automation_rule as update_automation_rule_service,
 )
 from app.modules.automation.schemas import (

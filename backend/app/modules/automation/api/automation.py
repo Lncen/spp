@@ -6,24 +6,20 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.deps import SessionDep, get_current_active_superuser
-from app.modules.automation.application.archive_query import (
-    list_automation_task_archives,
-)
-from app.modules.automation.application.executor_options import (
-    list_executor_options,
-)
-from app.modules.automation.application.task_cancel import (
+from app.modules.automation.application.task import (
     cancel_automation_task as cancel_automation_task_service,
 )
-from app.modules.automation.application.task_create import (
+from app.modules.automation.application.task import (
     create_automation_task as create_automation_task_service,
 )
-from app.modules.automation.application.task_query import (
+from app.modules.automation.application.task import (
     get_automation_task_public,
+    list_automation_task_archives,
     list_automation_tasks,
+    list_executor_options,
     to_automation_task_public,
 )
-from app.modules.automation.application.task_retry import (
+from app.modules.automation.application.task import (
     retry_automation_task as retry_automation_task_service,
 )
 from app.modules.automation.domain.constants import AutomationTaskStatus

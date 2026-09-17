@@ -1,14 +1,13 @@
 """自动化模块：商品定时同步 Celery 任务"""
 
 from celery import shared_task
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.core.db import engine
 from app.modules.automation.infrastructure.tasks.supplier_sync import (
     dispatch_upstream_products_sync,
 )
-from app.modules.product.product.models import ProductSupplier
-from app.modules.supplier.models import Supplier
+from app.modules.supplier.repositories.supplier import list_supplier_sku_map
 
 
 @shared_task(
@@ -32,22 +31,14 @@ def sync_product_status() -> dict:
 
     try:
         with Session(engine) as session:
-            suppliers = session.exec(select(Supplier)).all()
-            for supplier in suppliers:
-                rows = session.exec(
-                    select(ProductSupplier).where(
-                        ProductSupplier.supplier_id == supplier.id
-                    )
-                ).all()
-                product_ids = [row.sku_id for row in rows if row.sku_id]
-                if not product_ids:
-                    continue
-                stats["total_checked"] += len(product_ids)
-                task_id = dispatch_upstream_products_sync(
-                    supplier_id=str(supplier.id),
-                    product_ids=product_ids,
-                )
-                stats["dispatched"].append(task_id)
+            sku_map = list_supplier_sku_map(session=session)
+        for supplier_id, product_ids in sku_map.items():
+            stats["total_checked"] += len(product_ids)
+            task_id = dispatch_upstream_products_sync(
+                supplier_id=str(supplier_id),
+                product_ids=product_ids,
+            )
+            stats["dispatched"].append(task_id)
     except Exception as e:  # noqa: BLE001
         stats["failed"].append({"product_id": None, "error": str(e)})
 

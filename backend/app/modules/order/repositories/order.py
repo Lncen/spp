@@ -9,6 +9,7 @@ from sqlmodel import Session, col, delete, func, or_, select
 
 from app.modules.order.domain.constants import (
     ACTIVE_ORDER_STATUSES,
+    SYNCABLE_ORDER_STATUSES,
     OrderStatus,
 )
 from app.modules.order.domain.validation import (
@@ -20,6 +21,7 @@ from app.modules.order.domain.validation import (
 )
 from app.modules.order.models import Order, OrderParam
 from app.modules.order.schemas import OrderCreate
+from app.modules.product.constants import RedeemType
 from app.modules.product.product.models import (
     Product,
     ProductBuyParam,
@@ -255,3 +257,16 @@ def purge_completed_orders(
     session.exec(delete(Order).where(Order.id.in_(ids)))
     session.commit()
     return len(ids)
+
+
+def list_syncable_orders(*, session: Session) -> list[Order]:
+    """查询可同步上游状态的订单：API 履约、已生成上游单号且处于可同步状态"""
+    return list(
+        session.exec(
+            select(Order).where(
+                Order.fulfillment_type == RedeemType.AUTO_API,
+                Order.supplier_order_id.is_not(None),
+                Order.status.in_(tuple(SYNCABLE_ORDER_STATUSES)),
+            )
+        ).all()
+    )

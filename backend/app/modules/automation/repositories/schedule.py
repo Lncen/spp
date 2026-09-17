@@ -11,7 +11,6 @@ from sqlalchemy_celery_beat.models import (
 from sqlmodel import func, select
 
 from app.modules.automation.domain.constants import ScheduleType
-from app.modules.automation.schemas import CrontabScheduleIn, IntervalScheduleIn
 
 
 def get_task_or_404(*, session: Session, task_id: int) -> PeriodicTask:
@@ -41,27 +40,38 @@ def task_schedule_type(task: PeriodicTask) -> ScheduleType:
     return ScheduleType.INTERVAL
 
 
-def build_schedule_model(
+def build_crontab_schedule(
     *,
     session: Session,
-    schedule_type: ScheduleType,
-    crontab_in: CrontabScheduleIn | None,
-    interval_in: IntervalScheduleIn | None,
-) -> CrontabSchedule | IntervalSchedule:
-    """根据输入构造可复用的 schedule 模型并写入 session。"""
-    if schedule_type == ScheduleType.CRONTAB:
-        if crontab_in is None:
-            raise ValueError("schedule_type=crontab 时必须提供 crontab 配置")
-        spec = crontab_in.model_dump()
-        timezone = spec.pop("timezone")
-        model = CrontabSchedule(timezone=timezone, **spec)
-    else:
-        if interval_in is None:
-            raise ValueError("schedule_type=interval 时必须提供 interval 配置")
-        model = IntervalSchedule(
-            every=interval_in.every,
-            period=interval_in.period.value,
-        )
+    minute: str,
+    hour: str,
+    day_of_week: str,
+    day_of_month: str,
+    month_of_year: str,
+    timezone: str,
+) -> CrontabSchedule:
+    """构造可复用的 crontab 配置并写入 session。"""
+    model = CrontabSchedule(
+        minute=minute,
+        hour=hour,
+        day_of_week=day_of_week,
+        day_of_month=day_of_month,
+        month_of_year=month_of_year,
+        timezone=timezone,
+    )
+    session.add(model)
+    session.flush()
+    return model
+
+
+def build_interval_schedule(
+    *,
+    session: Session,
+    every: int,
+    period: str,
+) -> IntervalSchedule:
+    """构造可复用的 interval 配置并写入 session。"""
+    model = IntervalSchedule(every=every, period=period)
     session.add(model)
     session.flush()
     return model

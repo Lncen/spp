@@ -57,6 +57,22 @@ def list_rules(*, session: Session, skip: int, limit: int) -> list[AutomationRul
     ).all()
 
 
+def map_rule_names(
+    *,
+    session: Session,
+    rule_ids: set[uuid.UUID],
+) -> dict[uuid.UUID, str]:
+    """批量查询规则 ID → 规则名称，避免逐条查询造成 N+1。"""
+    if not rule_ids:
+        return {}
+    return {
+        rule.id: rule.name
+        for rule in session.exec(
+            select(AutomationRule).where(AutomationRule.id.in_(rule_ids))
+        ).all()
+    }
+
+
 def list_enabled_rules_by_event(
     *,
     session: Session,

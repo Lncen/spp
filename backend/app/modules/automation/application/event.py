@@ -1,22 +1,67 @@
-"""自动化模块：事件分发应用服务（按规则生成任务）"""
+"""自动化模块：事件应用服务
+
+按业务能力归组：事件发布、事件查询与按规则分发（生成自动化任务）。
+"""
 
 from datetime import timedelta
 
 from sqlmodel import Session
 
 from app.core.db import engine
+from app.core.event_bus import publish as publish_event
 from app.core.time import get_datetime_cn
 from app.modules.automation.domain.constants import AutomationEventStatus
 from app.modules.automation.domain.validation import validate_rule_config
 from app.modules.automation.models import AutomationEvent, AutomationTask
+from app.modules.automation.repositories.event import (
+    count_events,
+    list_events,
+)
 from app.modules.automation.repositories.rule import (
     list_enabled_rules_by_event,
 )
 from app.modules.automation.repositories.task import create_task
+from app.modules.automation.schemas import (
+    AutomationEventCreate,
+    AutomationEventPublic,
+    AutomationEventsPublic,
+)
 
 MAX_ERROR_LENGTH = 2000
 BASE_REDISPATCH_DELAY_SECONDS = 60
 MAX_REDISPATCH_DELAY_SECONDS = 3600
+
+
+def publish_automation_event(
+    *,
+    event_in: AutomationEventCreate,
+) -> AutomationEvent:
+    """发布业务事件：落库并触发规则分发。"""
+    return publish_event(
+        event_type=event_in.event_type,
+        payload=event_in.payload,
+    )
+
+
+def list_automation_events(
+    *,
+    session: Session,
+    skip: int,
+    limit: int,
+    event_type: str | None,
+) -> AutomationEventsPublic:
+    """分页获取自动化事件列表。"""
+    count = count_events(session=session, event_type=event_type)
+    events = list_events(
+        session=session,
+        skip=skip,
+        limit=limit,
+        event_type=event_type,
+    )
+    return AutomationEventsPublic(
+        data=[AutomationEventPublic.model_validate(event) for event in events],
+        count=count,
+    )
 
 
 def dispatch_event(*, event: AutomationEvent) -> list[AutomationTask]:

@@ -8,8 +8,10 @@ from sqlmodel import Session
 
 from app.core.db import engine
 from app.core.time import get_datetime_cn
+from app.modules.automation.infrastructure.tasks.retention import (
+    get_retention_days,
+)
 from app.modules.notification.repositories.notification import purge_old_notifications
-from app.modules.setting.application.setting_query import get_setting
 from app.modules.setting.domain.constants import NOTIFICATION_RETENTION_DAYS
 
 logger = logging.getLogger(__name__)
@@ -37,7 +39,11 @@ def cleanup_notification_records() -> dict:
     stats = {"purged": 0, "errors": []}
     try:
         with Session(engine) as session:
-            retention_days = _get_retention_days(session=session)
+            retention_days = get_retention_days(
+                session=session,
+                key=NOTIFICATION_RETENTION_DAYS,
+                default=DEFAULT_NOTIFICATION_RETENTION_DAYS,
+            )
             before = get_datetime_cn() - timedelta(days=retention_days)
             while True:
                 purged = purge_old_notifications(
@@ -52,17 +58,3 @@ def cleanup_notification_records() -> dict:
         stats["errors"].append(str(exc))
         logger.exception("通知记录清理异常")
     return stats
-
-
-def _get_retention_days(*, session: Session) -> int:
-    """读取全局设置的通知保留天数，非法值回退默认 30 天。"""
-    try:
-        days = int(
-            get_setting(
-                session=session,
-                key=NOTIFICATION_RETENTION_DAYS,
-            )
-        )
-    except (TypeError, ValueError):
-        days = DEFAULT_NOTIFICATION_RETENTION_DAYS
-    return max(1, days)

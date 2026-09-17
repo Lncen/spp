@@ -8,7 +8,9 @@ from sqlmodel import Session
 
 from app.core.db import engine
 from app.core.time import get_datetime_cn
-from app.modules.setting.application.setting_query import get_setting
+from app.modules.automation.infrastructure.tasks.retention import (
+    get_retention_days,
+)
 from app.modules.setting.domain.constants import WALLET_TRANSACTION_RETENTION_DAYS
 from app.modules.wallet.repositories.wallet import purge_old_transactions
 
@@ -35,7 +37,11 @@ def cleanup_wallet_transactions() -> dict:
     stats = {"purged": 0, "errors": []}
     try:
         with Session(engine) as session:
-            retention_days = _get_retention_days(session=session)
+            retention_days = get_retention_days(
+                session=session,
+                key=WALLET_TRANSACTION_RETENTION_DAYS,
+                default=DEFAULT_WALLET_RETENTION_DAYS,
+            )
             before = get_datetime_cn() - timedelta(days=retention_days)
             while True:
                 purged = purge_old_transactions(
@@ -50,17 +56,3 @@ def cleanup_wallet_transactions() -> dict:
         stats["errors"].append(str(exc))
         logger.exception("钱包流水数据清理异常")
     return stats
-
-
-def _get_retention_days(*, session: Session) -> int:
-    """读取全局设置的钱包流水保留天数，非法值回退默认 7 天。"""
-    try:
-        days = int(
-            get_setting(
-                session=session,
-                key=WALLET_TRANSACTION_RETENTION_DAYS,
-            )
-        )
-    except (TypeError, ValueError):
-        days = DEFAULT_WALLET_RETENTION_DAYS
-    return max(1, days)

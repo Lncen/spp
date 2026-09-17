@@ -5,11 +5,9 @@ from typing import Any
 from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import SessionDep, get_current_active_superuser
-from app.modules.automation.application.event_publish import (
-    publish_automation_event,
-)
-from app.modules.automation.application.event_query import (
+from app.modules.automation.application.event import (
     list_automation_events,
+    publish_automation_event,
 )
 from app.modules.automation.schemas import (
     AutomationEventCreate,

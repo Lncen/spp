@@ -1,4 +1,9 @@
-"""自动化模块：自动化任务数据访问层"""
+"""自动化模块：自动化任务数据访问层
+
+本层只做数据访问与持久化，不承载状态流转决策：
+「是否重试 / 是否终态 / 是否可取消」等业务规则在 `domain/execution.py`，
+流程编排在 `application/`（任务池执行见 `application/task_execution.py`）。
+"""
 
 import uuid
 from datetime import datetime
@@ -9,27 +14,25 @@ from sqlalchemy import delete, update
 from sqlmodel import Session, func, select
 
 from app.core.time import get_datetime_cn
-from app.modules.automation.domain.constants import AutomationTaskStatus
-from app.modules.automation.domain.execution import should_retry
+from app.modules.automation.domain.constants import (
+    TERMINAL_TASK_STATUSES,
+    AutomationTaskStatus,
+)
 from app.modules.automation.models import AutomationTask, AutomationTaskArchive
 
 MAX_ERROR_MESSAGE_LENGTH = 2000
 
-# 终态任务：进入终态即移入归档表，任务池只保留待执行 / 执行中任务
-TERMINAL_STATUSES = (
-    AutomationTaskStatus.SUCCESS,
-    AutomationTaskStatus.FAILED,
-    AutomationTaskStatus.CANCELED,
-)
 
-
-def _lock_running_task_for_terminal(
+def lock_claimed_task(
     *,
     session: Session,
     task: AutomationTask,
     expected_claimed_at: datetime | None,
 ) -> AutomationTask | None:
-    """终端写入前锁定任务行，确认仍由当前 worker 认领，避免失联恢复竞态。"""
+    """终态 / 重试写入前锁定任务行，确认仍由当前 worker 认领，避免失联恢复竞态。
+
+    expected_claimed_at 为 None 时不做校验，直接返回传入的任务行。
+    """
     if expected_claimed_at is None:
         return task
 
@@ -73,11 +76,71 @@ def create_task(
     return task
 
 
+def get_task(*, session: Session, task_id: uuid.UUID) -> AutomationTask | None:
+    """按 ID 获取任务，不存在时返回 None。"""
+    return session.get(AutomationTask, task_id)
+
+
 def get_task_or_404(*, session: Session, task_id: uuid.UUID) -> AutomationTask:
     """按 ID 获取任务，不存在时抛出 404。"""
-    task = session.get(AutomationTask, task_id)
-    if not task:
+    task = get_task(session=session, task_id=task_id)
+    if task is None:
         raise HTTPException(status_code=404, detail="自动化任务不存在")
+    return task
+
+
+def get_archived_task(
+    *,
+    session: Session,
+    task_id: uuid.UUID,
+) -> AutomationTaskArchive | None:
+    """按原任务 ID 获取归档记录，不存在时返回 None。"""
+    return session.exec(
+        select(AutomationTaskArchive).where(
+            AutomationTaskArchive.task_id == task_id
+        )
+    ).first()
+
+
+def get_archived_task_or_404(
+    *,
+    session: Session,
+    task_id: uuid.UUID,
+) -> AutomationTaskArchive:
+    """按原任务 ID 获取归档记录，不存在时抛出 404。"""
+    archived = get_archived_task(session=session, task_id=task_id)
+    if archived is None:
+        raise HTTPException(status_code=404, detail="自动化任务不存在或已归档")
+    return archived
+
+
+def restore_task_from_archive(
+    *,
+    session: Session,
+    archived: AutomationTaskArchive,
+) -> AutomationTask:
+    """从归档表恢复任务：重建任务池记录（重试计数清零）并删除归档行。"""
+    task = AutomationTask(
+        id=archived.task_id,
+        task_type=archived.task_type,
+        event_id=archived.event_id,
+        rule_id=archived.rule_id,
+        status=AutomationTaskStatus.PENDING,
+        priority=archived.priority,
+        execute_at=get_datetime_cn(),
+        retry_count=0,
+        max_retry=archived.max_retry,
+        payload=archived.payload,
+        last_error=None,
+        claimed_at=None,
+        started_at=None,
+        finished_at=None,
+        created_at=archived.created_at,
+    )
+    session.add(task)
+    session.delete(archived)
+    session.commit()
+    session.refresh(task)
     return task
 
 
@@ -237,69 +300,60 @@ def _move_to_archive(*, session: Session, task: AutomationTask) -> None:
     session.delete(task)
 
 
-def mark_success(
-    *,
-    session: Session,
-    task: AutomationTask,
-    expected_claimed_at: datetime | None = None,
-) -> bool:
-    """标记任务执行成功并立即归档。"""
-    locked = _lock_running_task_for_terminal(
-        session=session,
-        task=task,
-        expected_claimed_at=expected_claimed_at,
-    )
-    if locked is None:
-        return False
-    locked.status = AutomationTaskStatus.SUCCESS
-    locked.last_error = None
-    locked.finished_at = get_datetime_cn()
-    _move_to_archive(session=session, task=locked)
+def apply_task_success(*, session: Session, task: AutomationTask) -> None:
+    """持久化成功终态：写入终态字段并移入归档表。"""
+    task.status = AutomationTaskStatus.SUCCESS
+    task.last_error = None
+    task.finished_at = get_datetime_cn()
+    _move_to_archive(session=session, task=task)
     session.commit()
-    return True
 
 
-def mark_failed(
+def apply_task_failure(
     *,
     session: Session,
     task: AutomationTask,
     error_message: str,
     now: datetime,
-    terminal: bool = False,
-    expected_claimed_at: datetime | None = None,
-) -> bool:
-    """标记任务执行失败：默认未达重试上限则回退 pending；terminal=True 表示业务已终态，跳过重试直接失败归档。"""
-    locked = _lock_running_task_for_terminal(
-        session=session,
-        task=task,
-        expected_claimed_at=expected_claimed_at,
-    )
-    if locked is None:
-        return False
-    locked.last_error = error_message[:MAX_ERROR_MESSAGE_LENGTH]
-    if not terminal and should_retry(
-        retry_count=locked.retry_count,
-        max_retry=locked.max_retry,
-    ):
-        locked.retry_count += 1
-        locked.status = AutomationTaskStatus.PENDING
-        locked.execute_at = now
-        locked.finished_at = None
-        locked.claimed_at = None
-        locked.started_at = None
-        session.add(locked)
-    else:
-        locked.status = AutomationTaskStatus.FAILED
-        locked.finished_at = now
-        _move_to_archive(session=session, task=locked)
+) -> None:
+    """持久化失败终态：写入失败原因与终态时间并移入归档表。"""
+    task.status = AutomationTaskStatus.FAILED
+    task.last_error = error_message[:MAX_ERROR_MESSAGE_LENGTH]
+    task.finished_at = now
+    _move_to_archive(session=session, task=task)
     session.commit()
-    return True
 
 
-def reset_task(*, session: Session, task: AutomationTask) -> None:
-    """手动重试：仅失败任务可回到待执行，重试计数清零后重新获得完整自动重试预算。"""
-    if task.status != AutomationTaskStatus.FAILED:
-        raise ValueError("仅失败任务可手动重试")
+def apply_task_auto_retry(
+    *,
+    session: Session,
+    task: AutomationTask,
+    error_message: str,
+    now: datetime,
+) -> None:
+    """持久化自动重试：重试计数 +1、清空本次执行时间线并回到待执行。"""
+    task.retry_count += 1
+    task.last_error = error_message[:MAX_ERROR_MESSAGE_LENGTH]
+    task.status = AutomationTaskStatus.PENDING
+    task.execute_at = now
+    task.finished_at = None
+    task.claimed_at = None
+    task.started_at = None
+    session.add(task)
+    session.commit()
+
+
+def apply_task_canceled(*, session: Session, task: AutomationTask) -> None:
+    """持久化取消终态：写入终态字段并移入归档表。"""
+    task.status = AutomationTaskStatus.CANCELED
+    task.last_error = None
+    task.finished_at = get_datetime_cn()
+    _move_to_archive(session=session, task=task)
+    session.commit()
+
+
+def reset_task_for_retry(*, session: Session, task: AutomationTask) -> None:
+    """人工重试：重置为待执行，重试计数清零后重新获得完整自动重试预算。"""
     task.status = AutomationTaskStatus.PENDING
     task.retry_count = 0
     task.execute_at = get_datetime_cn()
@@ -312,63 +366,6 @@ def reset_task(*, session: Session, task: AutomationTask) -> None:
     session.refresh(task)
 
 
-def cancel_task(*, session: Session, task: AutomationTask) -> None:
-    """取消任务：仅待执行任务可取消，取消后移入归档表。"""
-    if task.status != AutomationTaskStatus.PENDING:
-        raise ValueError("仅待执行任务可取消")
-    task.status = AutomationTaskStatus.CANCELED
-    task.last_error = None
-    task.finished_at = get_datetime_cn()
-    _move_to_archive(session=session, task=task)
-    session.commit()
-
-
-def requeue_failed_task(
-    *,
-    session: Session,
-    task_id: uuid.UUID,
-) -> AutomationTask:
-    """失败任务重新进入队列（重试计数清零）：任务池中直接重置；已归档则从归档表恢复。"""
-    task = session.get(AutomationTask, task_id)
-    if task is not None:
-        if task.status != AutomationTaskStatus.FAILED:
-            raise ValueError("仅失败任务可重新进入队列")
-        reset_task(session=session, task=task)
-        return task
-
-    archived = session.exec(
-        select(AutomationTaskArchive).where(
-            AutomationTaskArchive.task_id == task_id
-        )
-    ).first()
-    if archived is None:
-        raise HTTPException(status_code=404, detail="自动化任务不存在或已归档")
-    if archived.status != AutomationTaskStatus.FAILED:
-        raise ValueError("仅失败任务可重新进入队列")
-    task = AutomationTask(
-        id=archived.task_id,
-        task_type=archived.task_type,
-        event_id=archived.event_id,
-        rule_id=archived.rule_id,
-        status=AutomationTaskStatus.PENDING,
-        priority=archived.priority,
-        execute_at=get_datetime_cn(),
-        retry_count=0,
-        max_retry=archived.max_retry,
-        payload=archived.payload,
-        last_error=None,
-        claimed_at=None,
-        started_at=None,
-        finished_at=None,
-        created_at=archived.created_at,
-    )
-    session.add(task)
-    session.delete(archived)
-    session.commit()
-    session.refresh(task)
-    return task
-
-
 def archive_finished_tasks(
     *,
     session: Session,
@@ -379,7 +376,7 @@ def archive_finished_tasks(
     tasks = session.exec(
         select(AutomationTask)
         .where(
-            AutomationTask.status.in_(TERMINAL_STATUSES),
+            AutomationTask.status.in_(TERMINAL_TASK_STATUSES),
             AutomationTask.finished_at.is_not(None),
             AutomationTask.finished_at <= before,
         )

@@ -10,11 +10,11 @@ from app.modules.automation.infrastructure.tasks.auth_cleanup import (
 from app.modules.automation.infrastructure.tasks.cleanup import (
     cleanup_automation_task_archives,
 )
-from app.modules.automation.infrastructure.tasks.expired_data import (
-    cleanup_expired_data,
-)
 from app.modules.automation.infrastructure.tasks.event_redispatch import (
     redispatch_stale_automation_events,
+)
+from app.modules.automation.infrastructure.tasks.expired_data import (
+    cleanup_expired_data,
 )
 from app.modules.automation.infrastructure.tasks.notification_cleanup import (
     cleanup_notification_records,

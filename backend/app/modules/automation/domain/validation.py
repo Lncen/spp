@@ -3,7 +3,6 @@
 from typing import Any
 
 from app.modules.automation.domain.constants import ScheduleType
-from app.modules.automation.schemas import CrontabScheduleIn, IntervalScheduleIn
 
 MAX_TASK_DELAY_SECONDS = 30 * 24 * 3600
 MAX_TASK_MAX_RETRY = 1000
@@ -12,18 +11,20 @@ MAX_TASK_MAX_RETRY = 1000
 def validate_schedule_input(
     *,
     schedule_type: ScheduleType,
-    crontab: CrontabScheduleIn | None,
-    interval: IntervalScheduleIn | None,
+    has_crontab: bool,
+    has_interval: bool,
 ) -> None:
     """校验调度类型与对应配置的配对关系，不满足时抛出 ValueError。"""
-    if schedule_type == ScheduleType.CRONTAB and crontab is None:
-        raise ValueError("schedule_type=crontab 时必须提供 crontab 配置")
-    if schedule_type == ScheduleType.INTERVAL and interval is None:
-        raise ValueError("schedule_type=interval 时必须提供 interval 配置")
-    if schedule_type == ScheduleType.CRONTAB and interval is not None:
-        raise ValueError("schedule_type=crontab 时不能提供 interval 配置")
-    if schedule_type == ScheduleType.INTERVAL and crontab is not None:
-        raise ValueError("schedule_type=interval 时不能提供 crontab 配置")
+    if schedule_type == ScheduleType.CRONTAB:
+        if not has_crontab:
+            raise ValueError("schedule_type=crontab 时必须提供 crontab 配置")
+        if has_interval:
+            raise ValueError("schedule_type=crontab 时不能提供 interval 配置")
+    elif schedule_type == ScheduleType.INTERVAL:
+        if not has_interval:
+            raise ValueError("schedule_type=interval 时必须提供 interval 配置")
+        if has_crontab:
+            raise ValueError("schedule_type=interval 时不能提供 crontab 配置")
 
 
 def _validate_task_option_int(

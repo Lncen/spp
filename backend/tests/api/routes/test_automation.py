@@ -10,6 +10,7 @@ from sqlmodel import Session, delete, select
 from app.core.config import settings
 from app.core.db import engine
 from app.init_models_data.automation_rules import seed_automation_rules
+from app.modules.automation.application.task_execution import handle_task_failure
 from app.modules.automation.domain.constants import AutomationTaskStatus
 from app.modules.automation.infrastructure.tasks import automation_task_scan
 from app.modules.automation.models import (
@@ -21,7 +22,6 @@ from app.modules.automation.models import (
 from app.modules.automation.repositories.task import (
     claim_due_tasks,
     create_task,
-    mark_failed,
     recover_stale_running_tasks,
 )
 
@@ -154,7 +154,12 @@ def test_task_pool_retry_then_failed() -> None:
             now=now + timedelta(seconds=1),
         )
         assert len(claimed) == 1
-        mark_failed(session=session, task=claimed[0], error_message="e1", now=now)
+        handle_task_failure(
+            session=session,
+            task=claimed[0],
+            error_message="e1",
+            now=now,
+        )
         assert claimed[0].status == AutomationTaskStatus.PENDING
         assert claimed[0].retry_count == 1
 
@@ -165,7 +170,12 @@ def test_task_pool_retry_then_failed() -> None:
             now=now + timedelta(seconds=1),
         )
         assert len(claimed) == 1
-        mark_failed(session=session, task=claimed[0], error_message="e2", now=now)
+        handle_task_failure(
+            session=session,
+            task=claimed[0],
+            error_message="e2",
+            now=now,
+        )
         assert session.get(AutomationTask, task_id) is None
         archived = _get_archive(session=session, task_id=task_id)
         assert archived is not None
@@ -188,7 +198,7 @@ def test_read_task_archives(
         session.commit()
         session.refresh(task)
         task_id = task.id
-        mark_failed(
+        handle_task_failure(
             session=session,
             task=task,
             error_message="boom",
@@ -237,7 +247,7 @@ def test_retry_and_cancel_task(
         session.commit()
         session.refresh(task)
         task_id = task.id
-        mark_failed(
+        handle_task_failure(
             session=session,
             task=task,
             error_message="boom-1",
@@ -245,7 +255,7 @@ def test_retry_and_cancel_task(
         )
         assert task.status == AutomationTaskStatus.PENDING
         assert task.retry_count == 1
-        mark_failed(
+        handle_task_failure(
             session=session,
             task=task,
             error_message="boom-2",
@@ -303,7 +313,7 @@ def test_terminal_failure_archives_without_retry() -> None:
         session.commit()
         session.refresh(task)
         task_id = task.id
-        mark_failed(
+        handle_task_failure(
             session=session,
             task=task,
             error_message="terminal",
