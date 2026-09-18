@@ -19,6 +19,7 @@ import {
   Settings,
   ShieldCheck,
   Tags,
+  UserCog,
   Users,
   Workflow,
   Zap,
@@ -97,6 +98,12 @@ const navGroups: ItemGroup[] = [
     label: "系统",
     collapsible: true,
     items: [
+      {
+        icon: UserCog,
+        title: "角色管理",
+        path: "/roles",
+        superuserOnly: true,
+      },
       {
         icon: ScrollText,
         title: "系统日志",

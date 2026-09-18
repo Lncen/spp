@@ -106,6 +106,8 @@ class Settings(BaseSettings):
     REDIS_DB: int = 0
     # 全局设置缓存 TTL：懒加载到 Redis 后，超过该时长自动重新从数据库加载
     SETTINGS_CACHE_TTL_SECONDS: int = 600
+    # 用户权限缓存 TTL：角色/权限变更时会主动失效，此处仅作兜底
+    PERMISSION_CACHE_TTL_SECONDS: int = 300
     CELERY_BROKER_DB: int = 1
     CELERY_RESULT_DB: int = 2
     # Socket.IO 实时通道 Redis DB（与缓存 / Celery broker / result 分离）

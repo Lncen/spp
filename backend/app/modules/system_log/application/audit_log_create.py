@@ -25,7 +25,9 @@ def record_audit_log(
     request_id: str | None = None,
     event_id: uuid.UUID | None = None,
 ) -> AuditLog:
-    """写入一条操作审计记录并提交，供关键管理操作调用"""
+    """写入一条操作审计记录并提交，供关键管理操作调用
+        写入的参数使用中文描述
+    """
 
     actor_identifier = (actor.email or actor.username or "system") if actor is not None else "system"
     audit_log = create_audit_log(

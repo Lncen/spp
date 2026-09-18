@@ -6,6 +6,7 @@ import {
   Lock,
   Medal,
   Shield,
+  ShieldCheck,
   Wallet,
 } from "lucide-react"
 import { type ReactNode, useEffect, useState } from "react"
@@ -14,6 +15,7 @@ import { useForm } from "react-hook-form"
 import {
   ImagesService,
   LevelsService,
+  RolesService,
   type UserListItemPublic,
   UsersService,
   WalletsService,
@@ -47,11 +49,13 @@ import { type FormData, formSchema } from "./editUserForm"
 import { LevelFields } from "./LevelFields"
 import { PasswordFields } from "./PasswordFields"
 import { PermissionsFields } from "./PermissionsFields"
+import { RoleFields } from "./RoleFields"
 import { WalletPanel } from "./WalletPanel"
 
 const sections = [
   { id: "basic", label: "基本信息", icon: Info },
   { id: "level", label: "等级", icon: Medal },
+  { id: "roles", label: "角色", icon: ShieldCheck },
   { id: "wallet", label: "钱包", icon: Wallet },
   { id: "avatar", label: "头像", icon: ImageIcon },
   { id: "password", label: "密码", icon: Lock },
@@ -134,6 +138,32 @@ const EditUser = ({ user, open, onOpenChange, onSuccess }: EditUserProps) => {
     enabled: open,
   })
 
+  // 角色目录只在打开「角色」分区时加载
+  const { data: roles, isLoading: isRolesLoading } = useQuery({
+    queryKey: ["roles"],
+    queryFn: () => RolesService.readRoles({ limit: 100 }),
+    enabled: open && activeSection === "roles",
+    staleTime: 5 * 60 * 1000,
+  })
+
+  // 已分配角色需要展示在「基本信息」的标签上，打开对话框即加载
+  const { data: userRoles, isLoading: isUserRolesLoading } = useQuery({
+    queryKey: ["user-roles", user.id],
+    queryFn: () => RolesService.readUserRoles({ userId: user.id }),
+    enabled: open,
+  })
+
+  // 已分配角色不属于 PATCH /users，单独维护选中值与保存前的基线，用于比较差异
+  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([])
+  const [initialRoleIds, setInitialRoleIds] = useState<string[]>([])
+
+  useEffect(() => {
+    if (!userRoles) return
+    const roleIds = userRoles.data.map((role) => role.id)
+    setSelectedRoleIds(roleIds)
+    setInitialRoleIds(roleIds)
+  }, [userRoles])
+
   useEffect(() => {
     if (!detail) return
     form.reset({
@@ -150,9 +180,29 @@ const EditUser = ({ user, open, onOpenChange, onSuccess }: EditUserProps) => {
     })
   }, [detail, form])
 
+  /** 仅提交变化的角色：新增逐个分配，移除逐个解除，接口本身幂等 */
+  const syncUserRoles = async () => {
+    const initial = new Set(initialRoleIds)
+    const next = new Set(selectedRoleIds)
+    const rolesToAssign = selectedRoleIds.filter(
+      (roleId) => !initial.has(roleId),
+    )
+    const rolesToRemove = initialRoleIds.filter((roleId) => !next.has(roleId))
+
+    for (const roleId of rolesToAssign) {
+      await RolesService.assignUserRole({
+        userId: user.id,
+        requestBody: { role_id: roleId },
+      })
+    }
+    for (const roleId of rolesToRemove) {
+      await RolesService.removeUserRole({ userId: user.id, roleId })
+    }
+  }
+
   const mutation = useMutation({
-    mutationFn: (data: FormData) =>
-      UsersService.updateUser({
+    mutationFn: async (data: FormData) => {
+      await UsersService.updateUser({
         userId: user.id,
         requestBody: {
           email: data.email,
@@ -168,15 +218,19 @@ const EditUser = ({ user, open, onOpenChange, onSuccess }: EditUserProps) => {
           remark: data.remark || null,
           bio: data.bio || null,
         },
-      }),
+      })
+      await syncUserRoles()
+    },
     onSuccess: () => {
       showSuccessToast("用户更新成功")
+      setInitialRoleIds(selectedRoleIds)
       onOpenChange(false)
       onSuccess()
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] })
+      queryClient.invalidateQueries({ queryKey: ["user-roles", user.id] })
     },
   })
 
@@ -235,6 +289,7 @@ const EditUser = ({ user, open, onOpenChange, onSuccess }: EditUserProps) => {
                       wallet={wallet}
                       isWalletLoading={isWalletLoading}
                       levelName={detail.level_name}
+                      roles={userRoles?.data}
                     />
                   </Section>
 
@@ -242,6 +297,15 @@ const EditUser = ({ user, open, onOpenChange, onSuccess }: EditUserProps) => {
                     <LevelFields
                       levels={levels}
                       isLevelsLoading={isLevelsLoading}
+                    />
+                  </Section>
+
+                  <Section id="roles" activeSection={activeSection}>
+                    <RoleFields
+                      roles={roles?.data}
+                      selectedRoleIds={selectedRoleIds}
+                      isLoading={isRolesLoading || isUserRolesLoading}
+                      onChange={setSelectedRoleIds}
                     />
                   </Section>
 

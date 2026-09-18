@@ -24,6 +24,7 @@ const segmentTitles: Record<string, string> = {
   orders: "订单",
   notifications: "通知记录",
   "global-settings": "全局设置",
+  roles: "角色管理",
   admin: "用户",
   settings: "设置",
   tasks: "任务池",

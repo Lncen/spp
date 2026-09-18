@@ -4,8 +4,10 @@ from app.core.config import settings
 from app.init_models_data.automation_rules import seed_automation_rules
 from app.init_models_data.images import seed_image_categories
 from app.init_models_data.levels import seed_levels
+from app.init_models_data.permissions import seed_permission_catalog
 from app.init_models_data.price_templates import seed_price_templates
 from app.init_models_data.product_category import seed_product_category_templates
+from app.init_models_data.roles import seed_system_roles
 from app.init_models_data.supplier import seed_supplier_templates
 from app.modules.user.application.user_create import create_user
 from app.modules.user.models import User
@@ -26,6 +28,12 @@ engine = create_engine(
 def init_db(session: Session) -> None:
     # 播种 10 个修真等级（幂等，已有则跳过）
     default_level_id = seed_levels(session=session)
+
+    # 播种权限定义目录（必须在系统角色之前，角色权限按权限码关联）
+    seed_permission_catalog(session=session)
+
+    # 播种系统内置角色与默认权限（幂等，不覆盖自定义角色）
+    seed_system_roles(session=session)
 
     # 播种默认图片分类（幂等，已有则跳过）
     seed_image_categories(session=session)

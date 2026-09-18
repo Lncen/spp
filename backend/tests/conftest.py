@@ -21,6 +21,7 @@ from app.modules.customer_service.models import (
 )
 from app.modules.image.models import Image, ImageCategory
 from app.modules.order.models import Order, OrderParam
+from app.modules.permission.models import Permission, PermissionCategory
 from app.modules.price_template.models import PriceTemplate, PriceTemplateRule
 from app.modules.product.category.models import ProductCategory
 from app.modules.product.product.models import (
@@ -31,6 +32,7 @@ from app.modules.product.product.models import (
     ProductPricing,
     ProductSupplier,
 )
+from app.modules.role.models import Role, RolePermission, UserRole
 from app.modules.supplier.models import Supplier
 from app.modules.system_log.models import AuditLog, SystemLog
 from app.modules.user.models import User
@@ -163,7 +165,6 @@ def db() -> Generator[Session]:
             conn.execute(
                 text("CREATE INDEX IF NOT EXISTS ix_orders_sku_id ON orders (sku_id)")
             )
-        init_db(session)
         # 新模块表尚未生成迁移，测试环境单独建表；产品库由 Alembic 迁移建表
         SQLModel.metadata.create_all(
             engine,
@@ -190,8 +191,15 @@ def db() -> Generator[Session]:
                 WalletTransaction.__table__,
                 SystemLog.__table__,
                 AuditLog.__table__,
+                PermissionCategory.__table__,
+                Permission.__table__,
+                Role.__table__,
+                RolePermission.__table__,
+                UserRole.__table__,
             ],
         )
+        # 建表完成后执行幂等播种；新增模块的种子数据依赖表结构已存在
+        init_db(session)
         yield session
         statement = delete(OrderParam)
         session.execute(statement)
@@ -222,6 +230,16 @@ def db() -> Generator[Session]:
         statement = delete(SystemLog)
         session.execute(statement)
         statement = delete(AuditLog)
+        session.execute(statement)
+        statement = delete(UserRole)
+        session.execute(statement)
+        statement = delete(RolePermission)
+        session.execute(statement)
+        statement = delete(Role)
+        session.execute(statement)
+        statement = delete(Permission)
+        session.execute(statement)
+        statement = delete(PermissionCategory)
         session.execute(statement)
         statement = delete(Image)
         session.execute(statement)

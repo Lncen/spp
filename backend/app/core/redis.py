@@ -48,6 +48,19 @@ def get_redis() -> AsyncRedis:
     return redis_client
 
 
+def is_redis_ready() -> bool:
+    """Redis 客户端与主事件循环是否已就绪
+
+    未就绪的场景（如 CLI 初始化脚本、Celery 冷启动）下，调用方应跳过缓存操作，
+    直接回落数据库，避免产生误导性的异常日志。
+    """
+    return (
+        redis_client is not None
+        and _event_loop is not None
+        and not _event_loop.is_closed()
+    )
+
+
 def run_redis_sync[T](awaitable: Awaitable[T], *, timeout: float = 5.0) -> T:
     """在同步上下文（如 FastAPI 线程池路由）中执行 Redis 命令
 

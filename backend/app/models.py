@@ -25,6 +25,7 @@ from app.modules.notification.models import (
     NotificationDelivery,
 )
 from app.modules.order.models import Order, OrderParam
+from app.modules.permission.models import Permission, PermissionCategory
 from app.modules.price_template.models import PriceTemplate, PriceTemplateRule
 from app.modules.product.category.models import ProductCategory
 from app.modules.product.product.models import (
@@ -35,6 +36,7 @@ from app.modules.product.product.models import (
     ProductPricing,
     ProductSupplier,
 )
+from app.modules.role.models import Role, RolePermission, UserRole
 from app.modules.setting.models import AppSetting
 from app.modules.supplier.models import Supplier
 from app.modules.system_log.models import AuditLog, SystemLog
@@ -62,6 +64,8 @@ __all__ = [
     "AppSetting",
     "Order",
     "OrderParam",
+    "Permission",
+    "PermissionCategory",
     "PriceTemplate",
     "PriceTemplateRule",
     "ProductCategory",
@@ -71,6 +75,9 @@ __all__ = [
     "ProductInventory",
     "ProductFulfillment",
     "ProductBuyParam",
+    "Role",
+    "RolePermission",
+    "UserRole",
     "Wallet",
     "WalletTransaction",
 ]

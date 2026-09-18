@@ -19,6 +19,7 @@ import { Route as LayoutSystemLogsRouteImport } from './routes/_layout/system-lo
 import { Route as LayoutSuppliersRouteImport } from './routes/_layout/suppliers'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutSchedulesRouteImport } from './routes/_layout/schedules'
+import { Route as LayoutRolesRouteImport } from './routes/_layout/roles'
 import { Route as LayoutProductsRouteImport } from './routes/_layout/products'
 import { Route as LayoutProductCategoriesRouteImport } from './routes/_layout/product-categories'
 import { Route as LayoutPriceTemplatesRouteImport } from './routes/_layout/price-templates'
@@ -86,6 +87,11 @@ const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
 const LayoutSchedulesRoute = LayoutSchedulesRouteImport.update({
   id: '/schedules',
   path: '/schedules',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutRolesRoute = LayoutRolesRouteImport.update({
+  id: '/roles',
+  path: '/roles',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutProductsRoute = LayoutProductsRouteImport.update({
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/price-templates': typeof LayoutPriceTemplatesRoute
   '/product-categories': typeof LayoutProductCategoriesRoute
   '/products': typeof LayoutProductsRoute
+  '/roles': typeof LayoutRolesRoute
   '/schedules': typeof LayoutSchedulesRoute
   '/settings': typeof LayoutSettingsRoute
   '/suppliers': typeof LayoutSuppliersRoute
@@ -233,6 +240,7 @@ export interface FileRoutesByTo {
   '/price-templates': typeof LayoutPriceTemplatesRoute
   '/product-categories': typeof LayoutProductCategoriesRoute
   '/products': typeof LayoutProductsRoute
+  '/roles': typeof LayoutRolesRoute
   '/schedules': typeof LayoutSchedulesRoute
   '/settings': typeof LayoutSettingsRoute
   '/suppliers': typeof LayoutSuppliersRoute
@@ -265,6 +273,7 @@ export interface FileRoutesById {
   '/_layout/price-templates': typeof LayoutPriceTemplatesRoute
   '/_layout/product-categories': typeof LayoutProductCategoriesRoute
   '/_layout/products': typeof LayoutProductsRoute
+  '/_layout/roles': typeof LayoutRolesRoute
   '/_layout/schedules': typeof LayoutSchedulesRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/suppliers': typeof LayoutSuppliersRoute
@@ -298,6 +307,7 @@ export interface FileRouteTypes {
     | '/price-templates'
     | '/product-categories'
     | '/products'
+    | '/roles'
     | '/schedules'
     | '/settings'
     | '/suppliers'
@@ -326,6 +336,7 @@ export interface FileRouteTypes {
     | '/price-templates'
     | '/product-categories'
     | '/products'
+    | '/roles'
     | '/schedules'
     | '/settings'
     | '/suppliers'
@@ -357,6 +368,7 @@ export interface FileRouteTypes {
     | '/_layout/price-templates'
     | '/_layout/product-categories'
     | '/_layout/products'
+    | '/_layout/roles'
     | '/_layout/schedules'
     | '/_layout/settings'
     | '/_layout/suppliers'
@@ -447,6 +459,13 @@ declare module '@tanstack/react-router' {
       path: '/schedules'
       fullPath: '/schedules'
       preLoaderRoute: typeof LayoutSchedulesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/roles': {
+      id: '/_layout/roles'
+      path: '/roles'
+      fullPath: '/roles'
+      preLoaderRoute: typeof LayoutRolesRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/products': {
@@ -619,6 +638,7 @@ interface LayoutRouteChildren {
   LayoutPriceTemplatesRoute: typeof LayoutPriceTemplatesRoute
   LayoutProductCategoriesRoute: typeof LayoutProductCategoriesRoute
   LayoutProductsRoute: typeof LayoutProductsRoute
+  LayoutRolesRoute: typeof LayoutRolesRoute
   LayoutSchedulesRoute: typeof LayoutSchedulesRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutSuppliersRoute: typeof LayoutSuppliersRoute
@@ -641,6 +661,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutPriceTemplatesRoute: LayoutPriceTemplatesRoute,
   LayoutProductCategoriesRoute: LayoutProductCategoriesRoute,
   LayoutProductsRoute: LayoutProductsRoute,
+  LayoutRolesRoute: LayoutRolesRoute,
   LayoutSchedulesRoute: LayoutSchedulesRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutSuppliersRoute: LayoutSuppliersRoute,

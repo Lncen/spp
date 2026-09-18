@@ -1,6 +1,6 @@
 import { useFormContext } from "react-hook-form"
 
-import type { ImagesPublic, WalletPublic } from "@/client"
+import type { ImagesPublic, RolePublic, WalletPublic } from "@/client"
 import { Badge } from "@/components/ui/badge"
 import { FormControl, FormField, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -16,6 +16,8 @@ interface BasicInfoFieldsProps {
   wallet?: WalletPublic
   isWalletLoading: boolean
   levelName?: string | null
+  /** 用户已分配角色，用于昵称下方的角色标签 */
+  roles?: RolePublic[]
 }
 
 export function BasicInfoFields({
@@ -23,9 +25,11 @@ export function BasicInfoFields({
   wallet,
   isWalletLoading,
   levelName,
+  roles,
 }: BasicInfoFieldsProps) {
   const { control, watch } = useFormContext<FormData>()
   const avatarId = watch("avatar_id")
+  const isSuperuser = watch("is_superuser")
   const selectedAvatar = avatarImages?.data.find(
     (image) => image.id === avatarId,
   )
@@ -45,15 +49,28 @@ export function BasicInfoFields({
             <span className="truncate text-sm">未设置</span>
           </div>
         )}
-        <div className="flex flex-col items-start gap-1">
+        <div className="flex flex-col items-start gap-1.5">
           <span className="truncate text-lg font-medium">
             {fullName || "昵称未填写"}
           </span>
-          {levelName && (
-            <Badge variant="secondary" className="text-xs">
-              {`Lv : ${levelName}`}
-            </Badge>
-          )}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {levelName && (
+              <Badge variant="secondary" className="text-xs">
+                Lv : {levelName}
+              </Badge>
+            )}
+            {isSuperuser ? (
+              <Badge variant="default" className="text-xs">
+                身份：超级管理员
+              </Badge>
+            ) : (
+              roles?.map((role) => (
+                <Badge key={role.id} variant="secondary" className="text-xs">
+                  身份：{role.name}
+                </Badge>
+              ))
+            )}
+          </div>
         </div>
       </div>
       <Separator />

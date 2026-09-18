@@ -32,6 +32,11 @@ from app.modules.notification.models import (  # noqa: F401
 )
 from app.modules.order.api import router as order_router
 from app.modules.order.models import Order  # noqa: F401
+from app.modules.permission.api import router as permission_router
+from app.modules.permission.models import (  # noqa: F401
+    Permission,
+    PermissionCategory,
+)
 from app.modules.price_template.api import router as price_template_router
 from app.modules.price_template.models import (  # noqa: F401
     PriceTemplate,
@@ -49,6 +54,12 @@ from app.modules.product.product.models import (  # noqa: F401
     ProductInventory,
     ProductPricing,
     ProductSupplier,
+)
+from app.modules.role.api import role_router, user_role_router
+from app.modules.role.models import (  # noqa: F401
+    Role,
+    RolePermission,
+    UserRole,
 )
 from app.modules.setting.api import router as setting_router
 from app.modules.supplier.api import router as supplier_router
@@ -89,6 +100,9 @@ api_router.include_router(supplier_router)
 api_router.include_router(system_log_router)
 api_router.include_router(product_router)
 api_router.include_router(product_category_router)
+api_router.include_router(permission_router)
+api_router.include_router(role_router)
+api_router.include_router(user_role_router)
 
 if settings.ENVIRONMENT == "local":
     api_router.include_router(private_router)
