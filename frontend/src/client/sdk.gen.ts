@@ -3,12 +3,12 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { AutomationReadAutomationTasksData, AutomationReadAutomationTasksResponse, AutomationCreateAutomationTaskData, AutomationCreateAutomationTaskResponse, AutomationReadExecutorOptionsResponse, AutomationReadAutomationTaskArchivesData, AutomationReadAutomationTaskArchivesResponse, AutomationReadAutomationTaskData, AutomationReadAutomationTaskResponse, AutomationRetryAutomationTaskData, AutomationRetryAutomationTaskResponse, AutomationCancelAutomationTaskData, AutomationCancelAutomationTaskResponse, AutomationReadAutomationEventsData, AutomationReadAutomationEventsResponse, AutomationPublishAutomationEventRouteData, AutomationPublishAutomationEventRouteResponse, AutomationReadAutomationRulesData, AutomationReadAutomationRulesResponse, AutomationCreateAutomationRuleData, AutomationCreateAutomationRuleResponse, AutomationReadAutomationRuleData, AutomationReadAutomationRuleResponse, AutomationUpdateAutomationRuleData, AutomationUpdateAutomationRuleResponse, AutomationDeleteAutomationRuleData, AutomationDeleteAutomationRuleResponse, AutomationToggleAutomationRuleData, AutomationToggleAutomationRuleResponse, BackupsReadBackupsData, BackupsReadBackupsResponse, BackupsCreateBackupResponse, BackupsDownloadBackupData, BackupsDownloadBackupResponse, BackupsRestoreBackupData, BackupsRestoreBackupResponse, BackupsDeleteBackupData, BackupsDeleteBackupResponse, CustomerServiceReadConversationsData, CustomerServiceReadConversationsResponse, CustomerServiceCreateConversationEndpointData, CustomerServiceCreateConversationEndpointResponse, CustomerServiceReadMessagesData, CustomerServiceReadMessagesResponse, CustomerServiceSendMessageEndpointData, CustomerServiceSendMessageEndpointResponse, CustomerServiceReadConversationData, CustomerServiceReadConversationResponse, CustomerServiceUpdateStatusEndpointData, CustomerServiceUpdateStatusEndpointResponse, CustomerServiceDeleteConversationEndpointData, CustomerServiceDeleteConversationEndpointResponse, CustomerServiceReadOnlineStatusData, CustomerServiceReadOnlineStatusResponse, ImageCategoriesReadCategoriesResponse, ImageCategoriesCreateNewCategoryData, ImageCategoriesCreateNewCategoryResponse, ImageCategoriesReadCategoryOptionsResponse, ImageCategoriesReadCategoryData, ImageCategoriesReadCategoryResponse, ImageCategoriesUpdateExistingCategoryData, ImageCategoriesUpdateExistingCategoryResponse, ImageCategoriesDeleteExistingCategoryData, ImageCategoriesDeleteExistingCategoryResponse, ImagesReadImagesData, ImagesReadImagesResponse, ImagesReadImageData, ImagesReadImageResponse, ImagesDeleteImageData, ImagesDeleteImageResponse, ImagesUpdateImageData, ImagesUpdateImageResponse, ImagesUploadImageData, ImagesUploadImageResponse, LevelsReadLevelsResponse, LevelsReadLevelData, LevelsReadLevelResponse, LevelsUpdateLevelEndpointData, LevelsUpdateLevelEndpointResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshTokenData, LoginRefreshTokenResponse, LoginLogoutData, LoginLogoutResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, LoginTestTokenResponse, NotificationsReadMyNotificationsData, NotificationsReadMyNotificationsResponse, NotificationsReadUnreadCountResponse, NotificationsReadUnreadSummaryResponse, NotificationsMarkReadData, NotificationsMarkReadResponse, NotificationsMarkAllReadResponse, NotificationsDeleteMyNotificationEndpointData, NotificationsDeleteMyNotificationEndpointResponse, NotificationsReadAdminNotificationsData, NotificationsReadAdminNotificationsResponse, NotificationsSendAdminNotificationData, NotificationsSendAdminNotificationResponse, NotificationsRetryAdminDeliveryData, NotificationsRetryAdminDeliveryResponse, NotificationsDeleteAdminNotificationData, NotificationsDeleteAdminNotificationResponse, OrdersCreateUserOrdersData, OrdersCreateUserOrdersResponse, OrdersReadOrdersData, OrdersReadOrdersResponse, OrdersReadUserOrdersData, OrdersReadUserOrdersResponse, OrdersCreateAdminOrdersApiData, OrdersCreateAdminOrdersApiResponse, OrdersPreviewAdminOrdersApiData, OrdersPreviewAdminOrdersApiResponse, OrdersReadUserOrderData, OrdersReadUserOrderResponse, OrdersCancelUserOrderData, OrdersCancelUserOrderResponse, OrdersReadOrderData, OrdersReadOrderResponse, OrdersFulfillOrderApiData, OrdersFulfillOrderApiResponse, OrdersCancelOrderApiData, OrdersCancelOrderApiResponse, OrdersRefundOrderApiData, OrdersRefundOrderApiResponse, OrdersUpdateOrderStatusApiData, OrdersUpdateOrderStatusApiResponse, OrdersSyncOrderStatusApiData, OrdersSyncOrderStatusApiResponse, OrdersRecordSupplierOrderIdApiData, OrdersRecordSupplierOrderIdApiResponse, PermissionsReadPermissionCategoriesResponse, PermissionsReadPermissionTreeResponse, PermissionsReadPermissionsData, PermissionsReadPermissionsResponse, PriceTemplatesReadPriceTemplatesData, PriceTemplatesReadPriceTemplatesResponse, PriceTemplatesCreatePriceTemplateData, PriceTemplatesCreatePriceTemplateResponse, PriceTemplatesReadPriceTemplateData, PriceTemplatesReadPriceTemplateResponse, PriceTemplatesUpdatePriceTemplateData, PriceTemplatesUpdatePriceTemplateResponse, PriceTemplatesDeletePriceTemplateData, PriceTemplatesDeletePriceTemplateResponse, PrivateCreateUserPrivateData, PrivateCreateUserPrivateResponse, ProductCategoriesReadProductCategoriesResponse, ProductCategoriesCreateProductCategoryData, ProductCategoriesCreateProductCategoryResponse, ProductCategoriesReadProductCategoryData, ProductCategoriesReadProductCategoryResponse, ProductCategoriesUpdateProductCategoryData, ProductCategoriesUpdateProductCategoryResponse, ProductCategoriesDeleteProductCategoryData, ProductCategoriesDeleteProductCategoryResponse, ProductsReadProductsData, ProductsReadProductsResponse, ProductsCreateProductData, ProductsCreateProductResponse, ProductsReadProductData, ProductsReadProductResponse, ProductsUpdateProductData, ProductsUpdateProductResponse, ProductsDeleteProductData, ProductsDeleteProductResponse, RolesReadRolesData, RolesReadRolesResponse, RolesCreateRoleEndpointData, RolesCreateRoleEndpointResponse, RolesReadRoleData, RolesReadRoleResponse, RolesUpdateRoleEndpointData, RolesUpdateRoleEndpointResponse, RolesDeleteRoleEndpointData, RolesDeleteRoleEndpointResponse, RolesReadRolePermissionsData, RolesReadRolePermissionsResponse, RolesSetRolePermissionsEndpointData, RolesSetRolePermissionsEndpointResponse, RolesReadMyPermissionsResponse, RolesReadUserRolesData, RolesReadUserRolesResponse, RolesAssignUserRoleData, RolesAssignUserRoleResponse, RolesRemoveUserRoleData, RolesRemoveUserRoleResponse, SchedulesReadSchedulesData, SchedulesReadSchedulesResponse, SchedulesReadTaskOptionsResponse, SchedulesReadScheduleData, SchedulesReadScheduleResponse, SchedulesUpdateScheduleData, SchedulesUpdateScheduleResponse, SchedulesToggleScheduleData, SchedulesToggleScheduleResponse, SchedulesRunScheduleData, SchedulesRunScheduleResponse, SchedulesReadTaskStatusData, SchedulesReadTaskStatusResponse, SettingsReadSettingsResponse, SettingsUpdateSettingEndpointData, SettingsUpdateSettingEndpointResponse, SuppliersReadSuppliersData, SuppliersReadSuppliersResponse, SuppliersCreateSupplierData, SuppliersCreateSupplierResponse, SuppliersGetPlatformOptionsResponse, SuppliersReadSupplierData, SuppliersReadSupplierResponse, SuppliersUpdateSupplierData, SuppliersUpdateSupplierResponse, SuppliersDeleteSupplierData, SuppliersDeleteSupplierResponse, SuppliersReadSupplierBalanceData, SuppliersReadSupplierBalanceResponse, SuppliersReadUpstreamProductsData, SuppliersReadUpstreamProductsResponse, SuppliersReadUpstreamCategoriesData, SuppliersReadUpstreamCategoriesResponse, SuppliersCreateUpstreamProductsSyncData, SuppliersCreateUpstreamProductsSyncResponse, SuppliersReadUpstreamProductsSyncStatusData, SuppliersReadUpstreamProductsSyncStatusResponse, SystemLogsReadSystemLogsData, SystemLogsReadSystemLogsResponse, SystemLogsReadSystemLogData, SystemLogsReadSystemLogResponse, SystemLogsReadAuditLogsData, SystemLogsReadAuditLogsResponse, SystemLogsReadAuditLogData, SystemLogsReadAuditLogResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, WalletsReadWalletMeResponse, WalletsReadWalletTransactionsMeData, WalletsReadWalletTransactionsMeResponse, WalletsReadWalletByUserIdData, WalletsReadWalletByUserIdResponse, WalletsReadWalletsData, WalletsReadWalletsResponse, WalletsReadWalletByIdData, WalletsReadWalletByIdResponse, WalletsUpdateWalletStatusData, WalletsUpdateWalletStatusResponse, WalletsReadWalletTransactionsData, WalletsReadWalletTransactionsResponse, WalletsAdjustWalletBalanceData, WalletsAdjustWalletBalanceResponse } from './types.gen';
+import type { AutomationReadAutomationTasksData, AutomationReadAutomationTasksResponse, AutomationCreateAutomationTaskData, AutomationCreateAutomationTaskResponse, AutomationReadExecutorOptionsResponse, AutomationReadAutomationTaskArchivesData, AutomationReadAutomationTaskArchivesResponse, AutomationReadAutomationTaskData, AutomationReadAutomationTaskResponse, AutomationRetryAutomationTaskData, AutomationRetryAutomationTaskResponse, AutomationCancelAutomationTaskData, AutomationCancelAutomationTaskResponse, AutomationReadAutomationEventsData, AutomationReadAutomationEventsResponse, AutomationPublishAutomationEventRouteData, AutomationPublishAutomationEventRouteResponse, AutomationReadAutomationRulesData, AutomationReadAutomationRulesResponse, AutomationCreateAutomationRuleData, AutomationCreateAutomationRuleResponse, AutomationReadAutomationRuleData, AutomationReadAutomationRuleResponse, AutomationUpdateAutomationRuleData, AutomationUpdateAutomationRuleResponse, AutomationDeleteAutomationRuleData, AutomationDeleteAutomationRuleResponse, AutomationToggleAutomationRuleData, AutomationToggleAutomationRuleResponse, BackupsReadBackupsData, BackupsReadBackupsResponse, BackupsCreateBackupResponse, BackupsDownloadBackupData, BackupsDownloadBackupResponse, BackupsRestoreBackupData, BackupsRestoreBackupResponse, BackupsDeleteBackupData, BackupsDeleteBackupResponse, CustomerServiceReadConversationsData, CustomerServiceReadConversationsResponse, CustomerServiceCreateConversationEndpointData, CustomerServiceCreateConversationEndpointResponse, CustomerServiceReadMessagesData, CustomerServiceReadMessagesResponse, CustomerServiceSendMessageEndpointData, CustomerServiceSendMessageEndpointResponse, CustomerServiceReadConversationData, CustomerServiceReadConversationResponse, CustomerServiceUpdateStatusEndpointData, CustomerServiceUpdateStatusEndpointResponse, CustomerServiceDeleteConversationEndpointData, CustomerServiceDeleteConversationEndpointResponse, CustomerServiceReadOnlineStatusData, CustomerServiceReadOnlineStatusResponse, ImageCategoriesReadCategoriesResponse, ImageCategoriesCreateNewCategoryData, ImageCategoriesCreateNewCategoryResponse, ImageCategoriesReadCategoryOptionsResponse, ImageCategoriesReadCategoryData, ImageCategoriesReadCategoryResponse, ImageCategoriesUpdateExistingCategoryData, ImageCategoriesUpdateExistingCategoryResponse, ImageCategoriesDeleteExistingCategoryData, ImageCategoriesDeleteExistingCategoryResponse, ImagesReadImagesData, ImagesReadImagesResponse, ImagesReadImageData, ImagesReadImageResponse, ImagesDeleteImageData, ImagesDeleteImageResponse, ImagesUpdateImageData, ImagesUpdateImageResponse, ImagesUploadImageData, ImagesUploadImageResponse, LevelsReadLevelsResponse, LevelsReadLevelData, LevelsReadLevelResponse, LevelsUpdateLevelEndpointData, LevelsUpdateLevelEndpointResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshTokenData, LoginRefreshTokenResponse, LoginLogoutData, LoginLogoutResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, LoginTestTokenResponse, NotificationsReadMyNotificationsData, NotificationsReadMyNotificationsResponse, NotificationsReadUnreadCountResponse, NotificationsReadUnreadSummaryResponse, NotificationsMarkReadData, NotificationsMarkReadResponse, NotificationsMarkAllReadResponse, NotificationsDeleteMyNotificationEndpointData, NotificationsDeleteMyNotificationEndpointResponse, NotificationsReadAdminNotificationsData, NotificationsReadAdminNotificationsResponse, NotificationsSendAdminNotificationData, NotificationsSendAdminNotificationResponse, NotificationsRetryAdminDeliveryData, NotificationsRetryAdminDeliveryResponse, NotificationsDeleteAdminNotificationData, NotificationsDeleteAdminNotificationResponse, OrdersCreateUserOrdersData, OrdersCreateUserOrdersResponse, OrdersReadOrdersData, OrdersReadOrdersResponse, OrdersReadUserOrdersData, OrdersReadUserOrdersResponse, OrdersCreateAdminOrdersApiData, OrdersCreateAdminOrdersApiResponse, OrdersPreviewAdminOrdersApiData, OrdersPreviewAdminOrdersApiResponse, OrdersReadUserOrderData, OrdersReadUserOrderResponse, OrdersCancelUserOrderData, OrdersCancelUserOrderResponse, OrdersReadOrderData, OrdersReadOrderResponse, OrdersFulfillOrderApiData, OrdersFulfillOrderApiResponse, OrdersCancelOrderApiData, OrdersCancelOrderApiResponse, OrdersRefundOrderApiData, OrdersRefundOrderApiResponse, OrdersUpdateOrderStatusApiData, OrdersUpdateOrderStatusApiResponse, OrdersSyncOrderStatusApiData, OrdersSyncOrderStatusApiResponse, OrdersRecordSupplierOrderIdApiData, OrdersRecordSupplierOrderIdApiResponse, PermissionsReadPermissionCategoriesResponse, PermissionsReadPermissionTreeResponse, PermissionsReadPermissionsData, PermissionsReadPermissionsResponse, PriceTemplatesReadPriceTemplatesData, PriceTemplatesReadPriceTemplatesResponse, PriceTemplatesCreatePriceTemplateData, PriceTemplatesCreatePriceTemplateResponse, PriceTemplatesReadPriceTemplateData, PriceTemplatesReadPriceTemplateResponse, PriceTemplatesUpdatePriceTemplateData, PriceTemplatesUpdatePriceTemplateResponse, PriceTemplatesDeletePriceTemplateData, PriceTemplatesDeletePriceTemplateResponse, PrivateCreateUserPrivateData, PrivateCreateUserPrivateResponse, ProductCategoriesReadProductCategoriesResponse, ProductCategoriesCreateProductCategoryData, ProductCategoriesCreateProductCategoryResponse, ProductCategoriesReadProductCategoryData, ProductCategoriesReadProductCategoryResponse, ProductCategoriesUpdateProductCategoryData, ProductCategoriesUpdateProductCategoryResponse, ProductCategoriesDeleteProductCategoryData, ProductCategoriesDeleteProductCategoryResponse, ProductsReadProductsData, ProductsReadProductsResponse, ProductsCreateProductData, ProductsCreateProductResponse, ProductsReadProductData, ProductsReadProductResponse, ProductsUpdateProductData, ProductsUpdateProductResponse, ProductsDeleteProductData, ProductsDeleteProductResponse, RolesReadRolesData, RolesReadRolesResponse, RolesCreateRoleEndpointData, RolesCreateRoleEndpointResponse, RolesReadRoleData, RolesReadRoleResponse, RolesUpdateRoleEndpointData, RolesUpdateRoleEndpointResponse, RolesDeleteRoleEndpointData, RolesDeleteRoleEndpointResponse, RolesReadRolePermissionsData, RolesReadRolePermissionsResponse, RolesSetRolePermissionsEndpointData, RolesSetRolePermissionsEndpointResponse, RolesReadMyPermissionsResponse, RolesReadUserRolesData, RolesReadUserRolesResponse, RolesAssignUserRoleData, RolesAssignUserRoleResponse, RolesRemoveUserRoleData, RolesRemoveUserRoleResponse, RolesReadUserPermissionsData, RolesReadUserPermissionsResponse, RolesSetUserPermissionsEndpointData, RolesSetUserPermissionsEndpointResponse, RolesSetUserDeniedPermissionsEndpointData, RolesSetUserDeniedPermissionsEndpointResponse, RolesRemoveUserPermissionEndpointData, RolesRemoveUserPermissionEndpointResponse, SchedulesReadSchedulesData, SchedulesReadSchedulesResponse, SchedulesReadTaskOptionsResponse, SchedulesReadScheduleData, SchedulesReadScheduleResponse, SchedulesUpdateScheduleData, SchedulesUpdateScheduleResponse, SchedulesToggleScheduleData, SchedulesToggleScheduleResponse, SchedulesRunScheduleData, SchedulesRunScheduleResponse, SchedulesReadTaskStatusData, SchedulesReadTaskStatusResponse, SettingsReadSettingsResponse, SettingsUpdateSettingEndpointData, SettingsUpdateSettingEndpointResponse, SuppliersReadSuppliersData, SuppliersReadSuppliersResponse, SuppliersCreateSupplierData, SuppliersCreateSupplierResponse, SuppliersGetPlatformOptionsResponse, SuppliersReadSupplierData, SuppliersReadSupplierResponse, SuppliersUpdateSupplierData, SuppliersUpdateSupplierResponse, SuppliersDeleteSupplierData, SuppliersDeleteSupplierResponse, SuppliersReadSupplierBalanceData, SuppliersReadSupplierBalanceResponse, SuppliersReadUpstreamProductsData, SuppliersReadUpstreamProductsResponse, SuppliersReadUpstreamCategoriesData, SuppliersReadUpstreamCategoriesResponse, SuppliersCreateUpstreamProductsSyncData, SuppliersCreateUpstreamProductsSyncResponse, SuppliersReadUpstreamProductsSyncStatusData, SuppliersReadUpstreamProductsSyncStatusResponse, SystemLogsReadSystemLogsData, SystemLogsReadSystemLogsResponse, SystemLogsReadSystemLogData, SystemLogsReadSystemLogResponse, SystemLogsReadAuditLogsData, SystemLogsReadAuditLogsResponse, SystemLogsReadAuditLogData, SystemLogsReadAuditLogResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, WalletsReadWalletMeResponse, WalletsReadWalletTransactionsMeData, WalletsReadWalletTransactionsMeResponse, WalletsReadWalletByUserIdData, WalletsReadWalletByUserIdResponse, WalletsReadWalletsData, WalletsReadWalletsResponse, WalletsReadWalletByIdData, WalletsReadWalletByIdResponse, WalletsUpdateWalletStatusData, WalletsUpdateWalletStatusResponse, WalletsReadWalletTransactionsData, WalletsReadWalletTransactionsResponse, WalletsAdjustWalletBalanceData, WalletsAdjustWalletBalanceResponse } from './types.gen';
 
 export class AutomationService {
     /**
      * Read Automation Tasks
-     * 获取自动化任务列表（超管权限）
+     * 获取自动化任务列表
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -33,7 +33,7 @@ export class AutomationService {
     
     /**
      * Create Automation Task
-     * 创建自动化任务（超管权限）
+     * 创建自动化任务
      * @param data The data for the request.
      * @param data.requestBody
      * @returns AutomationTaskPublic Successful Response
@@ -53,7 +53,7 @@ export class AutomationService {
     
     /**
      * Read Executor Options
-     * 获取已注册 Executor 任务类型列表（超管权限，前端下拉使用）
+     * 获取已注册 Executor 任务类型列表（前端下拉使用）
      * @returns TaskOptionsPublic Successful Response
      * @throws ApiError
      */
@@ -66,7 +66,7 @@ export class AutomationService {
     
     /**
      * Read Automation Task Archives
-     * 获取自动化任务归档列表（超管权限）
+     * 获取自动化任务归档列表
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -91,7 +91,7 @@ export class AutomationService {
     
     /**
      * Read Automation Task
-     * 根据 ID 获取自动化任务（超管权限）
+     * 根据 ID 获取自动化任务
      * @param data The data for the request.
      * @param data.id
      * @returns AutomationTaskPublic Successful Response
@@ -112,7 +112,7 @@ export class AutomationService {
     
     /**
      * Retry Automation Task
-     * 手动重试失败任务（超管权限）
+     * 手动重试失败任务
      * @param data The data for the request.
      * @param data.id
      * @returns AutomationTaskPublic Successful Response
@@ -133,7 +133,7 @@ export class AutomationService {
     
     /**
      * Cancel Automation Task
-     * 取消待执行任务（超管权限）
+     * 取消待执行任务
      * @param data The data for the request.
      * @param data.id
      * @returns AutomationTaskPublic Successful Response
@@ -154,7 +154,7 @@ export class AutomationService {
     
     /**
      * Read Automation Events
-     * 获取自动化事件列表（超管权限）
+     * 获取自动化事件列表
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -179,7 +179,7 @@ export class AutomationService {
     
     /**
      * Publish Automation Event Route
-     * 手动发布业务事件并触发规则分发（超管权限）
+     * 手动发布业务事件并触发规则分发
      * @param data The data for the request.
      * @param data.requestBody
      * @returns AutomationEventPublic Successful Response
@@ -199,7 +199,7 @@ export class AutomationService {
     
     /**
      * Read Automation Rules
-     * 获取自动化规则列表（超管权限）
+     * 获取自动化规则列表
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -222,7 +222,7 @@ export class AutomationService {
     
     /**
      * Create Automation Rule
-     * 创建自动化规则（超管权限）
+     * 创建自动化规则
      * @param data The data for the request.
      * @param data.requestBody
      * @returns AutomationRulePublic Successful Response
@@ -242,7 +242,7 @@ export class AutomationService {
     
     /**
      * Read Automation Rule
-     * 根据 ID 获取自动化规则（超管权限）
+     * 根据 ID 获取自动化规则
      * @param data The data for the request.
      * @param data.id
      * @returns AutomationRulePublic Successful Response
@@ -263,7 +263,7 @@ export class AutomationService {
     
     /**
      * Update Automation Rule
-     * 更新自动化规则（超管权限）
+     * 更新自动化规则
      * @param data The data for the request.
      * @param data.id
      * @param data.requestBody
@@ -287,7 +287,7 @@ export class AutomationService {
     
     /**
      * Delete Automation Rule
-     * 删除自动化规则（超管权限）
+     * 删除自动化规则
      * @param data The data for the request.
      * @param data.id
      * @returns Message Successful Response
@@ -308,7 +308,7 @@ export class AutomationService {
     
     /**
      * Toggle Automation Rule
-     * 启用或停用自动化规则（超管权限）
+     * 启用或停用自动化规则
      * @param data The data for the request.
      * @param data.id
      * @returns AutomationRulePublic Successful Response
@@ -331,7 +331,7 @@ export class AutomationService {
 export class BackupsService {
     /**
      * Read Backups
-     * 获取备份列表（仅超级管理员可用）
+     * 获取备份列表
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -354,7 +354,7 @@ export class BackupsService {
     
     /**
      * Create Backup
-     * 手动创建数据备份（仅超级管理员可用）
+     * 手动创建数据备份
      * @returns BackupPublic Successful Response
      * @throws ApiError
      */
@@ -367,7 +367,7 @@ export class BackupsService {
     
     /**
      * Download Backup
-     * 下载备份文件（仅超级管理员可用）
+     * 下载备份文件
      * @param data The data for the request.
      * @param data.filename
      * @returns unknown Successful Response
@@ -388,7 +388,7 @@ export class BackupsService {
     
     /**
      * Restore Backup
-     * 从指定备份执行合并恢复（仅超级管理员可用）
+     * 从指定备份执行合并恢复
      * @param data The data for the request.
      * @param data.filename
      * @returns RestoreResultPublic Successful Response
@@ -409,7 +409,7 @@ export class BackupsService {
     
     /**
      * Delete Backup
-     * 删除备份文件（仅超级管理员可用）
+     * 删除备份文件
      * @param data The data for the request.
      * @param data.filename
      * @returns Message Successful Response
@@ -547,7 +547,7 @@ export class CustomerServiceService {
     
     /**
      * Update Status Endpoint
-     * 管理端开关会话（open / closed）
+     * 管理端开关会话（open / closed），需 `customer_service:update`
      * @param data The data for the request.
      * @param data.conversationId
      * @param data.requestBody
@@ -571,7 +571,7 @@ export class CustomerServiceService {
     
     /**
      * Delete Conversation Endpoint
-     * 删除会话及其全部消息（仅管理端可删除）
+     * 删除会话及其全部消息，需 `customer_service:delete`
      * @param data The data for the request.
      * @param data.conversationId
      * @returns Message Successful Response
@@ -592,7 +592,7 @@ export class CustomerServiceService {
     
     /**
      * Read Online Status
-     * 管理端批量查询用户在线状态
+     * 管理端批量查询用户在线状态，需 `customer_service:view`
      * @param data The data for the request.
      * @param data.userIds
      * @returns OnlineStatusPublic Successful Response
@@ -682,7 +682,7 @@ export class ImageCategoriesService {
     
     /**
      * Update Existing Category
-     * 更新图片分类（管理员）
+     * 更新图片分类
      * @param data The data for the request.
      * @param data.id
      * @param data.requestBody
@@ -706,7 +706,7 @@ export class ImageCategoriesService {
     
     /**
      * Delete Existing Category
-     * 删除图片分类（管理员），有图片引用时拒绝删除
+     * 删除图片分类，有图片引用时拒绝删除
      * @param data The data for the request.
      * @param data.id
      * @returns Message Successful Response
@@ -731,8 +731,8 @@ export class ImagesService {
      * Read Images
      * 获取图片列表
      *
-     * 超管可查看全部图片；普通用户可查看自己上传的图片与系统默认图片
-     * （即超管上传的图片）。
+     * 持有 `image:view` 可查看全部图片；否则仅可查看自己上传的图片与
+     * 系统默认图片（即超管上传的图片）。
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -757,7 +757,7 @@ export class ImagesService {
     
     /**
      * Read Image
-     * 根据 ID 获取图片元数据（普通用户可查看自己上传的或系统默认图片）
+     * 根据 ID 获取图片元数据（持有 `image:view` 可查看全部，否则仅本人与系统默认图片）
      * @param data The data for the request.
      * @param data.id
      * @returns ImagePublic Successful Response
@@ -778,7 +778,7 @@ export class ImagesService {
     
     /**
      * Delete Image
-     * 删除图片（同时删除磁盘文件）
+     * 删除图片（同时删除磁盘文件；需本人上传或持有 `image:delete`）
      * @param data The data for the request.
      * @param data.id
      * @returns Message Successful Response
@@ -799,7 +799,7 @@ export class ImagesService {
     
     /**
      * Update Image
-     * 更新图片分类
+     * 更新图片分类（需本人上传或持有 `image:update`）
      * @param data The data for the request.
      * @param data.id
      * @param data.requestBody
@@ -823,7 +823,7 @@ export class ImagesService {
     
     /**
      * Upload Image
-     * 上传图片，支持 JPEG/PNG/WebP，自动压缩（仅超级管理员）
+     * 上传图片，支持 JPEG/PNG/WebP，自动压缩（需 `image:upload`）
      * @param data The data for the request.
      * @param data.formData
      * @param data.category 图片分类：avatar, product, product_detail
@@ -849,7 +849,7 @@ export class ImagesService {
 export class LevelsService {
     /**
      * Read Levels
-     * 获取全部等级列表（仅超级管理员）
+     * 获取全部等级列表
      * @returns LevelsPublic Successful Response
      * @throws ApiError
      */
@@ -862,7 +862,7 @@ export class LevelsService {
     
     /**
      * Read Level
-     * 按等级编号获取等级详情（仅超级管理员）
+     * 按等级编号获取等级详情
      * @param data The data for the request.
      * @param data.level
      * @returns LevelPublic Successful Response
@@ -883,7 +883,7 @@ export class LevelsService {
     
     /**
      * Update Level Endpoint
-     * 更新等级信息（仅超级管理员）
+     * 更新等级信息
      * @param data The data for the request.
      * @param data.level
      * @param data.requestBody
@@ -1010,7 +1010,7 @@ export class LoginService {
     
     /**
      * Recover Password Html Content
-     * 获取密码找回邮件的 HTML 内容（仅超级管理员可用）
+     * 获取密码找回邮件的 HTML 内容（需 `user:view`）
      * @param data The data for the request.
      * @param data.email
      * @returns string Successful Response
@@ -1269,7 +1269,7 @@ export class OrdersService {
     
     /**
      * Read Orders
-     * 查看全部订单，可按用户、状态与关键字过滤（仅超级管理员可用）
+     * 查看全部订单，可按用户、状态与关键字过滤
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -1321,7 +1321,7 @@ export class OrdersService {
     
     /**
      * Create Admin Orders Api
-     * 管理员批量下单（仅超管），跳过钱包与余额校验
+     * 管理员批量下单，跳过钱包与余额校验
      * @param data The data for the request.
      * @param data.requestBody
      * @returns AdminOrdersPublic Successful Response
@@ -1341,7 +1341,7 @@ export class OrdersService {
     
     /**
      * Preview Admin Orders Api
-     * 管理员批量下单结算预览（仅超管），不扣库存不落库
+     * 管理员批量下单结算预览，不扣库存不落库
      * @param data The data for the request.
      * @param data.requestBody
      * @returns AdminOrdersPreviewPublic Successful Response
@@ -1403,7 +1403,7 @@ export class OrdersService {
     
     /**
      * Read Order
-     * 查看单个订单（仅超级管理员可用）
+     * 查看单个订单
      * @param data The data for the request.
      * @param data.orderId
      * @returns OrderPublic Successful Response
@@ -1424,7 +1424,7 @@ export class OrdersService {
     
     /**
      * Fulfill Order Api
-     * 履约订单（仅超级管理员可用）
+     * 履约订单
      * @param data The data for the request.
      * @param data.orderId
      * @param data.requestBody
@@ -1472,7 +1472,7 @@ export class OrdersService {
     
     /**
      * Refund Order Api
-     * 管理员手动退款，按指定金额入账（仅超级管理员可用）
+     * 管理员手动退款，按指定金额入账
      * @param data The data for the request.
      * @param data.orderId
      * @param data.requestBody
@@ -1496,7 +1496,7 @@ export class OrdersService {
     
     /**
      * Update Order Status Api
-     * 管理员手动设置订单状态（仅超级管理员可用）
+     * 管理员手动设置订单状态
      * @param data The data for the request.
      * @param data.orderId
      * @param data.requestBody
@@ -1520,7 +1520,7 @@ export class OrdersService {
     
     /**
      * Sync Order Status Api
-     * 同步上游订单状态（仅超级管理员可用）
+     * 同步上游订单状态
      * @param data The data for the request.
      * @param data.orderId
      * @returns OrderPublic Successful Response
@@ -1541,7 +1541,7 @@ export class OrdersService {
     
     /**
      * Record Supplier Order Id Api
-     * 人工确认上游已下单后补录供应商订单号（仅超级管理员）
+     * 人工确认上游已下单后补录供应商订单号
      * @param data The data for the request.
      * @param data.orderId
      * @param data.requestBody
@@ -1616,7 +1616,7 @@ export class PermissionsService {
 export class PriceTemplatesService {
     /**
      * Read Price Templates
-     * 获取价格模板列表（仅超管）
+     * 获取价格模板列表
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -1639,7 +1639,7 @@ export class PriceTemplatesService {
     
     /**
      * Create Price Template
-     * 创建价格模板（仅超管，缺失等级自动补 15 折）
+     * 创建价格模板（缺失等级自动补 15 折）
      * @param data The data for the request.
      * @param data.requestBody
      * @returns PriceTemplatePublic Successful Response
@@ -1659,7 +1659,7 @@ export class PriceTemplatesService {
     
     /**
      * Read Price Template
-     * 获取价格模板详情（仅超管）
+     * 获取价格模板详情
      * @param data The data for the request.
      * @param data.templateId
      * @returns PriceTemplatePublic Successful Response
@@ -1680,7 +1680,7 @@ export class PriceTemplatesService {
     
     /**
      * Update Price Template
-     * 更新价格模板（仅超管，传入的等级折扣将覆盖，未传等级保留）
+     * 更新价格模板（传入的等级折扣将覆盖，未传等级保留）
      * @param data The data for the request.
      * @param data.templateId
      * @param data.requestBody
@@ -1704,7 +1704,7 @@ export class PriceTemplatesService {
     
     /**
      * Delete Price Template
-     * 删除价格模板（仅超管，规则级联删除）
+     * 删除价格模板（规则级联删除）
      * @param data The data for the request.
      * @param data.templateId
      * @returns Message Successful Response
@@ -1749,7 +1749,7 @@ export class PrivateService {
 export class ProductCategoriesService {
     /**
      * Read Product Categories
-     * 获取商品分类列表（仅超管）
+     * 获取商品分类列表
      * @returns ProductCategoriesPublic Successful Response
      * @throws ApiError
      */
@@ -1762,7 +1762,7 @@ export class ProductCategoriesService {
     
     /**
      * Create Product Category
-     * 创建商品分类（仅超管）
+     * 创建商品分类
      * @param data The data for the request.
      * @param data.requestBody
      * @returns ProductCategoryPublic Successful Response
@@ -1782,7 +1782,7 @@ export class ProductCategoriesService {
     
     /**
      * Read Product Category
-     * 根据 ID 获取商品分类（仅超管）
+     * 根据 ID 获取商品分类
      * @param data The data for the request.
      * @param data.categoryId
      * @returns ProductCategoryPublic Successful Response
@@ -1803,7 +1803,7 @@ export class ProductCategoriesService {
     
     /**
      * Update Product Category
-     * 更新商品分类（仅超管）
+     * 更新商品分类
      * @param data The data for the request.
      * @param data.categoryId
      * @param data.requestBody
@@ -1827,7 +1827,7 @@ export class ProductCategoriesService {
     
     /**
      * Delete Product Category
-     * 删除商品分类（仅超管，有子分类或商品时拒绝）
+     * 删除商品分类（有子分类或商品时拒绝）
      * @param data The data for the request.
      * @param data.categoryId
      * @returns Message Successful Response
@@ -1850,7 +1850,7 @@ export class ProductCategoriesService {
 export class ProductsService {
     /**
      * Read Products
-     * 分页查询商品（仅超管）
+     * 分页查询商品
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -1885,7 +1885,7 @@ export class ProductsService {
     
     /**
      * Create Product
-     * 创建商品及其关联配置（仅超管）
+     * 创建商品及其关联配置
      * @param data The data for the request.
      * @param data.requestBody
      * @returns ProductPublic Successful Response
@@ -1905,7 +1905,7 @@ export class ProductsService {
     
     /**
      * Read Product
-     * 根据 ID 获取商品（仅超管）
+     * 根据 ID 获取商品
      * @param data The data for the request.
      * @param data.productId
      * @returns ProductPublic Successful Response
@@ -1926,7 +1926,7 @@ export class ProductsService {
     
     /**
      * Update Product
-     * 更新商品及其关联配置（仅超管）
+     * 更新商品及其关联配置
      * @param data The data for the request.
      * @param data.productId
      * @param data.requestBody
@@ -1950,7 +1950,7 @@ export class ProductsService {
     
     /**
      * Delete Product
-     * 删除商品及其关联配置（仅超管）
+     * 删除商品及其关联配置
      * @param data The data for the request.
      * @param data.productId
      * @returns Message Successful Response
@@ -2207,12 +2207,104 @@ export class RolesService {
             }
         });
     }
+    
+    /**
+     * Read User Permissions
+     * 用户直授权限：直接授予（allow）与显式拒绝（deny）
+     * @param data The data for the request.
+     * @param data.userId
+     * @returns UserPermissionsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readUserPermissions(data: RolesReadUserPermissionsData): CancelablePromise<RolesReadUserPermissionsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/users/{user_id}/permissions',
+            path: {
+                user_id: data.userId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Set User Permissions Endpoint
+     * 全量设置用户直授权限
+     * @param data The data for the request.
+     * @param data.userId
+     * @param data.requestBody
+     * @returns UserPermissionsPublic Successful Response
+     * @throws ApiError
+     */
+    public static setUserPermissionsEndpoint(data: RolesSetUserPermissionsEndpointData): CancelablePromise<RolesSetUserPermissionsEndpointResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/users/{user_id}/permissions',
+            path: {
+                user_id: data.userId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Set User Denied Permissions Endpoint
+     * 全量设置用户直授拒绝权限（deny 优先于角色授予与直授允许）
+     * @param data The data for the request.
+     * @param data.userId
+     * @param data.requestBody
+     * @returns UserPermissionsPublic Successful Response
+     * @throws ApiError
+     */
+    public static setUserDeniedPermissionsEndpoint(data: RolesSetUserDeniedPermissionsEndpointData): CancelablePromise<RolesSetUserDeniedPermissionsEndpointResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/users/{user_id}/permissions/deny',
+            path: {
+                user_id: data.userId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Remove User Permission Endpoint
+     * 撤销某权限上的用户直授记录（允许与拒绝一并清除）
+     * @param data The data for the request.
+     * @param data.userId
+     * @param data.permissionId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static removeUserPermissionEndpoint(data: RolesRemoveUserPermissionEndpointData): CancelablePromise<RolesRemoveUserPermissionEndpointResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/users/{user_id}/permissions/{permission_id}',
+            path: {
+                user_id: data.userId,
+                permission_id: data.permissionId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
 }
 
 export class SchedulesService {
     /**
      * Read Schedules
-     * 获取计划任务列表（超管权限）
+     * 获取计划任务列表
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -2235,7 +2327,7 @@ export class SchedulesService {
     
     /**
      * Read Task Options
-     * 获取可配置的 Celery 任务列表（超管权限，前端下拉使用）
+     * 获取可配置的 Celery 任务列表（前端下拉使用）
      * @returns TaskOptionsPublic Successful Response
      * @throws ApiError
      */
@@ -2248,7 +2340,7 @@ export class SchedulesService {
     
     /**
      * Read Schedule
-     * 根据 ID 获取计划任务（超管权限）
+     * 根据 ID 获取计划任务
      * @param data The data for the request.
      * @param data.id
      * @returns SchedulePublic Successful Response
@@ -2269,7 +2361,7 @@ export class SchedulesService {
     
     /**
      * Update Schedule
-     * 更新计划任务（超管权限）
+     * 更新计划任务
      * @param data The data for the request.
      * @param data.id
      * @param data.requestBody
@@ -2293,7 +2385,7 @@ export class SchedulesService {
     
     /**
      * Toggle Schedule
-     * 启用或停用计划任务（超管权限）
+     * 启用或停用计划任务
      * @param data The data for the request.
      * @param data.id
      * @returns SchedulePublic Successful Response
@@ -2314,7 +2406,7 @@ export class SchedulesService {
     
     /**
      * Run Schedule
-     * 立即执行一次计划任务（超管权限，不影响原计划）
+     * 立即执行一次计划任务（不影响原计划）
      * @param data The data for the request.
      * @param data.id
      * @returns RunTaskPublic Successful Response
@@ -2335,7 +2427,7 @@ export class SchedulesService {
     
     /**
      * Read Task Status
-     * 查询 Celery 任务执行状态（超管权限）
+     * 查询 Celery 任务执行状态
      * @param data The data for the request.
      * @param data.taskId
      * @returns TaskStatusPublic Successful Response
@@ -2371,7 +2463,7 @@ export class SettingsService {
     
     /**
      * Update Setting Endpoint
-     * 新增或更新全局开关（仅超级管理员）
+     * 新增或更新全局开关
      * @param data The data for the request.
      * @param data.key
      * @param data.requestBody
@@ -2397,7 +2489,7 @@ export class SettingsService {
 export class SuppliersService {
     /**
      * Read Suppliers
-     * 获取供应商列表（超管权限）
+     * 获取供应商列表
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -2420,7 +2512,7 @@ export class SuppliersService {
     
     /**
      * Create Supplier
-     * 创建供应商（超管权限）
+     * 创建供应商
      * @param data The data for the request.
      * @param data.requestBody
      * @returns SupplierPublic Successful Response
@@ -2440,7 +2532,7 @@ export class SuppliersService {
     
     /**
      * Get Platform Options
-     * 获取平台枚举选项列表（超管权限，前端下拉菜单使用）
+     * 获取平台枚举选项列表（前端下拉菜单使用）
      * @returns PlatformOptionsPublic Successful Response
      * @throws ApiError
      */
@@ -2453,7 +2545,7 @@ export class SuppliersService {
     
     /**
      * Read Supplier
-     * 根据 ID 获取供应商详情（超管权限）
+     * 根据 ID 获取供应商详情
      * @param data The data for the request.
      * @param data.id
      * @returns SupplierPublic Successful Response
@@ -2474,7 +2566,7 @@ export class SuppliersService {
     
     /**
      * Update Supplier
-     * 更新供应商信息（超管权限，不含余额）
+     * 更新供应商信息（不含余额）
      * @param data The data for the request.
      * @param data.id
      * @param data.requestBody
@@ -2498,7 +2590,7 @@ export class SuppliersService {
     
     /**
      * Delete Supplier
-     * 删除供应商（超管权限）
+     * 删除供应商
      * @param data The data for the request.
      * @param data.id
      * @returns Message Successful Response
@@ -2519,7 +2611,7 @@ export class SuppliersService {
     
     /**
      * Read Supplier Balance
-     * 获取供应商上游实时余额（超管权限）
+     * 获取供应商上游实时余额
      * @param data The data for the request.
      * @param data.id
      * @returns BalancePublic Successful Response
@@ -2540,7 +2632,7 @@ export class SuppliersService {
     
     /**
      * Read Upstream Products
-     * 获取上游商品列表并标记本地同步状态（超管权限）
+     * 获取上游商品列表并标记本地同步状态
      * @param data The data for the request.
      * @param data.id
      * @param data.categoryId
@@ -2565,7 +2657,7 @@ export class SuppliersService {
     
     /**
      * Read Upstream Categories
-     * 获取上游商品分类列表（超管权限）
+     * 获取上游商品分类列表
      * @param data The data for the request.
      * @param data.id
      * @returns UpstreamCategoriesPublic Successful Response
@@ -2586,7 +2678,7 @@ export class SuppliersService {
     
     /**
      * Create Upstream Products Sync
-     * 按勾选的上游商品 ID 创建异步同步任务（超管权限）
+     * 按勾选的上游商品 ID 创建异步同步任务
      * @param data The data for the request.
      * @param data.id
      * @param data.requestBody
@@ -2610,7 +2702,7 @@ export class SuppliersService {
     
     /**
      * Read Upstream Products Sync Status
-     * 查询上游商品同步任务状态（超管权限）
+     * 查询上游商品同步任务状态
      * @param data The data for the request.
      * @param data.id
      * @param data.taskId
@@ -2635,7 +2727,7 @@ export class SuppliersService {
 export class SystemLogsService {
     /**
      * Read System Logs
-     * 分页查询系统日志（超管权限）
+     * 分页查询系统日志
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -2676,7 +2768,7 @@ export class SystemLogsService {
     
     /**
      * Read System Log
-     * 查询单条系统日志详情（超管权限）
+     * 查询单条系统日志详情
      * @param data The data for the request.
      * @param data.logId
      * @returns SystemLogPublic Successful Response
@@ -2697,7 +2789,7 @@ export class SystemLogsService {
     
     /**
      * Read Audit Logs
-     * 分页查询操作审计（超管权限）
+     * 分页查询操作审计
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -2734,7 +2826,7 @@ export class SystemLogsService {
     
     /**
      * Read Audit Log
-     * 查询单条操作审计详情（超管权限）
+     * 查询单条操作审计详情
      * @param data The data for the request.
      * @param data.auditLogId
      * @returns AuditLogPublic Successful Response
@@ -2757,7 +2849,7 @@ export class SystemLogsService {
 export class UsersService {
     /**
      * Read Users
-     * 获取用户列表（仅超级管理员可用）
+     * 获取用户列表
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -2782,7 +2874,7 @@ export class UsersService {
     
     /**
      * Create User
-     * 创建新用户（仅超级管理员可用）
+     * 创建新用户
      * @param data The data for the request.
      * @param data.requestBody
      * @returns UserPublic Successful Response
@@ -2888,7 +2980,7 @@ export class UsersService {
     
     /**
      * Read User By Id
-     * 根据 ID 获取用户详情（仅超级管理员可用）
+     * 根据 ID 获取用户详情
      * @param data The data for the request.
      * @param data.userId
      * @returns UserDetailPublic Successful Response
@@ -2909,7 +3001,7 @@ export class UsersService {
     
     /**
      * Update User
-     * 更新用户信息（仅超级管理员可用）
+     * 更新用户信息
      * @param data The data for the request.
      * @param data.userId
      * @param data.requestBody
@@ -2933,7 +3025,7 @@ export class UsersService {
     
     /**
      * Delete User
-     * 删除用户（仅超级管理员可用，不允许删除自己）
+     * 删除用户（不允许删除自己）
      * @param data The data for the request.
      * @param data.userId
      * @returns Message Successful Response
@@ -2956,7 +3048,7 @@ export class UsersService {
 export class UtilsService {
     /**
      * Test Email
-     * 发送测试邮件（仅超级管理员可用）
+     * 发送测试邮件
      * @param data The data for the request.
      * @param data.emailTo
      * @returns Message Successful Response
@@ -3030,7 +3122,7 @@ export class WalletsService {
     
     /**
      * Read Wallet By User Id
-     * 获取指定用户钱包（仅超级管理员可用），不存在时自动创建
+     * 获取指定用户钱包，不存在时自动创建
      * @param data The data for the request.
      * @param data.userId
      * @returns WalletPublic Successful Response
@@ -3051,7 +3143,7 @@ export class WalletsService {
     
     /**
      * Read Wallets
-     * 获取全部钱包列表（仅超级管理员可用）
+     * 获取全部钱包列表
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -3074,7 +3166,7 @@ export class WalletsService {
     
     /**
      * Read Wallet By Id
-     * 按 ID 获取钱包（仅超级管理员可用）
+     * 按 ID 获取钱包
      * @param data The data for the request.
      * @param data.walletId
      * @returns WalletPublic Successful Response
@@ -3095,7 +3187,7 @@ export class WalletsService {
     
     /**
      * Update Wallet Status
-     * 更新钱包启用状态（仅超级管理员可用）
+     * 更新钱包启用状态
      * @param data The data for the request.
      * @param data.walletId
      * @param data.requestBody
@@ -3119,7 +3211,7 @@ export class WalletsService {
     
     /**
      * Read Wallet Transactions
-     * 获取指定钱包流水（仅超级管理员可用）
+     * 获取指定钱包流水
      * @param data The data for the request.
      * @param data.walletId
      * @param data.skip
@@ -3148,7 +3240,7 @@ export class WalletsService {
     
     /**
      * Adjust Wallet Balance
-     * 管理员调账：正数入账，负数扣款（仅超级管理员可用）
+     * 管理员调账：正数入账，负数扣款
      * @param data The data for the request.
      * @param data.walletId
      * @param data.requestBody

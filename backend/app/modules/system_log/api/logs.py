@@ -6,7 +6,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
-from app.api.deps import SessionDep, get_current_active_superuser
+from app.api.deps import SessionDep, require_permission
 from app.modules.system_log.application.audit_log_query import (
     get_audit_log,
     list_audit_logs_page,
@@ -22,13 +22,14 @@ from app.modules.system_log.schemas.log import (
     SystemLogsPublic,
 )
 
-router = APIRouter(
-    tags=["system_logs"],
-    dependencies=[Depends(get_current_active_superuser)],
+router = APIRouter(tags=["system_logs"])
+
+
+@router.get(
+    "/system-logs/",
+    dependencies=[Depends(require_permission("system_log:view"))],
+    response_model=SystemLogsPublic,
 )
-
-
-@router.get("/system-logs/", response_model=SystemLogsPublic)
 def read_system_logs(
     session: SessionDep,
     skip: Annotated[int, Query(ge=0)] = 0,
@@ -43,7 +44,7 @@ def read_system_logs(
     start_at: Annotated[datetime | None, Query()] = None,
     end_at: Annotated[datetime | None, Query()] = None,
 ) -> SystemLogsPublic:
-    """分页查询系统日志（超管权限）"""
+    """分页查询系统日志"""
     return list_system_logs_page(
         session=session,
         skip=skip,
@@ -60,13 +61,21 @@ def read_system_logs(
     )
 
 
-@router.get("/system-logs/{log_id}", response_model=SystemLogPublic)
+@router.get(
+    "/system-logs/{log_id}",
+    dependencies=[Depends(require_permission("system_log:view"))],
+    response_model=SystemLogPublic,
+)
 def read_system_log(*, session: SessionDep, log_id: uuid.UUID) -> SystemLogPublic:
-    """查询单条系统日志详情（超管权限）"""
+    """查询单条系统日志详情"""
     return get_system_log(session=session, log_id=log_id)
 
 
-@router.get("/audit-logs/", response_model=AuditLogsPublic)
+@router.get(
+    "/audit-logs/",
+    dependencies=[Depends(require_permission("audit_log:view"))],
+    response_model=AuditLogsPublic,
+)
 def read_audit_logs(
     session: SessionDep,
     skip: Annotated[int, Query(ge=0)] = 0,
@@ -79,7 +88,7 @@ def read_audit_logs(
     start_at: Annotated[datetime | None, Query()] = None,
     end_at: Annotated[datetime | None, Query()] = None,
 ) -> AuditLogsPublic:
-    """分页查询操作审计（超管权限）"""
+    """分页查询操作审计"""
     return list_audit_logs_page(
         session=session,
         skip=skip,
@@ -94,9 +103,13 @@ def read_audit_logs(
     )
 
 
-@router.get("/audit-logs/{audit_log_id}", response_model=AuditLogPublic)
+@router.get(
+    "/audit-logs/{audit_log_id}",
+    dependencies=[Depends(require_permission("audit_log:view"))],
+    response_model=AuditLogPublic,
+)
 def read_audit_log(
     *, session: SessionDep, audit_log_id: uuid.UUID
 ) -> AuditLogPublic:
-    """查询单条操作审计详情（超管权限）"""
+    """查询单条操作审计详情"""
     return get_audit_log(session=session, audit_log_id=audit_log_id)

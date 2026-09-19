@@ -98,7 +98,11 @@ class DingTalkChannel(BaseChannel):
 ## 四、API 介绍
 
 所有接口均需登录访问（`CurrentUser`），路由前缀 `/notifications`，由 `api/notifications.py` 提供；
-标有**管理端**的接口额外要求超管权限（`get_current_active_superuser`）。
+标有**管理端**的接口额外要求权限码（`app/api/deps.py` 的 `require_permission`，清单见
+`app/init_models_data/permissions.py` 的「通知管理」分类）：
+`GET /notifications/admin` → `notification:view`，`POST /notifications/admin` → `notification:create`，
+`POST /notifications/admin/deliveries/{delivery_id}/retry` → `notification:retry`，
+`DELETE /notifications/admin/{notification_id}` → `notification:delete`。
 
 ### 1. 查询我的通知
 
@@ -134,7 +138,7 @@ class DingTalkChannel(BaseChannel):
 | `conversation_unread_count` | int | 客服会话未读（管理端统计全部会话，普通用户统计自己的会话） |
 | `total_unread` | int | 两者之和 |
 
-主页面侧边栏「客服」角标使用该接口；通知与客服消息的实时事件（`notification.created` / `customer_service.message.created`）都会触发其刷新，本地已读 / 删除操作也会同步失效缓存。
+主页面侧边栏「通知」「会话」角标分别使用该接口的 `notification_unread_count` / `conversation_unread_count`；通知与客服消息的实时事件（`notification.created` / `customer_service.message.created`）都会触发其刷新，本地已读 / 删除操作也会同步失效缓存。
 
 ### 3. 标记单条已读
 
@@ -158,7 +162,7 @@ class DingTalkChannel(BaseChannel):
 
 ### 6. 管理端：查询通知记录
 
-`GET /notifications/admin`（超管）
+`GET /notifications/admin`（`notification:view`）
 
 | 参数 | 类型 | 默认 | 说明 |
 |---|---|---|---|
@@ -174,7 +178,7 @@ class DingTalkChannel(BaseChannel):
 
 ### 7. 管理端：手动发送通知
 
-`POST /notifications/admin`（超管）
+`POST /notifications/admin`（`notification:create`）
 
 请求体 `NotificationSendRequest`：
 
@@ -193,13 +197,13 @@ class DingTalkChannel(BaseChannel):
 
 ### 8. 管理端：重试失败投递
 
-`POST /notifications/admin/deliveries/{delivery_id}/retry`（超管）
+`POST /notifications/admin/deliveries/{delivery_id}/retry`（`notification:retry`）
 
 仅 `failed` 状态的投递可重试：重置为 `pending`、清空错误信息并重新入队。响应 `DeliveryPublic`。
 
 ### 9. 管理端：删除通知记录
 
-`DELETE /notifications/admin/{notification_id}`（超管）
+`DELETE /notifications/admin/{notification_id}`（`notification:delete`）
 
 删除通知实例及其全部投递记录（显式删除，不依赖数据库级联配置）。响应 `Message`。
 
@@ -231,11 +235,11 @@ class DingTalkChannel(BaseChannel):
 
 ## 七、前端入口
 
-- **用户侧通知弹窗**：`frontend/src/components/Notifications/NotificationCenterDialog.tsx`
-  - 布局：顶部标题行（通知 + 全部/未读 计数标签 + 全部已读）+ 左右分栏（左：通知列表，右：通知信息详情），整体为 Dialog 弹窗；
-  - 入口位于侧边栏「项目 → 通知」（`AppSidebar.tsx` 挂载），点击打开弹窗；
-  - 左侧列表**懒加载**：每页 20 条（`skip`/`limit` 分页），滚动到底部自动加载下一页；顶部计数用轻量请求（`limit=1`）获取，未读视图带 `unread_only=true`；点击单条自动标记已读并查看详情，支持「全部已读」；
-  - 「通知信息」面板提供**删除**按钮（`DELETE /notifications/{id}`，AlertDialog 二次确认），删除后同步更新列表与计数缓存；
-  - 侧边栏「通知」项显示未读数角标（`GET /notifications/unread-count`，仅在弹窗关闭时刷新，避免频繁请求）。
-- **管理端通知记录**：`frontend/src/components/Admin/Notifications/`，路由 `/notifications`（仅超管，含群发通知、失败重试、投递详情）；
+- **用户侧通知弹窗**：`frontend/src/components/Notifications/NotificationsDialog.tsx`（列表面板 `NotificationPanel.tsx`，弹窗开关由 `NotificationsProvider.tsx` 管理）
+  - 布局：顶部标题行（系统通知 + 全部/未读 计数标签 + 全部已读）+ 通知卡片列表（标题 / 内容 / 类型 / 创建时间 / 删除），整体为 Dialog 弹窗；
+  - 入口位于侧边栏「项目 → 通知」（`AppSidebar.tsx` 挂载），与「项目 → 会话」（客服工作台）相互独立，点击打开弹窗；
+  - 列表**懒加载**：每页 20 条（`skip`/`limit` 分页），滚动到底部自动加载下一页；顶部计数用轻量请求（`limit=1`）获取，未读视图带 `unread_only=true`；点击单条自动标记已读，支持「全部已读」；
+  - 单条支持**删除**（`DELETE /notifications/{id}`，AlertDialog 二次确认），删除后同步更新列表与计数缓存；
+  - 侧边栏「通知」项显示未读数角标（取自 `GET /notifications/unread-summary` 的 `notification_unread_count`，弹窗关闭时失效缓存，避免频繁请求）。
+- **管理端通知记录**：`frontend/src/components/Admin/Notifications/`，路由 `/notifications`（管理端页面，需 `notification:view` 等权限码，含群发通知、失败重试、投递详情）；
 - **用户表发送通知**：`frontend/src/components/Admin/Users/` 用户行内操作菜单「发送通知」，向指定单个用户发送（事件类型下拉不含群发）。

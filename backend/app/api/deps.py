@@ -13,7 +13,7 @@ from app.core.config import settings
 from app.core.db import engine
 from app.init_models_data.permissions import is_registered_permission
 from app.modules.auth.schemas import TokenPayload
-from app.modules.role.application.permission_check import has_permission
+from app.modules.authorization.application.permission_check import has_permission
 from app.modules.user.models import User
 
 reusable_oauth2 = OAuth2PasswordBearer(
@@ -66,6 +66,14 @@ class PermissionChecker:
     def __init__(self, code: str) -> None:
         self.code = code
 
+    def check(self, *, session: SessionDep, current_user: CurrentUser) -> bool:
+        """非抛出式判定，供「持有权限或资源归属本人」的接口使用"""
+        return has_permission(
+            session=session,
+            user=current_user,
+            code=self.code,
+        )
+
     def __call__(
         self,
         session: SessionDep,
@@ -83,5 +91,10 @@ class PermissionChecker:
 
 
 def require_permission(code: str) -> PermissionChecker:
-    """声明接口所需权限码。"""
+    """声明接口所需权限码
+
+    装饰器在模块导入期求值，因此未登记在权限清单里的权限码会直接导致启动失败。
+    """
+    if not is_registered_permission(code):
+        raise RuntimeError(f"未登记的权限码：{code}")
     return PermissionChecker(code)

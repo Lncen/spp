@@ -64,7 +64,7 @@ backend/app/modules/setting/
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | GET | /settings/ | 获取全部设置（需登录） |
-| PUT | /settings/{key} | 新增或更新设置项（仅超管） |
+| PUT | /settings/{key} | 新增或更新设置项（`setting:update`） |
 
 ## 五、关键设计
 
@@ -73,6 +73,8 @@ backend/app/modules/setting/
 3. **默认值兜底**：未落库的内置设置（如 `order_enabled`）按 `DEFAULT_SETTINGS` 返回，保证新增设置无需迁移即可生效。
 4. **对外接口不变**：`app.modules.setting.models` / `app.modules.setting.schemas` / `app.modules.setting.api` 的 import 路径通过包 `__init__` 保持兼容；`get_setting` 迁移至 `application/setting_query.py`，外部引用已同步更新。
 5. **设置类型**：`type` 字段用 `SettingType` 枚举按模块名标识设置归属（如 `system`、`order`）；已存在的 `app_setting` 表新增该列需生成迁移并回填存量行为 `system`。
+6. **权限声明**：写接口使用 `app/api/deps.py` 的 `require_permission("setting:update")` 声明权限码。
+7. **已存在的安全风险**：`GET /settings/` 目前只要求登录，返回**全部**设置项（含业务开关等敏感值）。前端「消息提示音」依赖该接口读取 `message_cue_volume`，因此本次未收紧。建议后续把敏感设置项与前端可读设置项拆分为不同接口或字段，再补 `setting:view` 权限码。
 
 ## 六、重构记录
 

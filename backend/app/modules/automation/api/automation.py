@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.api.deps import SessionDep, get_current_active_superuser
+from app.api.deps import SessionDep, require_permission
 from app.modules.automation.application.task import (
     cancel_automation_task as cancel_automation_task_service,
 )
@@ -36,7 +36,7 @@ router = APIRouter(prefix="/automation/tasks", tags=["automation"])
 
 @router.get(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("automation_task:view"))],
     response_model=AutomationTasksPublic,
 )
 def read_automation_tasks(
@@ -48,7 +48,7 @@ def read_automation_tasks(
         title="任务状态过滤",
     ),
 ) -> Any:
-    """获取自动化任务列表（超管权限）"""
+    """获取自动化任务列表"""
     return list_automation_tasks(
         session=session,
         skip=skip,
@@ -59,17 +59,17 @@ def read_automation_tasks(
 
 @router.get(
     "/task-options",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("automation_task:view"))],
     response_model=TaskOptionsPublic,
 )
 def read_executor_options() -> Any:
-    """获取已注册 Executor 任务类型列表（超管权限，前端下拉使用）"""
+    """获取已注册 Executor 任务类型列表（前端下拉使用）"""
     return TaskOptionsPublic(data=list_executor_options())
 
 
 @router.get(
     "/archive",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("automation_task:view"))],
     response_model=AutomationTaskArchivesPublic,
 )
 def read_automation_task_archives(
@@ -81,7 +81,7 @@ def read_automation_task_archives(
         title="任务状态过滤",
     ),
 ) -> Any:
-    """获取自动化任务归档列表（超管权限）"""
+    """获取自动化任务归档列表"""
     return list_automation_task_archives(
         session=session,
         skip=skip,
@@ -92,7 +92,7 @@ def read_automation_task_archives(
 
 @router.post(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("automation_task:create"))],
     response_model=AutomationTaskPublic,
 )
 def create_automation_task(
@@ -100,7 +100,7 @@ def create_automation_task(
     session: SessionDep,
     task_in: AutomationTaskCreate,
 ) -> Any:
-    """创建自动化任务（超管权限）"""
+    """创建自动化任务"""
     try:
         task = create_automation_task_service(session=session, task_in=task_in)
     except ValueError as e:
@@ -110,27 +110,27 @@ def create_automation_task(
 
 @router.get(
     "/{id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("automation_task:view"))],
     response_model=AutomationTaskPublic,
 )
 def read_automation_task(
     session: SessionDep,
     id: uuid.UUID,
 ) -> Any:
-    """根据 ID 获取自动化任务（超管权限）"""
+    """根据 ID 获取自动化任务"""
     return get_automation_task_public(session=session, task_id=id)
 
 
 @router.post(
     "/{id}/retry",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("automation_task:manage"))],
     response_model=AutomationTaskPublic,
 )
 def retry_automation_task(
     session: SessionDep,
     id: uuid.UUID,
 ) -> Any:
-    """手动重试失败任务（超管权限）"""
+    """手动重试失败任务"""
     try:
         task = retry_automation_task_service(session=session, task_id=id)
     except ValueError as e:
@@ -140,14 +140,14 @@ def retry_automation_task(
 
 @router.post(
     "/{id}/cancel",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("automation_task:manage"))],
     response_model=AutomationTaskPublic,
 )
 def cancel_automation_task(
     session: SessionDep,
     id: uuid.UUID,
 ) -> Any:
-    """取消待执行任务（超管权限）"""
+    """取消待执行任务"""
     try:
         task = cancel_automation_task_service(session=session, task_id=id)
     except ValueError as e:

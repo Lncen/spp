@@ -25,8 +25,8 @@ export type Item = {
   path: string
   /** 子菜单项，存在时渲染为可展开的父级菜单 */
   items?: { title: string; path: string }[]
-  /** 仅超级管理员可见 */
-  superuserOnly?: boolean
+  /** 需要的权限码，未配置表示登录即可见；超级管理员持有全部权限 */
+  permission?: string
 }
 
 export type ItemGroup = {

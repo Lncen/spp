@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from app.api.deps import (
     CurrentUser,
     SessionDep,
-    get_current_active_superuser,
+    require_permission,
 )
 from app.common.models import Message
 from app.modules.backup.application.create import create_backup as create_backup_service
@@ -28,11 +28,7 @@ from app.modules.backup.schemas import (
 )
 from app.modules.system_log.application.audit_log_create import record_audit_log
 
-router = APIRouter(
-    prefix="/backups",
-    tags=["backups"],
-    dependencies=[Depends(get_current_active_superuser)],
-)
+router = APIRouter(prefix="/backups", tags=["backups"])
 
 
 def _request_meta(request: Request) -> tuple[str | None, str | None, str | None]:
@@ -42,24 +38,32 @@ def _request_meta(request: Request) -> tuple[str | None, str | None, str | None]
     return ip, user_agent, request_id
 
 
-@router.get("/", response_model=BackupsPublic)
+@router.get(
+    "/",
+    dependencies=[Depends(require_permission("backup:view"))],
+    response_model=BackupsPublic,
+)
 def read_backups(
     session: SessionDep,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 100,
 ) -> Any:
-    """获取备份列表（仅超级管理员可用）"""
+    """获取备份列表"""
     return list_backups(session=session, skip=skip, limit=limit)
 
 
-@router.post("/", response_model=BackupPublic)
+@router.post(
+    "/",
+    dependencies=[Depends(require_permission("backup:create"))],
+    response_model=BackupPublic,
+)
 def create_backup(
     *,
     request: Request,
     session: SessionDep,
     current_user: CurrentUser,
 ) -> Any:
-    """手动创建数据备份（仅超级管理员可用）"""
+    """手动创建数据备份"""
     result = create_backup_service(session=session)
     ip, user_agent, request_id = _request_meta(request)
     record_audit_log(
@@ -77,13 +81,16 @@ def create_backup(
     return result
 
 
-@router.get("/{filename}/download")
+@router.get(
+    "/{filename}/download",
+    dependencies=[Depends(require_permission("backup:view"))],
+)
 def download_backup(
     *,
     session: SessionDep,
     filename: str,
 ) -> FileResponse:
-    """下载备份文件（仅超级管理员可用）"""
+    """下载备份文件"""
     file_path = get_backup_path(session=session, filename=filename)
     return FileResponse(
         path=file_path,
@@ -92,7 +99,11 @@ def download_backup(
     )
 
 
-@router.post("/{filename}/restore", response_model=RestoreResultPublic)
+@router.post(
+    "/{filename}/restore",
+    dependencies=[Depends(require_permission("backup:restore"))],
+    response_model=RestoreResultPublic,
+)
 def restore_backup(
     *,
     request: Request,
@@ -100,7 +111,7 @@ def restore_backup(
     current_user: CurrentUser,
     filename: str,
 ) -> Any:
-    """从指定备份执行合并恢复（仅超级管理员可用）"""
+    """从指定备份执行合并恢复"""
     payload = get_backup_payload(session=session, filename=filename)
     result = restore_backup_service(session=session, payload=payload)
     ip, user_agent, request_id = _request_meta(request)
@@ -119,7 +130,11 @@ def restore_backup(
     return result
 
 
-@router.delete("/{filename}", response_model=Message)
+@router.delete(
+    "/{filename}",
+    dependencies=[Depends(require_permission("backup:delete"))],
+    response_model=Message,
+)
 def delete_backup(
     *,
     request: Request,
@@ -127,7 +142,7 @@ def delete_backup(
     current_user: CurrentUser,
     filename: str,
 ) -> Any:
-    """删除备份文件（仅超级管理员可用）"""
+    """删除备份文件"""
     file_path = get_backup_path(session=session, filename=filename)
     delete_backup_file(file_path)
     ip, user_agent, request_id = _request_meta(request)

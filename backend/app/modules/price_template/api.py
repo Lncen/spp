@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-from app.api.deps import SessionDep, get_current_active_superuser
+from app.api.deps import SessionDep, require_permission
 from app.common.models import Message
 from app.modules.price_template.models import PriceTemplate, PriceTemplateRule
 from app.modules.price_template.schemas import (
@@ -63,13 +63,13 @@ def _template_to_public(
 
 @router.get(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("price_template:view"))],
     response_model=PriceTemplatesPublic,
 )
 def read_price_templates(
     session: SessionDep, skip: int = 0, limit: int = 100
 ) -> Any:
-    """获取价格模板列表（仅超管）"""
+    """获取价格模板列表"""
     templates = get_all_price_templates(session=session, skip=skip, limit=limit)
     count = get_price_template_count(session=session)
     rules_map = get_rules_by_template_ids(
@@ -87,13 +87,13 @@ def read_price_templates(
 
 @router.post(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("price_template:create"))],
     response_model=PriceTemplatePublic,
 )
 def create_price_template(
     *, session: SessionDep, template_in: PriceTemplateCreate
 ) -> Any:
-    """创建价格模板（仅超管，缺失等级自动补 15 折）"""
+    """创建价格模板（缺失等级自动补 15 折）"""
     template = create_price_template_service(session=session, template_in=template_in)
     rules = get_rules_by_template_id(session=session, template_id=template.id)
     return _template_to_public(template, rules)
@@ -101,11 +101,11 @@ def create_price_template(
 
 @router.get(
     "/{template_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("price_template:view"))],
     response_model=PriceTemplatePublic,
 )
 def read_price_template(session: SessionDep, template_id: uuid.UUID) -> Any:
-    """获取价格模板详情（仅超管）"""
+    """获取价格模板详情"""
     template = get_price_template(session=session, template_id=template_id)
     rules = get_rules_by_template_id(session=session, template_id=template_id)
     return _template_to_public(template, rules)
@@ -113,7 +113,7 @@ def read_price_template(session: SessionDep, template_id: uuid.UUID) -> Any:
 
 @router.put(
     "/{template_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("price_template:update"))],
     response_model=PriceTemplatePublic,
 )
 def update_price_template(
@@ -122,7 +122,7 @@ def update_price_template(
     template_id: uuid.UUID,
     template_in: PriceTemplateUpdate,
 ) -> Any:
-    """更新价格模板（仅超管，传入的等级折扣将覆盖，未传等级保留）"""
+    """更新价格模板（传入的等级折扣将覆盖，未传等级保留）"""
     template = update_price_template_service(
         session=session,
         template_id=template_id,
@@ -134,10 +134,10 @@ def update_price_template(
 
 @router.delete(
     "/{template_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("price_template:delete"))],
     response_model=Message,
 )
 def delete_price_template(session: SessionDep, template_id: uuid.UUID) -> Message:
-    """删除价格模板（仅超管，规则级联删除）"""
+    """删除价格模板（规则级联删除）"""
     delete_price_template_service(session=session, template_id=template_id)
     return Message(message="价格模板已删除")

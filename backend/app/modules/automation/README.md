@@ -110,7 +110,7 @@ backend/app/modules/automation/
 
 | 层 | 职责 | 本模块内容 |
 | --- | --- | --- |
-| api | 权限验证、接收请求、参数校验、调用 Application、返回响应 | 任务池、事件、规则、计划任务路由（均为超管权限） |
+| api | 权限验证、接收请求、参数校验、调用 Application、返回响应 | 任务池、事件、规则、计划任务路由（均声明权限码） |
 | application | 编排业务流程、控制事务 | 任务池管理与执行流转、事件发布与分发、规则 CRUD、计划任务管理 |
 | domain | 核心业务规则，不依赖 Web 框架 / 数据库 / Celery | 状态枚举与终态集合、重试与状态流转判定、调度配对与规则配置校验 |
 | infrastructure | 外部系统交互 | Celery 任务发现与 beat 种子、事件监听器、执行器注册表、定时任务 |
@@ -248,7 +248,24 @@ Celery beat 触发 → infrastructure/tasks/* → 业务模块能力
 
 ## 七、API 路由
 
-所有接口均为超管权限，路径省略统一前缀 `/api/v1`。
+所有接口使用 `app/api/deps.py` 的 `require_permission` 声明权限码
+（清单见 `app/init_models_data/permissions.py` 的「自动化」与「计划任务」分类），
+路径省略统一前缀 `/api/v1`。
+
+| 权限码 | 覆盖接口 |
+| --- | --- |
+| `schedule:view` | `GET /schedules/`、`GET /schedules/task-options`、`GET /schedules/{id}`、`GET /schedules/tasks/{task_id}/status` |
+| `schedule:update` | `PUT /schedules/{id}` |
+| `schedule:manage` | `POST /schedules/{id}/toggle`、`POST /schedules/{id}/run` |
+| `automation_task:view` | `GET /automation/tasks/`、`GET /automation/tasks/task-options`、`GET /automation/tasks/archive`、`GET /automation/tasks/{id}` |
+| `automation_task:create` | `POST /automation/tasks/` |
+| `automation_task:manage` | `POST /automation/tasks/{id}/retry`、`POST /automation/tasks/{id}/cancel` |
+| `automation_event:view` | `GET /automation/events/` |
+| `automation_event:publish` | `POST /automation/events/` |
+| `automation_rule:view` | `GET /automation/rules/`、`GET /automation/rules/{id}` |
+| `automation_rule:create` | `POST /automation/rules/` |
+| `automation_rule:update` | `PUT /automation/rules/{id}`、`POST /automation/rules/{id}/toggle` |
+| `automation_rule:delete` | `DELETE /automation/rules/{id}` |
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |

@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query, status
 from app.api.deps import (
     CurrentUser,
     SessionDep,
-    get_current_active_superuser,
+    require_permission,
 )
 from app.common.models import Message
 from app.modules.notification.application.notification_admin import (
@@ -116,7 +116,7 @@ def delete_my_notification_endpoint(
 
 @router.get(
     "/admin",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("notification:view"))],
     response_model=NotificationsAdminPublic,
 )
 def read_admin_notifications(
@@ -144,7 +144,7 @@ def read_admin_notifications(
 
 @router.post(
     "/admin",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("notification:create"))],
     response_model=Message,
 )
 def send_admin_notification(
@@ -173,7 +173,7 @@ def send_admin_notification(
 
 @router.post(
     "/admin/deliveries/{delivery_id}/retry",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("notification:retry"))],
     response_model=DeliveryPublic,
 )
 def retry_admin_delivery(
@@ -187,7 +187,7 @@ def retry_admin_delivery(
 
 @router.delete(
     "/admin/{notification_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("notification:delete"))],
     response_model=Message,
 )
 def delete_admin_notification(

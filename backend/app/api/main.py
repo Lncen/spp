@@ -7,6 +7,15 @@ import app.modules.system_log.infrastructure.event_listeners  # noqa: F401  ц│их
 from app.common.router import router as utils_router
 from app.core.config import settings
 from app.modules.auth.api import login_router, password_router, token_router
+from app.modules.authorization.api import (
+    role_permission_router,
+    user_grant_router,
+)
+from app.modules.authorization.models import (  # noqa: F401
+    RolePermission,
+    UserPermission,
+    UserRole,
+)
 from app.modules.automation.api import (
     automation_events_router,
     automation_router,
@@ -55,12 +64,8 @@ from app.modules.product.product.models import (  # noqa: F401
     ProductPricing,
     ProductSupplier,
 )
-from app.modules.role.api import role_router, user_role_router
-from app.modules.role.models import (  # noqa: F401
-    Role,
-    RolePermission,
-    UserRole,
-)
+from app.modules.role.api import role_router
+from app.modules.role.models import Role  # noqa: F401
 from app.modules.setting.api import router as setting_router
 from app.modules.supplier.api import router as supplier_router
 from app.modules.supplier.models import Supplier  # noqa: F401
@@ -102,7 +107,8 @@ api_router.include_router(product_router)
 api_router.include_router(product_category_router)
 api_router.include_router(permission_router)
 api_router.include_router(role_router)
-api_router.include_router(user_role_router)
+api_router.include_router(role_permission_router)
+api_router.include_router(user_grant_router)
 
 if settings.ENVIRONMENT == "local":
     api_router.include_router(private_router)

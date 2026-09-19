@@ -4,7 +4,12 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.api.deps import CurrentUser, SessionDep, get_current_user
+from app.api.deps import (
+    CurrentUser,
+    SessionDep,
+    get_current_user,
+    require_permission,
+)
 from app.modules.setting.application.setting_query import get_setting_items
 from app.modules.setting.application.setting_update import update_setting
 from app.modules.setting.domain.constants import SettingType
@@ -29,7 +34,11 @@ def read_settings(session: SessionDep) -> Any:
     )
 
 
-@router.put("/{key}", response_model=SettingRead)
+@router.put(
+    "/{key}",
+    dependencies=[Depends(require_permission("setting:update"))],
+    response_model=SettingRead,
+)
 def update_setting_endpoint(
     *,
     session: SessionDep,
@@ -37,9 +46,7 @@ def update_setting_endpoint(
     key: str,
     setting_in: SettingUpdate,
 ) -> Any:
-    """新增或更新全局开关（仅超级管理员）"""
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="权限不足")
+    """新增或更新全局开关"""
     if not key.strip():
         raise HTTPException(status_code=422, detail="设置键不能为空")
     setting = update_setting(

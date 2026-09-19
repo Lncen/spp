@@ -5,11 +5,18 @@ import uuid
 from fastapi import HTTPException
 from sqlmodel import Session, col, select
 
+from app.modules.authorization.application.permission_check import (
+    has_permission,
+    list_active_user_ids_with_permission,
+)
 from app.modules.customer_service.application.realtime_publish import (
     conversation_participant_ids,
     publish_conversation_deleted,
 )
-from app.modules.customer_service.domain.constants import ConversationStatus
+from app.modules.customer_service.domain.constants import (
+    AGENT_PERMISSION_CODE,
+    ConversationStatus,
+)
 from app.modules.customer_service.models import Conversation, ConversationMessage
 from app.modules.customer_service.repositories.conversation import (
     count_unread_messages,
@@ -32,6 +39,11 @@ from app.modules.user.models import User
 def _user_display_name(user: User) -> str:
     """发送者展示名：全名，为空时显示 用户 + ID 后 6 位"""
     return user.full_name or f"用户{str(user.id)[-6:]}"
+
+
+def is_agent(*, session: Session, user: User) -> bool:
+    """是否客服坐席：持有客服权限码即为接待方，超级管理员天然持有"""
+    return has_permission(session=session, user=user, code=AGENT_PERMISSION_CODE)
 
 
 def _latest_other_sender_names(
@@ -68,28 +80,21 @@ def _latest_other_sender_names(
 
 
 def get_total_conversation_unread(*, session: Session, user: User) -> int:
-    """当前查看者全部会话中他人发来且未读的消息总数（侧边栏角标汇总用，不区分角色）"""
+    """当前查看者可见会话中他人发来且未读的消息总数（侧边栏角标汇总用，客服坐席统计全部会话）"""
     if user.id is None:
         return 0
     return count_unread_total(
         session=session,
         user_id=user.id,
-        is_superuser=user.is_superuser,
+        can_view_all=is_agent(session=session, user=user),
     )
 
 
-def list_active_superuser_ids(*, session: Session) -> list[uuid.UUID]:
-    """当前启用的管理员 ID 列表（客服接待方）"""
-    return [
-        user.id
-        for user in session.exec(
-            select(User).where(
-                col(User.is_superuser).is_(True),
-                col(User.is_active).is_(True),
-            )
-        ).all()
-        if user.id is not None
-    ]
+def list_active_agent_ids(*, session: Session) -> list[uuid.UUID]:
+    """当前启用的客服坐席 ID 列表（会话接待方）"""
+    return list_active_user_ids_with_permission(
+        session=session, code=AGENT_PERMISSION_CODE
+    )
 
 
 def get_or_create_conversation(
@@ -114,8 +119,9 @@ def list_conversations(
     skip: int,
     limit: int,
 ) -> ConversationsPublic:
-    """会话列表：管理端查全部，普通用户查自己的"""
-    if current_user.is_superuser:
+    """会话列表：客服坐席查全部，普通用户查自己的"""
+    can_view_all = is_agent(session=session, user=current_user)
+    if can_view_all:
         count, conversations = list_all_conversations(
             session=session, skip=skip, limit=limit
         )
@@ -132,7 +138,7 @@ def list_conversations(
         data=_to_conversation_items(
             session=session,
             conversations=conversations,
-            include_user_info=current_user.is_superuser,
+            include_user_info=can_view_all,
             reader_id=current_user.id,
         ),
         count=count,
@@ -266,10 +272,10 @@ def delete_conversation(
     if conversation is None:
         raise HTTPException(status_code=404, detail="会话不存在")
 
-    admin_ids = list_active_superuser_ids(session=session)
+    agent_ids = list_active_agent_ids(session=session)
     participant_ids = conversation_participant_ids(
         conversation=conversation,
-        admin_ids=admin_ids,
+        agent_ids=agent_ids,
     )
     session.delete(conversation)
     session.commit()

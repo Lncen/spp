@@ -20,15 +20,17 @@ def get_images_page(
     *,
     session: Session,
     current_user: User,
+    can_view_all: bool,
     skip: int = 0,
     limit: int = 100,
     category: str | None = None,
 ) -> tuple[int, list[Image]]:
     """分页查询图片列表，返回 (总数, 列表)
 
-    超管可见全部图片；普通用户可见自己上传的与系统默认（超管上传）图片。
+    ``can_view_all`` 为真（持有 ``image:view``）可见全部图片；
+    否则仅可见自己上传的与系统默认（超管上传）图片。
     """
-    if current_user.is_superuser:
+    if can_view_all:
         owner_ids = None
     else:
         owner_ids = [current_user.id, *get_superuser_ids(session=session)]
@@ -46,7 +48,11 @@ def get_images_page(
 
 
 def get_accessible_image(
-    *, session: Session, current_user: User, image_id: uuid.UUID
+    *,
+    session: Session,
+    current_user: User,
+    image_id: uuid.UUID,
+    can_view_all: bool,
 ) -> Image:
     """按 ID 获取图片并做可见性校验，不可见时抛出 403"""
     image = get_image_by_id(session=session, image_id=image_id)
@@ -57,7 +63,7 @@ def get_accessible_image(
         image_owner_id=image.owner_id,
         owner_is_superuser=owner_is_superuser,
         user_id=current_user.id,
-        user_is_superuser=current_user.is_superuser,
+        can_view_all=can_view_all,
     ):
         raise HTTPException(status_code=403, detail="权限不足")
     return image

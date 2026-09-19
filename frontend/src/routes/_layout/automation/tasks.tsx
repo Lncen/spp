@@ -1,20 +1,12 @@
-import { createFileRoute, redirect } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 
 import { TasksSection } from "@/components/Admin/Automation/tasks"
-import { getCurrentUserQueryOptions } from "@/hooks/useAuth"
+import { ensurePermission } from "@/hooks/usePermissions"
 
 export const Route = createFileRoute("/_layout/automation/tasks")({
   component: Tasks,
-  beforeLoad: async ({ context }) => {
-    const user = await context.queryClient.ensureQueryData(
-      getCurrentUserQueryOptions(),
-    )
-    if (!user.is_superuser) {
-      throw redirect({
-        to: "/",
-      })
-    }
-  },
+  beforeLoad: ({ context }) =>
+    ensurePermission(context.queryClient, "automation_task:view"),
   head: () => ({
     meta: [
       {

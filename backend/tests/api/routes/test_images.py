@@ -6,8 +6,10 @@ from sqlmodel import Session
 
 from app.core.config import settings
 from app.modules.image.models import Image
+from app.modules.user.application.user_query import get_user_by_email
 from tests.utils.image import create_test_image_bytes
-from tests.utils.user import create_random_user
+from tests.utils.user import authentication_token_from_email, create_random_user
+from tests.utils.utils import random_email, random_lower_string
 
 
 def test_upload_image(
@@ -273,3 +275,95 @@ def test_delete_image_not_enough_permissions(
     assert response.status_code == 403
     content = response.json()
     assert content["detail"] == "权限不足"
+
+
+def _grant_image_permission(
+    *,
+    client: TestClient,
+    superuser_headers: dict[str, str],
+    user_id: uuid.UUID,
+    code: str,
+) -> None:
+    """创建仅含指定权限码的角色并分配给用户，用于验证权限放行路径"""
+    permissions = client.get(
+        f"{settings.API_V1_STR}/permissions", headers=superuser_headers
+    ).json()["data"]
+    permission_id = next(item["id"] for item in permissions if item["code"] == code)
+
+    role = client.post(
+        f"{settings.API_V1_STR}/roles",
+        headers=superuser_headers,
+        json={"name": f"图片权限角色 {random_lower_string()}"},
+    ).json()
+    response = client.put(
+        f"{settings.API_V1_STR}/roles/{role['id']}/permissions",
+        headers=superuser_headers,
+        json={"permission_ids": [permission_id]},
+    )
+    assert response.status_code == 200, response.text
+
+    response = client.post(
+        f"{settings.API_V1_STR}/users/{user_id}/roles",
+        headers=superuser_headers,
+        json={"role_id": role["id"]},
+    )
+    assert response.status_code == 200, response.text
+
+
+def test_image_view_permission_expands_visible_scope(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    """授予 image:view 后，普通用户可查看他人上传的图片"""
+    other_user = create_random_user(db)
+    other_image = Image(
+        owner_id=other_user.id,
+        file_hash=uuid.uuid4().hex,
+        filename="perm_view_test.jpg",
+        file_size=100,
+        width=100,
+        height=100,
+        file_path="images/test/perm_view_test.jpg",
+    )
+    db.add(other_image)
+    db.commit()
+    db.refresh(other_image)
+
+    email = random_email()
+    headers = authentication_token_from_email(client=client, email=email, db=db)
+    user = get_user_by_email(session=db, email=email)
+    assert user is not None
+    assert user.id is not None
+
+    # 未授权时不可见他人图片
+    response = client.get(
+        f"{settings.API_V1_STR}/images/{other_image.id}",
+        headers=headers,
+    )
+    assert response.status_code == 403
+
+    _grant_image_permission(
+        client=client,
+        superuser_headers=superuser_token_headers,
+        user_id=user.id,
+        code="image:view",
+    )
+
+    # 授权后立即生效：详情与列表都可看到他人图片
+    response = client.get(
+        f"{settings.API_V1_STR}/images/{other_image.id}",
+        headers=headers,
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["id"] == str(other_image.id)
+
+    listed = client.get(
+        f"{settings.API_V1_STR}/images/",
+        headers=headers,
+        params={"limit": 100},
+    )
+    assert listed.status_code == 200, listed.text
+    assert str(other_image.id) in {
+        item["id"] for item in listed.json()["data"]
+    }

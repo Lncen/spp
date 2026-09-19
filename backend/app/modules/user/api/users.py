@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.api.deps import (
     CurrentUser,
     SessionDep,
-    get_current_active_superuser,
+    require_permission,
 )
 from app.common.models import Message
 from app.modules.setting.application.setting_query import get_setting
@@ -55,7 +55,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("user:view"))],
     response_model=UserListPublic,
 )
 def read_users(
@@ -64,7 +64,7 @@ def read_users(
     limit: int = Query(default=100, ge=1, le=100),
     search: str | None = Query(default=None, max_length=100),
 ) -> Any:
-    """获取用户列表（仅超级管理员可用）"""
+    """获取用户列表"""
     count, users = get_users_page(
         session=session, skip=skip, limit=limit, search=search
     )
@@ -72,10 +72,12 @@ def read_users(
 
 
 @router.post(
-    "/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
+    "/",
+    dependencies=[Depends(require_permission("user:create"))],
+    response_model=UserPublic,
 )
 def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
-    """创建新用户（仅超级管理员可用）"""
+    """创建新用户"""
     return create_user_service(
         session=session, user_create=user_in, send_notification=True
     )
@@ -125,11 +127,11 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
 
 @router.get(
     "/{user_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("user:view"))],
     response_model=UserDetailPublic,
 )
 def read_user_by_id(user_id: uuid.UUID, session: SessionDep) -> Any:
-    """根据 ID 获取用户详情（仅超级管理员可用）"""
+    """根据 ID 获取用户详情"""
     user = get_user_detail(session=session, user_id=user_id)
     if user is None:
         raise HTTPException(status_code=404, detail="用户不存在")
@@ -138,7 +140,7 @@ def read_user_by_id(user_id: uuid.UUID, session: SessionDep) -> Any:
 
 @router.patch(
     "/{user_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("user:update"))],
     response_model=UserPublic,
 )
 def update_user(
@@ -147,18 +149,18 @@ def update_user(
     user_id: uuid.UUID,
     user_in: UserUpdate,
 ) -> Any:
-    """更新用户信息（仅超级管理员可用）"""
+    """更新用户信息"""
     db_user = get_user_by_id(session=session, user_id=user_id)
     if not db_user:
         raise HTTPException(status_code=404, detail="该用户不存在")
     return update_user_service(session=session, db_user=db_user, user_in=user_in)
 
 
-@router.delete("/{user_id}", dependencies=[Depends(get_current_active_superuser)])
+@router.delete("/{user_id}", dependencies=[Depends(require_permission("user:delete"))])
 def delete_user(
     session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID
 ) -> Message:
-    """删除用户（仅超级管理员可用，不允许删除自己）"""
+    """删除用户（不允许删除自己）"""
     user = get_user_by_id(session=session, user_id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")

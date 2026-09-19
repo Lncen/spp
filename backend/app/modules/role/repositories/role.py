@@ -1,16 +1,16 @@
 """角色模块：数据访问层
 
-只负责数据查询与持久化，不编排业务流程。
+只负责角色定义的查询与持久化；角色与权限、角色与用户的授予关系
+见 authorization 模块，本文件不访问授权表。
 """
 
 import uuid
 
 from fastapi import HTTPException
 from sqlalchemy.sql.elements import ColumnElement
-from sqlmodel import Session, col, delete, func, or_, select
+from sqlmodel import Session, col, func, or_, select
 
-from app.modules.permission.models import Permission, PermissionCategory
-from app.modules.role.models import Role, RolePermission, UserRole
+from app.modules.role.models import Role
 
 
 def create_role_row(
@@ -56,11 +56,10 @@ def get_role_by_code(*, session: Session, code: str) -> Role | None:
 
 
 def delete_role_row(*, session: Session, role: Role) -> None:
-    """删除角色及其角色权限、用户角色关联（不提交，由调用方控制事务）"""
-    session.exec(
-        delete(RolePermission).where(col(RolePermission.role_id) == role.id)
-    )
-    session.exec(delete(UserRole).where(col(UserRole.role_id) == role.id))
+    """删除角色行（不提交，由调用方控制事务）
+
+    角色权限与用户角色分配由调用方先经 authorization 模块清理。
+    """
     session.delete(role)
     session.flush()
 
@@ -91,134 +90,3 @@ def count_roles(*, session: Session, keyword: str | None = None) -> int:
     """角色总数（与列表同条件）"""
     statement = select(func.count()).select_from(Role).where(*_role_filters(keyword))
     return session.exec(statement).one()
-
-
-def list_role_permission_codes(
-    *, session: Session, role_id: uuid.UUID
-) -> set[str]:
-    """角色持有的有效权限码集合"""
-    statement = (
-        select(Permission.code)
-        .select_from(RolePermission)
-        .join(Permission, col(RolePermission.permission_id) == col(Permission.id))
-        .join(
-            PermissionCategory,
-            col(Permission.category_id) == col(PermissionCategory.id),
-        )
-        .where(
-            col(RolePermission.role_id) == role_id,
-            col(Permission.is_active).is_(True),
-            col(PermissionCategory.is_active).is_(True),
-        )
-    )
-    return set(session.exec(statement).all())
-
-
-def replace_role_permissions(
-    *,
-    session: Session,
-    role_id: uuid.UUID,
-    permission_ids: list[uuid.UUID],
-    created_by: uuid.UUID | None,
-) -> None:
-    """全量覆盖角色权限（不提交，由调用方控制事务）"""
-    session.exec(
-        delete(RolePermission).where(col(RolePermission.role_id) == role_id)
-    )
-    session.flush()
-    for permission_id in dict.fromkeys(permission_ids):
-        session.add(
-            RolePermission(
-                role_id=role_id,
-                permission_id=permission_id,
-                created_by=created_by,
-            )
-        )
-    session.flush()
-
-
-def list_user_roles(*, session: Session, user_id: uuid.UUID) -> list[Role]:
-    """用户已分配的角色列表"""
-    statement = (
-        select(Role)
-        .join(UserRole, col(UserRole.role_id) == col(Role.id))
-        .where(col(UserRole.user_id) == user_id)
-        .order_by(col(Role.sort_order), col(Role.code))
-    )
-    return list(session.exec(statement).all())
-
-
-def get_user_role(
-    *, session: Session, user_id: uuid.UUID, role_id: uuid.UUID
-) -> UserRole | None:
-    """查询用户角色关联"""
-    return session.exec(
-        select(UserRole).where(
-            col(UserRole.user_id) == user_id,
-            col(UserRole.role_id) == role_id,
-        )
-    ).first()
-
-
-def add_user_role(
-    *,
-    session: Session,
-    user_id: uuid.UUID,
-    role_id: uuid.UUID,
-    created_by: uuid.UUID | None,
-) -> UserRole:
-    """新增用户角色关联并加入会话（不提交）"""
-    user_role = UserRole(
-        user_id=user_id,
-        role_id=role_id,
-        created_by=created_by,
-    )
-    session.add(user_role)
-    session.flush()
-    return user_role
-
-
-def delete_user_role(
-    *, session: Session, user_id: uuid.UUID, role_id: uuid.UUID
-) -> None:
-    """删除用户角色关联（不提交）"""
-    session.exec(
-        delete(UserRole).where(
-            col(UserRole.user_id) == user_id,
-            col(UserRole.role_id) == role_id,
-        )
-    )
-    session.flush()
-
-
-def list_user_ids_by_role(
-    *, session: Session, role_id: uuid.UUID
-) -> list[uuid.UUID]:
-    """查询持有该角色的全部用户 ID，用于缓存失效"""
-    statement = select(UserRole.user_id).where(col(UserRole.role_id) == role_id)
-    return list(session.exec(statement).all())
-
-
-def get_user_permission_codes(
-    *, session: Session, user_id: uuid.UUID
-) -> set[str]:
-    """用户经有效角色获得的全部有效权限码"""
-    statement = (
-        select(Permission.code)
-        .select_from(UserRole)
-        .join(Role, col(UserRole.role_id) == col(Role.id))
-        .join(RolePermission, col(RolePermission.role_id) == col(Role.id))
-        .join(Permission, col(RolePermission.permission_id) == col(Permission.id))
-        .join(
-            PermissionCategory,
-            col(Permission.category_id) == col(PermissionCategory.id),
-        )
-        .where(
-            col(UserRole.user_id) == user_id,
-            col(Role.is_active).is_(True),
-            col(RolePermission.is_active).is_(True),
-            col(Permission.is_active).is_(True),
-            col(PermissionCategory.is_active).is_(True),
-        )
-    )
-    return set(session.exec(statement).all())

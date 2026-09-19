@@ -2,13 +2,9 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
-from app.api.deps import (
-    CurrentUser,
-    SessionDep,
-    get_current_active_superuser,
-)
+from app.api.deps import SessionDep, require_permission
 from app.modules.level.models import UserLevel
 from app.modules.level.schemas import LevelPublic, LevelsPublic, LevelUpdate
 from app.modules.level.service import (
@@ -34,11 +30,11 @@ def _level_to_public(level_obj: UserLevel) -> LevelPublic:
 
 @router.get(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("level:view"))],
     response_model=LevelsPublic,
 )
 def read_levels(session: SessionDep) -> Any:
-    """获取全部等级列表（仅超级管理员）"""
+    """获取全部等级列表"""
     levels = get_all_levels(session=session)
     count = get_level_count(session=session)
     return LevelsPublic(
@@ -49,25 +45,25 @@ def read_levels(session: SessionDep) -> Any:
 
 @router.get(
     "/{level}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("level:view"))],
     response_model=LevelPublic,
 )
 def read_level(session: SessionDep, level: int) -> Any:
-    """按等级编号获取等级详情（仅超级管理员）"""
+    """按等级编号获取等级详情"""
     level_obj = get_level_by_number(session=session, level=level)
     return _level_to_public(level_obj)
 
 
-@router.put("/{level}", response_model=LevelPublic)
+@router.put(
+    "/{level}",
+    dependencies=[Depends(require_permission("level:update"))],
+    response_model=LevelPublic,
+)
 def update_level_endpoint(
     session: SessionDep,
-    current_user: CurrentUser,
     level: int,
     level_in: LevelUpdate,
 ) -> Any:
-    """更新等级信息（仅超级管理员）"""
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="权限不足")
-
+    """更新等级信息"""
     level_obj = update_level(session=session, level=level, level_in=level_in)
     return _level_to_public(level_obj)

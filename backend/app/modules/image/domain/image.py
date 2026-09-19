@@ -8,10 +8,14 @@ def can_access_image(
     image_owner_id: uuid.UUID,
     owner_is_superuser: bool,
     user_id: uuid.UUID,
-    user_is_superuser: bool,
+    can_view_all: bool,
 ) -> bool:
-    """用户是否可查看图片：超管可见全部；普通用户可见自己上传的或系统（超管）图片"""
-    if user_is_superuser:
+    """用户是否可查看图片
+
+    - ``can_view_all``（持有 ``image:view`` 权限）可见全部图片；
+    - 否则可见自己上传的或系统（超管）图片。
+    """
+    if can_view_all:
         return True
     return image_owner_id == user_id or owner_is_superuser
 

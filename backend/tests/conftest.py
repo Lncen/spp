@@ -9,6 +9,11 @@ from app.core.config import settings
 from app.core.db import engine, init_db
 from app.main import app
 from app.modules.auth.models import RefreshToken
+from app.modules.authorization.models import (
+    RolePermission,
+    UserPermission,
+    UserRole,
+)
 from app.modules.automation.models import (
     AutomationEvent,
     AutomationRule,
@@ -32,7 +37,7 @@ from app.modules.product.product.models import (
     ProductPricing,
     ProductSupplier,
 )
-from app.modules.role.models import Role, RolePermission, UserRole
+from app.modules.role.models import Role
 from app.modules.supplier.models import Supplier
 from app.modules.system_log.models import AuditLog, SystemLog
 from app.modules.user.models import User
@@ -196,6 +201,7 @@ def db() -> Generator[Session]:
                 Role.__table__,
                 RolePermission.__table__,
                 UserRole.__table__,
+                UserPermission.__table__,
             ],
         )
         # 建表完成后执行幂等播种；新增模块的种子数据依赖表结构已存在
@@ -230,6 +236,8 @@ def db() -> Generator[Session]:
         statement = delete(SystemLog)
         session.execute(statement)
         statement = delete(AuditLog)
+        session.execute(statement)
+        statement = delete(UserPermission)
         session.execute(statement)
         statement = delete(UserRole)
         session.execute(statement)

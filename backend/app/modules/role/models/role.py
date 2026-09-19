@@ -1,13 +1,8 @@
 """角色模块：数据模型
 
-- ``role``：角色定义；
-- ``role_permission``：角色与权限定义的关联；
-- ``user_role``：用户与角色的关联。
+- ``role``：角色定义；角色与权限、角色与用户的授予关系见 authorization 模块。
 """
 
-import uuid
-
-from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 from app.core.mixin.models import AuditUserMixin, BaseModelMixin
@@ -49,60 +44,4 @@ class Role(BaseModelMixin, AuditUserMixin, SQLModel, table=True):
         index=True,
         title="系统内置角色",
         description="系统内置角色不可删除、不可停用，由初始化脚本维护",
-    )
-
-
-class RolePermission(BaseModelMixin, SQLModel, table=True):
-    """角色权限关联"""
-
-    __tablename__ = "role_permission"
-    __table_args__ = (
-        UniqueConstraint(
-            "role_id",
-            "permission_id",
-            name="uq_role_permission_role_permission",
-        ),
-    )
-
-    role_id: uuid.UUID = Field(
-        foreign_key="role.id",
-        ondelete="CASCADE",
-        index=True,
-        nullable=False,
-        title="角色 ID",
-        description="关联角色的 UUID",
-    )
-    permission_id: uuid.UUID = Field(
-        foreign_key="permission.id",
-        ondelete="CASCADE",
-        index=True,
-        nullable=False,
-        title="权限 ID",
-        description="关联权限定义的 UUID",
-    )
-
-
-class UserRole(BaseModelMixin, AuditUserMixin, SQLModel, table=True):
-    """用户角色关联"""
-
-    __tablename__ = "user_role"
-    __table_args__ = (
-        UniqueConstraint("user_id", "role_id", name="uq_user_role_user_role"),
-    )
-
-    user_id: uuid.UUID = Field(
-        foreign_key="user.id",
-        ondelete="CASCADE",
-        index=True,
-        nullable=False,
-        title="用户 ID",
-        description="关联用户的 UUID",
-    )
-    role_id: uuid.UUID = Field(
-        foreign_key="role.id",
-        ondelete="CASCADE",
-        index=True,
-        nullable=False,
-        title="角色 ID",
-        description="关联角色的 UUID",
     )

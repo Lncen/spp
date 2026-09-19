@@ -1,5 +1,5 @@
 ﻿import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute, redirect } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 import type { PaginationState } from "@tanstack/react-table"
 import { Search } from "lucide-react"
 import { Suspense, useState } from "react"
@@ -10,8 +10,9 @@ import AddUser from "@/components/Admin/Users/AddUser"
 import { columns, type UserTableData } from "@/components/Admin/Users/columns"
 import { DataTable } from "@/components/Common/DataTable"
 import { Input } from "@/components/ui/input"
-import useAuth, { getCurrentUserQueryOptions } from "@/hooks/useAuth"
+import useAuth from "@/hooks/useAuth"
 import { useDebouncedValue } from "@/hooks/useDebouncedValue"
+import { ensurePermission } from "@/hooks/usePermissions"
 
 const SEARCH_DEBOUNCE_MS = 300
 
@@ -29,16 +30,8 @@ function getUsersQueryOptions(search: string, pagination: PaginationState) {
 
 export const Route = createFileRoute("/_layout/admin")({
   component: Admin,
-  beforeLoad: async ({ context }) => {
-    const user = await context.queryClient.ensureQueryData(
-      getCurrentUserQueryOptions(),
-    )
-    if (!user.is_superuser) {
-      throw redirect({
-        to: "/",
-      })
-    }
-  },
+  beforeLoad: ({ context }) =>
+    ensurePermission(context.queryClient, "user:view"),
   head: () => ({
     meta: [
       {

@@ -1,4 +1,8 @@
-"""角色模块：请求与响应模型"""
+"""角色模块：请求与响应模型
+
+``to_role_public`` 是角色 ORM → 对外 DTO 的唯一转换入口，
+授权模块返回用户角色列表时复用，避免重复映射逻辑。
+"""
 
 import re
 import uuid
@@ -6,6 +10,8 @@ from datetime import datetime
 
 from pydantic import field_validator
 from sqlmodel import Field, SQLModel
+
+from app.modules.role.models import Role
 
 
 class RoleCreate(SQLModel):
@@ -75,34 +81,16 @@ class RolesPublic(SQLModel):
     data: list[RolePublic]
 
 
-class RolePermissionsUpdate(SQLModel):
-    """设置角色权限请求：全量覆盖"""
-
-    permission_ids: list[uuid.UUID]
-
-
-class RolePermissionsPublic(SQLModel):
-    """角色权限响应"""
-
-    role_id: uuid.UUID
-    permission_codes: list[str]
-
-
-class UserRoleAssign(SQLModel):
-    """为用户分配角色请求"""
-
-    role_id: uuid.UUID
-
-
-class UserRolesPublic(SQLModel):
-    """用户角色列表响应"""
-
-    count: int
-    data: list[RolePublic]
-
-
-class MyPermissionsPublic(SQLModel):
-    """当前用户权限响应：超管返回全部有效权限码"""
-
-    is_superuser: bool
-    permission_codes: list[str]
+def to_role_public(*, role: Role) -> RolePublic:
+    """角色 ORM → 对外 DTO"""
+    return RolePublic(
+        id=role.id,
+        code=role.code,
+        name=role.name,
+        description=role.description,
+        sort_order=role.sort_order,
+        is_system=role.is_system,
+        is_active=role.is_active,
+        created_at=role.created_at,
+        updated_at=role.updated_at,
+    )

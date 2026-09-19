@@ -57,14 +57,14 @@ system_log/
 
 ## 四、API
 
-所有接口仅超管可访问。
+所有接口均只读，并统一使用 `app/api/deps.py` 的 `require_permission` 声明权限码。
 
-| 方法 | 路径 | 说明 |
-| --- | --- | --- |
-| GET | /system-logs/ | 系统日志分页筛选 |
-| GET | /system-logs/{log_id} | 系统日志详情 |
-| GET | /audit-logs/ | 操作审计分页筛选 |
-| GET | /audit-logs/{audit_log_id} | 操作审计详情 |
+| 方法 | 路径 | 权限码 | 说明 |
+| --- | --- | --- | --- |
+| GET | /system-logs/ | `system_log:view` | 系统日志分页筛选 |
+| GET | /system-logs/{log_id} | `system_log:view` | 系统日志详情 |
+| GET | /audit-logs/ | `audit_log:view` | 操作审计分页筛选 |
+| GET | /audit-logs/{audit_log_id} | `audit_log:view` | 操作审计详情 |
 
 系统日志筛选参数：`level`、`module`、`event_type`、`status`、
 `resource_type`、`resource_id`、`keyword`、`start_at`、`end_at`。

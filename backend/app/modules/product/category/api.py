@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from sqlmodel import select
 
-from app.api.deps import SessionDep, get_current_active_superuser
+from app.api.deps import SessionDep, require_permission
 from app.common.models import Message
 from app.core.config import settings
 from app.modules.image.models import Image
@@ -105,11 +105,11 @@ def _categories_to_tree(
 
 @category_router.get(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("product_category:view"))],
     response_model=ProductCategoriesPublic,
 )
 def read_product_categories(session: SessionDep) -> Any:
-    """获取商品分类列表（仅超管）"""
+    """获取商品分类列表"""
     categories = list_categories(session=session)
     return ProductCategoriesPublic(
         data=_categories_to_tree(_categories_to_public(session, categories)),
@@ -119,31 +119,31 @@ def read_product_categories(session: SessionDep) -> Any:
 
 @category_router.post(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("product_category:create"))],
     response_model=ProductCategoryPublic,
 )
 def create_product_category(
     *, session: SessionDep, category_in: ProductCategoryCreate
 ) -> Any:
-    """创建商品分类（仅超管）"""
+    """创建商品分类"""
     category = create_category_service(session=session, category_in=category_in)
     return _categories_to_public(session, [category])[0]
 
 
 @category_router.get(
     "/{category_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("product_category:view"))],
     response_model=ProductCategoryPublic,
 )
 def read_product_category(session: SessionDep, category_id: uuid.UUID) -> Any:
-    """根据 ID 获取商品分类（仅超管）"""
+    """根据 ID 获取商品分类"""
     category = get_category_service(session=session, category_id=category_id)
     return _categories_to_public(session, [category])[0]
 
 
 @category_router.put(
     "/{category_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("product_category:update"))],
     response_model=ProductCategoryPublic,
 )
 def update_product_category(
@@ -152,7 +152,7 @@ def update_product_category(
     category_id: uuid.UUID,
     category_in: ProductCategoryUpdate,
 ) -> Any:
-    """更新商品分类（仅超管）"""
+    """更新商品分类"""
     category = update_category_service(
         session=session,
         category_id=category_id,
@@ -163,10 +163,10 @@ def update_product_category(
 
 @category_router.delete(
     "/{category_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("product_category:delete"))],
     response_model=Message,
 )
 def delete_product_category(session: SessionDep, category_id: uuid.UUID) -> Message:
-    """删除商品分类（仅超管，有子分类或商品时拒绝）"""
+    """删除商品分类（有子分类或商品时拒绝）"""
     delete_category_service(session=session, category_id=category_id)
     return Message(message="商品分类已删除")

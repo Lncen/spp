@@ -50,11 +50,13 @@ const MESSAGES_LOAD_MORE_THRESHOLD = 120
 
 export function ChatPanel({
   conversationId,
-  isSuperuser,
+  isAgent,
+  canDelete,
   onConversationDeleted,
 }: {
   conversationId: string
-  isSuperuser: boolean
+  isAgent: boolean
+  canDelete: boolean
   onConversationDeleted?: () => void
 }) {
   const queryClient = useQueryClient()
@@ -290,47 +292,47 @@ export function ChatPanel({
           {conversation?.user_name ?? "客服会话"}
         </span>
         <div className="flex items-center gap-2">
-          {isSuperuser ? (
-            <>
-              <span
-                className={cn(
-                  "text-xs",
-                  conversation?.user_online
-                    ? "text-emerald-500"
-                    : "text-muted-foreground",
-                )}
-              >
-                {conversation?.user_online ? "在线" : "离线"}
-              </span>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-destructive"
+          {isAgent ? (
+            <span
+              className={cn(
+                "text-xs",
+                conversation?.user_online
+                  ? "text-emerald-500"
+                  : "text-muted-foreground",
+              )}
+            >
+              {conversation?.user_online ? "在线" : "离线"}
+            </span>
+          ) : null}
+          {canDelete ? (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>删除会话</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    删除后该会话的全部聊天记录将不可恢复，确定删除吗？
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>取消</AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={deleteMutation.isPending}
+                    onClick={() => deleteMutation.mutate()}
                   >
-                    <Trash2 />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>删除会话</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      删除后该会话的全部聊天记录将不可恢复，确定删除吗？
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>取消</AlertDialogCancel>
-                    <AlertDialogAction
-                      disabled={deleteMutation.isPending}
-                      onClick={() => deleteMutation.mutate()}
-                    >
-                      删除
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </>
+                    删除
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           ) : null}
         </div>
       </header>

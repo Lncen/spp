@@ -110,9 +110,9 @@ def count_unread_total(
     *,
     session: Session,
     user_id: uuid.UUID,
-    is_superuser: bool,
+    can_view_all: bool,
 ) -> int:
-    """统计当前查看者可见会话中他人发来且未读的消息总数（管理端统计全部会话，不区分发送方角色）"""
+    """统计当前查看者可见会话中他人发来且未读的消息总数（客服坐席统计全部会话）"""
     stmt = (
         select(func.count())
         .select_from(ConversationMessage)
@@ -122,7 +122,7 @@ def count_unread_total(
             col(ConversationMessage.read_at).is_(None),
         )
     )
-    if not is_superuser:
+    if not can_view_all:
         stmt = stmt.where(col(Conversation.user_id) == user_id)
     return session.exec(stmt).one() or 0
 

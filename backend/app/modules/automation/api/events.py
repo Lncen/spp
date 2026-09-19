@@ -4,7 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 
-from app.api.deps import SessionDep, get_current_active_superuser
+from app.api.deps import SessionDep, require_permission
 from app.modules.automation.application.event import (
     list_automation_events,
     publish_automation_event,
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/automation/events", tags=["automation"])
 
 @router.get(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("automation_event:view"))],
     response_model=AutomationEventsPublic,
 )
 def read_automation_events(
@@ -29,7 +29,7 @@ def read_automation_events(
     limit: int = Query(default=100, ge=1, le=1000),
     event_type: str | None = Query(default=None, title="事件类型过滤"),
 ) -> Any:
-    """获取自动化事件列表（超管权限）"""
+    """获取自动化事件列表"""
     return list_automation_events(
         session=session,
         skip=skip,
@@ -40,12 +40,12 @@ def read_automation_events(
 
 @router.post(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("automation_event:publish"))],
     response_model=AutomationEventPublic,
 )
 def publish_automation_event_route(
     *,
     event_in: AutomationEventCreate,
 ) -> Any:
-    """手动发布业务事件并触发规则分发（超管权限）"""
+    """手动发布业务事件并触发规则分发"""
     return publish_automation_event(event_in=event_in)

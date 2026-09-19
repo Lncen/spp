@@ -1,20 +1,12 @@
-import { createFileRoute, redirect } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 
 import { ProductCategories } from "@/components/Admin/ProductCategories/ProductCategories"
-import { getCurrentUserQueryOptions } from "@/hooks/useAuth"
+import { ensurePermission } from "@/hooks/usePermissions"
 
 export const Route = createFileRoute("/_layout/product-categories")({
   component: RouteComponent,
-  beforeLoad: async ({ context }) => {
-    const user = await context.queryClient.ensureQueryData(
-      getCurrentUserQueryOptions(),
-    )
-    if (!user.is_superuser) {
-      throw redirect({
-        to: "/",
-      })
-    }
-  },
+  beforeLoad: ({ context }) =>
+    ensurePermission(context.queryClient, "product_category:view"),
   head: () => ({
     meta: [
       {

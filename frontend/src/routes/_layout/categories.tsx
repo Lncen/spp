@@ -1,19 +1,11 @@
-import { createFileRoute, redirect } from "@tanstack/react-router"
-import { getCurrentUserQueryOptions } from "@/hooks/useAuth"
+import { createFileRoute } from "@tanstack/react-router"
+import { ensurePermission } from "@/hooks/usePermissions"
 import { ImageCategories } from "../../components/Admin/ImageCategories/ImageCategories"
 
 export const Route = createFileRoute("/_layout/categories")({
   component: RouteComponent,
-  beforeLoad: async ({ context }) => {
-    const user = await context.queryClient.ensureQueryData(
-      getCurrentUserQueryOptions(),
-    )
-    if (!user.is_superuser) {
-      throw redirect({
-        to: "/",
-      })
-    }
-  },
+  beforeLoad: ({ context }) =>
+    ensurePermission(context.queryClient, "image_category:view"),
   head: () => ({
     meta: [
       {

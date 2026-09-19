@@ -12,9 +12,10 @@ from typing import TypedDict
 from sqlmodel import Session, col, delete, select
 
 from app.init_models_data.permissions import ALL_PERMISSION_CODES
+from app.modules.authorization.infrastructure.cache import invalidate_all_permissions
+from app.modules.authorization.models import RolePermission
 from app.modules.permission.models import Permission, PermissionCategory
-from app.modules.role.infrastructure.cache import invalidate_all_permissions
-from app.modules.role.models import Role, RolePermission
+from app.modules.role.models import Role
 
 
 class SystemRoleData(TypedDict):

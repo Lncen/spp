@@ -11,7 +11,8 @@
 - `permission.action` 是动作类型（`view` / `create` / `update` / `manage`），仅用于分组展示与筛选；
 - 对外只提供只读查询接口，统一要求 `permission:view` 权限，运行期不存在任何写接口。
 
-本模块**不负责**角色与用户角色的关系（见 `role` 模块），也不负责权限判定与缓存。
+本模块**不负责**角色、用户与权限之间的授予关系（见 `authorization` 模块），
+也不负责权限判定与缓存。
 
 ## 二、目录结构
 
@@ -55,6 +56,8 @@ permission_category + permission（数据库）
 - 权限清单以列表形式维护在 `app/init_models_data/permissions.py`，是分类与权限码的唯一来源；
 - 清单中移除的权限不物理删除，只置 `is_active=false`，避免历史授权关系断裂；
 - 权限码在导入期校验：`require_permission` 收到未登记的权限码会直接导致应用启动失败；
-- 只读接口统一要求 `permission:view`：权限校验使用 `app/api/deps.py` 的 `require_permission`，判定逻辑复用 role 模块的 `has_permission`；
+- 权限清单覆盖全部**管理端**接口：分类按业务模块划分（角色、权限、用户、等级、商品、订单、钱包、供应商、价格模板、通知、客服、自动化、计划任务、系统日志、数据备份、图片、系统设置、系统工具）；授权关系接口使用角色管理分类的 `role:*` 与用户管理分类的 `user:assign_permission`；
+- **用户自助接口不做硬性拦截**：`/users/me*`、`/wallets/me*`、`/orders/me*`、`POST /orders/`、`/notifications` 用户侧、`/customer-service` 用户侧、`GET /settings/` 保持「登录即可」，因为普通用户没有角色，加权限码会导致其无法使用自身功能；图片模块的列表 / 详情 / 修改 / 删除属于「持有权限或资源归属本人」，用 `require_permission(code).check(...)` 做能力扩展而非硬拦截；
+- 只读接口统一要求 `permission:view`：权限校验使用 `app/api/deps.py` 的 `require_permission`，判定逻辑复用 `authorization` 模块的 `has_permission`；
 - `GET /permission-categories` 与 `GET /permissions/tree` 是角色授权界面的数据来源，给非超管角色授予 `role:assign_permission` 时应同时授予 `permission:view`，否则该角色打不开授权界面；
 - 按项目规范不提交 Migration 文件；上线前需执行 `alembic revision --autogenerate` 与 `alembic upgrade head`。

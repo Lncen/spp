@@ -1,5 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
 import {
   Image as ImageIcon,
   Info,
@@ -9,17 +14,22 @@ import {
   ShieldCheck,
   Wallet,
 } from "lucide-react"
-import { type ReactNode, useEffect, useState } from "react"
+import { type ReactNode, useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 
 import {
   ImagesService,
   LevelsService,
+  PermissionsService,
   RolesService,
   type UserListItemPublic,
   UsersService,
   WalletsService,
 } from "@/client"
+import {
+  PERMISSION_TREE_QUERY_KEY,
+  rolePermissionsQueryKey,
+} from "@/components/Admin/Roles/constants"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -48,9 +58,25 @@ import { BasicInfoFields } from "./BasicInfoFields"
 import { type FormData, formSchema } from "./editUserForm"
 import { LevelFields } from "./LevelFields"
 import { PasswordFields } from "./PasswordFields"
-import { PermissionsFields } from "./PermissionsFields"
+import {
+  PermissionsFields,
+  type UserPermissionDraft,
+} from "./PermissionsFields"
 import { RoleFields } from "./RoleFields"
 import { WalletPanel } from "./WalletPanel"
+
+/** 用户直授权限查询键 */
+const userPermissionsQueryKey = (userId: string) =>
+  ["user-permissions", userId] as const
+
+/** 比较两组权限码是否一致（顺序无关） */
+function sameCodeSet(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) {
+    return false
+  }
+  const codes = new Set(right)
+  return left.every((code) => codes.has(code))
+}
 
 const sections = [
   { id: "basic", label: "基本信息", icon: Info },
@@ -153,6 +179,55 @@ const EditUser = ({ user, open, onOpenChange, onSuccess }: EditUserProps) => {
     enabled: open,
   })
 
+  // 权限树与直授权限只在切到「权限」分区时加载，避免打开对话框就请求
+  const isPermissionsSection = open && activeSection === "permissions"
+
+  const { data: permissionTree, isLoading: isPermissionTreeLoading } = useQuery(
+    {
+      queryKey: PERMISSION_TREE_QUERY_KEY,
+      queryFn: () => PermissionsService.readPermissionTree(),
+      enabled: isPermissionsSection,
+      staleTime: 5 * 60 * 1000,
+    },
+  )
+
+  const { data: userPermissions } = useQuery({
+    queryKey: userPermissionsQueryKey(user.id),
+    queryFn: () => RolesService.readUserPermissions({ userId: user.id }),
+    enabled: isPermissionsSection,
+  })
+
+  // 已分配角色带来的权限码：与角色授权页共用缓存，仅用于只读提示
+  const rolePermissionQueries = useQueries({
+    queries: (userRoles?.data ?? []).map((role) => ({
+      queryKey: rolePermissionsQueryKey(role.id),
+      queryFn: () => RolesService.readRolePermissions({ roleId: role.id }),
+      enabled: isPermissionsSection,
+      staleTime: 5 * 60 * 1000,
+    })),
+  })
+
+  const rolePermissionCodes = useMemo(() => {
+    const codes = new Set<string>()
+    for (const query of rolePermissionQueries) {
+      for (const code of query.data?.permission_codes ?? []) {
+        codes.add(code)
+      }
+    }
+    return codes
+  }, [rolePermissionQueries])
+
+  /** 权限码 → 权限 ID：保存直授权限时接口需要 ID */
+  const permissionIdByCode = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const category of permissionTree?.data ?? []) {
+      for (const permission of category.permissions) {
+        map.set(permission.code, permission.id)
+      }
+    }
+    return map
+  }, [permissionTree])
+
   // 已分配角色不属于 PATCH /users，单独维护选中值与保存前的基线，用于比较差异
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([])
   const [initialRoleIds, setInitialRoleIds] = useState<string[]>([])
@@ -163,6 +238,24 @@ const EditUser = ({ user, open, onOpenChange, onSuccess }: EditUserProps) => {
     setSelectedRoleIds(roleIds)
     setInitialRoleIds(roleIds)
   }, [userRoles])
+
+  // 直授权限同样不属于 PATCH /users，单独维护草稿与保存前的基线
+  const [permissionDraft, setPermissionDraft] = useState<UserPermissionDraft>({
+    allowCodes: [],
+    denyCodes: [],
+  })
+  const [initialPermissions, setInitialPermissions] =
+    useState<UserPermissionDraft | null>(null)
+
+  useEffect(() => {
+    if (!userPermissions) return
+    const next: UserPermissionDraft = {
+      allowCodes: userPermissions.allow_codes,
+      denyCodes: userPermissions.deny_codes,
+    }
+    setPermissionDraft(next)
+    setInitialPermissions(next)
+  }, [userPermissions])
 
   useEffect(() => {
     if (!detail) return
@@ -200,6 +293,35 @@ const EditUser = ({ user, open, onOpenChange, onSuccess }: EditUserProps) => {
     }
   }
 
+  /** 仅提交变化的直授权限：允许与拒绝各自全量覆盖，无变化时不发请求 */
+  const syncUserPermissions = async () => {
+    if (!initialPermissions) return
+
+    const toPermissionIds = (codes: string[]) =>
+      codes
+        .map((code) => permissionIdByCode.get(code))
+        .filter((id): id is string => Boolean(id))
+
+    if (
+      !sameCodeSet(permissionDraft.allowCodes, initialPermissions.allowCodes)
+    ) {
+      await RolesService.setUserPermissionsEndpoint({
+        userId: user.id,
+        requestBody: {
+          permission_ids: toPermissionIds(permissionDraft.allowCodes),
+        },
+      })
+    }
+    if (!sameCodeSet(permissionDraft.denyCodes, initialPermissions.denyCodes)) {
+      await RolesService.setUserDeniedPermissionsEndpoint({
+        userId: user.id,
+        requestBody: {
+          permission_ids: toPermissionIds(permissionDraft.denyCodes),
+        },
+      })
+    }
+  }
+
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
       await UsersService.updateUser({
@@ -220,10 +342,12 @@ const EditUser = ({ user, open, onOpenChange, onSuccess }: EditUserProps) => {
         },
       })
       await syncUserRoles()
+      await syncUserPermissions()
     },
     onSuccess: () => {
       showSuccessToast("用户更新成功")
       setInitialRoleIds(selectedRoleIds)
+      setInitialPermissions(permissionDraft)
       onOpenChange(false)
       onSuccess()
     },
@@ -231,6 +355,9 @@ const EditUser = ({ user, open, onOpenChange, onSuccess }: EditUserProps) => {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] })
       queryClient.invalidateQueries({ queryKey: ["user-roles", user.id] })
+      queryClient.invalidateQueries({
+        queryKey: userPermissionsQueryKey(user.id),
+      })
     },
   })
 
@@ -321,7 +448,13 @@ const EditUser = ({ user, open, onOpenChange, onSuccess }: EditUserProps) => {
                   </Section>
 
                   <Section id="permissions" activeSection={activeSection}>
-                    <PermissionsFields />
+                    <PermissionsFields
+                      tree={permissionTree?.data}
+                      isTreeLoading={isPermissionTreeLoading}
+                      roleCodes={rolePermissionCodes}
+                      draft={permissionDraft}
+                      onChange={setPermissionDraft}
+                    />
                   </Section>
 
                   <Section id="wallet" activeSection={activeSection}>

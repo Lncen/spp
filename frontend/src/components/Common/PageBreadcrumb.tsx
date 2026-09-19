@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/breadcrumb"
 
 const segmentTitles: Record<string, string> = {
-  items: "Items",
   images: "图片",
   categories: "图片分类",
   levels: "等级",

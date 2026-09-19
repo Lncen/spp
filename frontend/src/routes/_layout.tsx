@@ -5,6 +5,8 @@ import { PageBreadcrumb } from "@/components/Common/PageBreadcrumb"
 import { CustomerServiceDialog } from "@/components/CustomerService/CustomerServiceDialog"
 import { CustomerServiceProvider } from "@/components/CustomerService/CustomerServiceProvider"
 import { RealtimeCustomerServiceBridge } from "@/components/CustomerService/RealtimeCustomerServiceBridge"
+import { NotificationsDialog } from "@/components/Notifications/NotificationsDialog"
+import { NotificationsProvider } from "@/components/Notifications/NotificationsProvider"
 import { RealtimeNotificationBridge } from "@/components/Notifications/RealtimeNotificationBridge"
 import AppSidebar from "@/components/Sidebar/AppSidebar"
 import { Separator } from "@/components/ui/separator"
@@ -30,30 +32,33 @@ export const Route = createFileRoute("/_layout")({
 function Layout() {
   return (
     <RealtimeProvider>
-      <CustomerServiceProvider>
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset>
-            <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b px-4">
-              <SidebarTrigger className="-ml-1 text-muted-foreground" />
-              <Separator
-                orientation="vertical"
-                className="mr-2 data-[orientation=vertical]:h-4"
-              />
-              <PageBreadcrumb />
-            </header>
-            <main className="flex-1 p-6 md:p-8">
-              <div className="mx-auto ">
-                <Outlet />
-              </div>
-            </main>
-            <Footer />
-          </SidebarInset>
-          <RealtimeCustomerServiceBridge />
-          <RealtimeNotificationBridge />
-        </SidebarProvider>
-        <CustomerServiceDialog />
-      </CustomerServiceProvider>
+      <NotificationsProvider>
+        <CustomerServiceProvider>
+          <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+              <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b px-4">
+                <SidebarTrigger className="-ml-1 text-muted-foreground" />
+                <Separator
+                  orientation="vertical"
+                  className="mr-2 data-[orientation=vertical]:h-4"
+                />
+                <PageBreadcrumb />
+              </header>
+              <main className="flex-1 p-6 md:p-8">
+                <div className="mx-auto ">
+                  <Outlet />
+                </div>
+              </main>
+              <Footer />
+            </SidebarInset>
+            <RealtimeCustomerServiceBridge />
+            <RealtimeNotificationBridge />
+          </SidebarProvider>
+          <CustomerServiceDialog />
+          <NotificationsDialog />
+        </CustomerServiceProvider>
+      </NotificationsProvider>
     </RealtimeProvider>
   )
 }

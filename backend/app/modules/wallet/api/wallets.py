@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Request
 from app.api.deps import (
     CurrentUser,
     SessionDep,
-    get_current_active_superuser,
+    require_permission,
 )
 from app.modules.system_log.application.audit_log_create import record_audit_log
 from app.modules.wallet.application.wallet_adjust import adjust_balance
@@ -67,21 +67,21 @@ def read_wallet_transactions_me(
 
 @router.get(
     "/user/{user_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("wallet:view"))],
     response_model=WalletPublic,
 )
 def read_wallet_by_user_id(*, session: SessionDep, user_id: uuid.UUID) -> Any:
-    """获取指定用户钱包（仅超级管理员可用），不存在时自动创建"""
+    """获取指定用户钱包，不存在时自动创建"""
     return get_or_create_user_wallet(session=session, user_id=user_id)
 
 
 @router.get(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("wallet:view"))],
     response_model=WalletsPublic,
 )
 def read_wallets(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
-    """获取全部钱包列表（仅超级管理员可用）"""
+    """获取全部钱包列表"""
     count, wallets = get_wallets_page(session=session, skip=skip, limit=limit)
     return WalletsPublic(
         data=[WalletPublic.model_validate(w) for w in wallets],
@@ -91,17 +91,17 @@ def read_wallets(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 
 @router.get(
     "/{wallet_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("wallet:view"))],
     response_model=WalletPublic,
 )
 def read_wallet_by_id(*, session: SessionDep, wallet_id: uuid.UUID) -> Any:
-    """按 ID 获取钱包（仅超级管理员可用）"""
+    """按 ID 获取钱包"""
     return get_wallet_by_id(session=session, wallet_id=wallet_id)
 
 
 @router.get(
     "/{wallet_id}/transactions",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("wallet:view"))],
     response_model=WalletTransactionsPublic,
 )
 def read_wallet_transactions(
@@ -112,7 +112,7 @@ def read_wallet_transactions(
     limit: int = 100,
     tx_type: str | None = None,
 ) -> Any:
-    """获取指定钱包流水（仅超级管理员可用）"""
+    """获取指定钱包流水"""
     get_wallet_by_id(session=session, wallet_id=wallet_id)
     count, transactions = get_wallet_transactions_page(
         session=session,
@@ -129,7 +129,7 @@ def read_wallet_transactions(
 
 @router.post(
     "/{wallet_id}/adjust",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("wallet:adjust"))],
     response_model=WalletTransactionPublic,
 )
 def adjust_wallet_balance(
@@ -140,7 +140,7 @@ def adjust_wallet_balance(
     wallet_id: uuid.UUID,
     body: WalletAdjust,
 ) -> Any:
-    """管理员调账：正数入账，负数扣款（仅超级管理员可用）"""
+    """管理员调账：正数入账，负数扣款"""
     wallet = get_wallet_by_id(session=session, wallet_id=wallet_id)
     balance_before = str(wallet.balance)
     amount = str(body.amount)
@@ -179,13 +179,13 @@ def adjust_wallet_balance(
 
 @router.patch(
     "/{wallet_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("wallet:update"))],
     response_model=WalletPublic,
 )
 def update_wallet_status(
     *, session: SessionDep, wallet_id: uuid.UUID, body: WalletUpdate
 ) -> Any:
-    """更新钱包启用状态（仅超级管理员可用）"""
+    """更新钱包启用状态"""
     wallet = get_wallet_by_id(session=session, wallet_id=wallet_id)
     return update_wallet_status_service(
         session=session, wallet=wallet, is_active=body.is_active

@@ -4,7 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.api.deps import SessionDep, get_current_active_superuser
+from app.api.deps import SessionDep, require_permission
 from app.modules.automation.application.schedule import (
     get_schedule_public,
     list_schedules,
@@ -31,7 +31,7 @@ router = APIRouter(prefix="/schedules", tags=["schedules"])
 
 @router.get(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("schedule:view"))],
     response_model=SchedulesPublic,
 )
 def read_schedules(
@@ -39,36 +39,36 @@ def read_schedules(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=1000),
 ) -> Any:
-    """获取计划任务列表（超管权限）"""
+    """获取计划任务列表"""
     return list_schedules(session=session, skip=skip, limit=limit)
 
 
 @router.get(
     "/task-options",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("schedule:view"))],
     response_model=TaskOptionsPublic,
 )
 def read_task_options() -> Any:
-    """获取可配置的 Celery 任务列表（超管权限，前端下拉使用）"""
+    """获取可配置的 Celery 任务列表（前端下拉使用）"""
     return TaskOptionsPublic(data=list_task_options())
 
 
 @router.get(
     "/{id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("schedule:view"))],
     response_model=SchedulePublic,
 )
 def read_schedule(
     session: SessionDep,
     id: int,
 ) -> Any:
-    """根据 ID 获取计划任务（超管权限）"""
+    """根据 ID 获取计划任务"""
     return get_schedule_public(session=session, task_id=id)
 
 
 @router.put(
     "/{id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("schedule:update"))],
     response_model=SchedulePublic,
 )
 def update_schedule(
@@ -77,7 +77,7 @@ def update_schedule(
     id: int,
     schedule_in: ScheduleUpdate,
 ) -> Any:
-    """更新计划任务（超管权限）"""
+    """更新计划任务"""
     try:
         task = update_schedule_service(
             session=session,
@@ -91,14 +91,14 @@ def update_schedule(
 
 @router.post(
     "/{id}/toggle",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("schedule:manage"))],
     response_model=SchedulePublic,
 )
 def toggle_schedule(
     session: SessionDep,
     id: int,
 ) -> Any:
-    """启用或停用计划任务（超管权限）"""
+    """启用或停用计划任务"""
     return to_schedule_public(
         toggle_schedule_service(session=session, task_id=id)
     )
@@ -106,12 +106,12 @@ def toggle_schedule(
 
 @router.post(
     "/{id}/run",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("schedule:manage"))],
     response_model=RunTaskPublic,
 )
 def run_schedule(
     session: SessionDep,
     id: int,
 ) -> Any:
-    """立即执行一次计划任务（超管权限，不影响原计划）"""
+    """立即执行一次计划任务（不影响原计划）"""
     return RunTaskPublic(task_id=run_schedule_now(session=session, task_id=id))

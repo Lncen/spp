@@ -64,13 +64,20 @@ backend/app/modules/product/
 
 ## 四、API 路由
 
-| 方法 | 路径 | 说明 |
-| --- | --- | --- |
-| GET | /products/ | 商品分页列表（超管，支持分类/状态/来源/类型/关闭/名称筛选） |
-| POST | /products/ | 创建商品及其关联配置（超管） |
-| GET | /products/{id} | 商品详情（超管） |
-| PUT | /products/{id} | 更新商品及其关联配置（超管） |
-| DELETE | /products/{id} | 删除商品及其关联配置（超管） |
+| 方法 | 路径 | 权限码 | 说明 |
+| --- | --- | --- | --- |
+| GET | /products/ | `product:view` | 商品分页列表（支持分类/状态/来源/类型/关闭/名称筛选） |
+| POST | /products/ | `product:create` | 创建商品及其关联配置 |
+| GET | /products/{id} | `product:view` | 商品详情 |
+| PUT | /products/{id} | `product:update` | 更新商品及其关联配置 |
+| DELETE | /products/{id} | `product:delete` | 删除商品及其关联配置 |
+| GET | /product-categories/ | `product_category:view` | 商品分类树 |
+| POST | /product-categories/ | `product_category:create` | 创建商品分类 |
+| GET | /product-categories/{category_id} | `product_category:view` | 商品分类详情 |
+| PUT | /product-categories/{category_id} | `product_category:update` | 更新商品分类 |
+| DELETE | /product-categories/{category_id} | `product_category:delete` | 删除商品分类（有子分类或商品时拒绝） |
+
+权限码清单见 `app/init_models_data/permissions.py` 的「商品管理」分类，接口统一使用 `app/api/deps.py` 的 `require_permission` 声明。
 
 ## 五、关键设计
 

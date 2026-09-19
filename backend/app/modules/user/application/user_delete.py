@@ -12,7 +12,7 @@ from app.modules.user.repositories.user import (
 
 
 def delete_user(*, session: Session, user: User, user_id: uuid.UUID) -> None:
-    """删除用户（仅超级管理员）"""
+    """删除指定用户（调用方接口要求 `user:delete` 权限）"""
     delete_user_record(session=session, user=user)
     session.commit()
 

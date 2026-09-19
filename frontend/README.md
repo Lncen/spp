@@ -90,6 +90,16 @@ The frontend code is structured as follows:
 * `frontend/src/hooks` - Custom hooks.
 * `frontend/src/routes` - The different routes of the frontend which include the pages.
 
+## 路由与菜单权限
+
+前端只控制可见性，真实权限由后端校验。
+
+* 当前用户权限码取自 `GET /api/v1/users/me/permissions`，统一封装在 `frontend/src/hooks/usePermissions.ts`。
+* 页面权限在路由 `beforeLoad` 声明：`beforeLoad: ({ context }) => ensurePermission(context.queryClient, "product:view")`，未持有权限时跳回首页。
+* 侧边栏菜单在 `frontend/src/components/Sidebar/AppSidebar.tsx` 用 `permission` 字段声明所需权限码；未配置表示登录即可见，分组内菜单项全部不可见时该分组不展示。
+* 超级管理员由后端返回全部有效权限码，前端不需要单独判断 `is_superuser`。
+* 权限码清单以后端 `backend/app/init_models_data/permissions.py` 为准。
+
 ## End-to-End Testing with Playwright
 
 The frontend includes initial end-to-end tests using Playwright. To run the tests, you need to have the Docker Compose stack running. Start the stack with the following command:

@@ -1,20 +1,12 @@
-import { createFileRoute, redirect } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 
 import { AuditLogsSection } from "@/components/Admin/AuditLogs"
-import { getCurrentUserQueryOptions } from "@/hooks/useAuth"
+import { ensurePermission } from "@/hooks/usePermissions"
 
 export const Route = createFileRoute("/_layout/audit-logs")({
   component: AuditLogs,
-  beforeLoad: async ({ context }) => {
-    const user = await context.queryClient.ensureQueryData(
-      getCurrentUserQueryOptions(),
-    )
-    if (!user.is_superuser) {
-      throw redirect({
-        to: "/",
-      })
-    }
-  },
+  beforeLoad: ({ context }) =>
+    ensurePermission(context.queryClient, "audit_log:view"),
   head: () => ({
     meta: [
       {

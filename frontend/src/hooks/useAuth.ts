@@ -10,6 +10,7 @@ import {
 } from "@/client"
 import { handleError } from "@/utils"
 import useCustomToast from "./useCustomToast"
+import { PERMISSIONS_QUERY_KEY } from "./usePermissions"
 
 const isLoggedIn = () => {
   return localStorage.getItem("access_token") !== null
@@ -53,6 +54,8 @@ const useAuth = () => {
   const loginMutation = useMutation({
     mutationFn: login,
     onSuccess: () => {
+      // 换账号登录时清除上一个账号的权限缓存，避免菜单沿用旧权限
+      queryClient.removeQueries({ queryKey: PERMISSIONS_QUERY_KEY })
       navigate({ to: "/" })
     },
     onError: handleError.bind(showErrorToast),
@@ -60,6 +63,7 @@ const useAuth = () => {
 
   const logout = () => {
     localStorage.removeItem("access_token")
+    queryClient.removeQueries({ queryKey: PERMISSIONS_QUERY_KEY })
     navigate({ to: "/login" })
   }
 

@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse
 
-from app.api.deps import SessionDep, get_current_active_superuser
+from app.api.deps import SessionDep, require_permission
 from app.common.models import Message
 from app.modules.auth.schemas import NewPassword
 from app.modules.user.application.user_query import get_user_by_email
@@ -59,11 +59,11 @@ def reset_password(session: SessionDep, body: NewPassword) -> Message:
 
 @router.post(
     "/password-recovery-html-content/{email}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("user:view"))],
     response_class=HTMLResponse,
 )
 def recover_password_html_content(email: str, session: SessionDep) -> Any:
-    """获取密码找回邮件的 HTML 内容（仅超级管理员可用）"""
+    """获取密码找回邮件的 HTML 内容（需 `user:view`）"""
     user = get_user_by_email(session=session, email=email)
 
     if not user:

@@ -4,9 +4,9 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, SessionDep, require_permission
 from app.common.models import Message
 from app.core.config import settings
 from app.modules.image.application.category_manage import (
@@ -35,6 +35,11 @@ from app.modules.image.schemas import (
 
 router = APIRouter(prefix="/images", tags=["images"])
 
+# 图片库权限码：模块导入期校验，供「持有权限或资源归属本人」的接口判定
+IMAGE_VIEW = require_permission("image:view")
+IMAGE_UPDATE = require_permission("image:update")
+IMAGE_DELETE = require_permission("image:delete")
+
 
 def _build_image_url(image: Image) -> str:
     """构建图片可访问 URL
@@ -61,12 +66,15 @@ def read_images(
 ) -> Any:
     """获取图片列表
 
-    超管可查看全部图片；普通用户可查看自己上传的图片与系统默认图片
-    （即超管上传的图片）。
+    持有 `image:view` 可查看全部图片；否则仅可查看自己上传的图片与
+    系统默认图片（即超管上传的图片）。
     """
     count, images = get_images_page(
         session=session,
         current_user=current_user,
+        can_view_all=IMAGE_VIEW.check(
+            session=session, current_user=current_user
+        ),
         skip=skip,
         limit=limit,
         category=category,
@@ -82,14 +90,21 @@ def read_images(
 
 @router.get("/{id}", response_model=ImagePublic)
 def read_image(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> Any:
-    """根据 ID 获取图片元数据（普通用户可查看自己上传的或系统默认图片）"""
+    """根据 ID 获取图片元数据（持有 `image:view` 可查看全部，否则仅本人与系统默认图片）"""
     image = get_accessible_image(
-        session=session, current_user=current_user, image_id=id
+        session=session,
+        current_user=current_user,
+        image_id=id,
+        can_view_all=IMAGE_VIEW.check(session=session, current_user=current_user),
     )
     return ImagePublic.model_validate(image, update={"url": _build_image_url(image)})
 
 
-@router.post("/upload", response_model=ImagePublic)
+@router.post(
+    "/upload",
+    dependencies=[Depends(require_permission("image:upload"))],
+    response_model=ImagePublic,
+)
 async def upload_image(
     *,
     session: SessionDep,
@@ -100,10 +115,7 @@ async def upload_image(
         description="图片分类：avatar, product, product_detail",
     ),
 ) -> Any:
-    """上传图片，支持 JPEG/PNG/WebP，自动压缩（仅超级管理员）"""
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="权限不足")
-
+    """上传图片，支持 JPEG/PNG/WebP，自动压缩（需 `image:upload`）"""
     # 验证分类（DB 驱动）
     if category:
         valid, msg = validate_category_name(session=session, name=category)
@@ -150,11 +162,13 @@ async def upload_image(
 def delete_image(
     session: SessionDep, current_user: CurrentUser, id: uuid.UUID
 ) -> Message:
-    """删除图片（同时删除磁盘文件）"""
+    """删除图片（同时删除磁盘文件；需本人上传或持有 `image:delete`）"""
     image = session.get(Image, id)
     if not image:
         raise HTTPException(status_code=404, detail="图片不存在")
-    if not current_user.is_superuser and (image.owner_id != current_user.id):
+    if image.owner_id != current_user.id and not IMAGE_DELETE.check(
+        session=session, current_user=current_user
+    ):
         raise HTTPException(status_code=403, detail="权限不足")
 
     delete_image_service(session=session, image=image)
@@ -168,11 +182,13 @@ def update_image(
     id: uuid.UUID,
     data: ImageUpdate,
 ) -> Any:
-    """更新图片分类"""
+    """更新图片分类（需本人上传或持有 `image:update`）"""
     image = session.get(Image, id)
     if not image:
         raise HTTPException(status_code=404, detail="图片不存在")
-    if not current_user.is_superuser and (image.owner_id != current_user.id):
+    if image.owner_id != current_user.id and not IMAGE_UPDATE.check(
+        session=session, current_user=current_user
+    ):
         raise HTTPException(status_code=403, detail="权限不足")
 
     image = update_image_service(session=session, image=image, data=data)

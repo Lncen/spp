@@ -26,7 +26,6 @@ import { Route as LayoutPriceTemplatesRouteImport } from './routes/_layout/price
 import { Route as LayoutOrdersRouteImport } from './routes/_layout/orders'
 import { Route as LayoutNotificationsRouteImport } from './routes/_layout/notifications'
 import { Route as LayoutLevelsRouteImport } from './routes/_layout/levels'
-import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutImagesRouteImport } from './routes/_layout/images'
 import { Route as LayoutGlobalSettingsRouteImport } from './routes/_layout/global-settings'
 import { Route as LayoutCategoriesRouteImport } from './routes/_layout/categories'
@@ -124,11 +123,6 @@ const LayoutLevelsRoute = LayoutLevelsRouteImport.update({
   path: '/levels',
   getParentRoute: () => LayoutRoute,
 } as any)
-const LayoutItemsRoute = LayoutItemsRouteImport.update({
-  id: '/items',
-  path: '/items',
-  getParentRoute: () => LayoutRoute,
-} as any)
 const LayoutImagesRoute = LayoutImagesRouteImport.update({
   id: '/images',
   path: '/images',
@@ -204,7 +198,6 @@ export interface FileRoutesByFullPath {
   '/categories': typeof LayoutCategoriesRoute
   '/global-settings': typeof LayoutGlobalSettingsRoute
   '/images': typeof LayoutImagesRoute
-  '/items': typeof LayoutItemsRoute
   '/levels': typeof LayoutLevelsRoute
   '/notifications': typeof LayoutNotificationsRoute
   '/orders': typeof LayoutOrdersRoute
@@ -233,7 +226,6 @@ export interface FileRoutesByTo {
   '/categories': typeof LayoutCategoriesRoute
   '/global-settings': typeof LayoutGlobalSettingsRoute
   '/images': typeof LayoutImagesRoute
-  '/items': typeof LayoutItemsRoute
   '/levels': typeof LayoutLevelsRoute
   '/notifications': typeof LayoutNotificationsRoute
   '/orders': typeof LayoutOrdersRoute
@@ -266,7 +258,6 @@ export interface FileRoutesById {
   '/_layout/categories': typeof LayoutCategoriesRoute
   '/_layout/global-settings': typeof LayoutGlobalSettingsRoute
   '/_layout/images': typeof LayoutImagesRoute
-  '/_layout/items': typeof LayoutItemsRoute
   '/_layout/levels': typeof LayoutLevelsRoute
   '/_layout/notifications': typeof LayoutNotificationsRoute
   '/_layout/orders': typeof LayoutOrdersRoute
@@ -300,7 +291,6 @@ export interface FileRouteTypes {
     | '/categories'
     | '/global-settings'
     | '/images'
-    | '/items'
     | '/levels'
     | '/notifications'
     | '/orders'
@@ -329,7 +319,6 @@ export interface FileRouteTypes {
     | '/categories'
     | '/global-settings'
     | '/images'
-    | '/items'
     | '/levels'
     | '/notifications'
     | '/orders'
@@ -361,7 +350,6 @@ export interface FileRouteTypes {
     | '/_layout/categories'
     | '/_layout/global-settings'
     | '/_layout/images'
-    | '/_layout/items'
     | '/_layout/levels'
     | '/_layout/notifications'
     | '/_layout/orders'
@@ -510,13 +498,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutLevelsRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/_layout/items': {
-      id: '/_layout/items'
-      path: '/items'
-      fullPath: '/items'
-      preLoaderRoute: typeof LayoutItemsRouteImport
-      parentRoute: typeof LayoutRoute
-    }
     '/_layout/images': {
       id: '/_layout/images'
       path: '/images'
@@ -631,7 +612,6 @@ interface LayoutRouteChildren {
   LayoutCategoriesRoute: typeof LayoutCategoriesRoute
   LayoutGlobalSettingsRoute: typeof LayoutGlobalSettingsRoute
   LayoutImagesRoute: typeof LayoutImagesRoute
-  LayoutItemsRoute: typeof LayoutItemsRoute
   LayoutLevelsRoute: typeof LayoutLevelsRoute
   LayoutNotificationsRoute: typeof LayoutNotificationsRoute
   LayoutOrdersRoute: typeof LayoutOrdersRoute
@@ -654,7 +634,6 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutCategoriesRoute: LayoutCategoriesRoute,
   LayoutGlobalSettingsRoute: LayoutGlobalSettingsRoute,
   LayoutImagesRoute: LayoutImagesRoute,
-  LayoutItemsRoute: LayoutItemsRoute,
   LayoutLevelsRoute: LayoutLevelsRoute,
   LayoutNotificationsRoute: LayoutNotificationsRoute,
   LayoutOrdersRoute: LayoutOrdersRoute,

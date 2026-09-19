@@ -56,12 +56,12 @@ backend/app/modules/wallet/
 | --- | --- | --- |
 | GET | /wallets/me | 获取当前用户钱包 |
 | GET | /wallets/me/transactions | 获取当前用户钱包流水 |
-| GET | /wallets/ | 获取全部钱包列表（仅超管） |
-| GET | /wallets/user/{user_id} | 按用户获取钱包，不存在则自动创建（仅超管） |
-| GET | /wallets/{wallet_id} | 按 ID 获取钱包（仅超管） |
-| GET | /wallets/{wallet_id}/transactions | 获取指定钱包流水（仅超管） |
-| POST | /wallets/{wallet_id}/adjust | 管理员调账：正数入账、负数扣款（仅超管） |
-| PATCH | /wallets/{wallet_id} | 更新钱包启用状态（仅超管） |
+| GET | /wallets/ | 获取全部钱包列表（`wallet:view`） |
+| GET | /wallets/user/{user_id} | 按用户获取钱包，不存在则自动创建（`wallet:view`） |
+| GET | /wallets/{wallet_id} | 按 ID 获取钱包（`wallet:view`） |
+| GET | /wallets/{wallet_id}/transactions | 获取指定钱包流水（`wallet:view`） |
+| POST | /wallets/{wallet_id}/adjust | 管理员调账：正数入账、负数扣款（`wallet:adjust`） |
+| PATCH | /wallets/{wallet_id} | 更新钱包启用状态（`wallet:update`） |
 
 ## 五、关键设计
 
@@ -70,6 +70,7 @@ backend/app/modules/wallet/
 3. **原子扣款**：余额变更通过带条件的 `UPDATE` 完成（`balance + amount >= 0`），余额不足时回滚并返回 400，避免并发超扣。
 4. **依赖方向**：api → application → repositories / domain，禁止反向依赖。
 5. **流水保留期可配置**：保留天数由全局设置 `wallet_transaction_retention_days` 控制（`PUT /settings/wallet_transaction_retention_days`，默认 7 天，非法值回退默认），定时任务位于 `automation` 模块 `infrastructure/tasks/wallet_cleanup.py`，分批物理删除超过保留期的流水。
+6. **权限声明**：管理端接口使用 `app/api/deps.py` 的 `require_permission` 声明权限码；`/wallets/me` 与 `/wallets/me/transactions` 属于用户自助接口，保持「登录即可」。
 
 ## 六、重构记录
 

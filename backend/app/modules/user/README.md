@@ -55,17 +55,19 @@ backend/app/modules/user/
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| GET | /users/ | 获取用户列表：用户名/余额/角色/状态；支持 `search` 按用户名/邮箱/昵称模糊搜索（仅超管） |
-| POST | /users/ | 创建新用户（仅超管，可选邮件通知） |
+| GET | /users/ | 获取用户列表：用户名/余额/角色/状态；支持 `search` 按用户名/邮箱/昵称模糊搜索（`user:view`） |
+| POST | /users/ | 创建新用户（`user:create`，可选邮件通知） |
 | PATCH | /users/me | 更新当前用户个人信息 |
 | PATCH | /users/me/password | 修改当前用户密码 |
 | GET | /users/me | 获取当前用户信息 |
 | DELETE | /users/me | 删除当前用户（需设置 allow_delete_account 开启，超管禁止） |
 | POST | /users/signup | 用户自助注册 |
-| GET | /users/{user_id} | 获取用户详情（含等级名称，仅超管） |
-| PATCH | /users/{user_id} | 更新用户（仅超管） |
-| DELETE | /users/{user_id} | 删除用户（仅超管，禁止删自己） |
+| GET | /users/{user_id} | 获取用户详情（含等级名称，`user:view`） |
+| PATCH | /users/{user_id} | 更新用户（`user:update`） |
+| DELETE | /users/{user_id} | 删除用户（`user:delete`，禁止删自己） |
 | POST | /private/users/ | 内部创建用户（仅 local 环境） |
+
+除上表外，`auth` 模块的 `POST /password-recovery-html-content/{email}`（密码找回邮件 HTML 预览）同样要求 `user:view`。
 
 ## 五、关键设计
 
@@ -73,9 +75,10 @@ backend/app/modules/user/
 2. **事务边界**：repositories 只 `flush`，由 application 统一 `commit` + `refresh`。
 3. **依赖方向**：api → application → repositories / domain / infrastructure，禁止反向依赖。
 4. **字段权限**：`remark`（备注）仅管理员可修改；`bio`（简介）由用户本人维护；`avatar_id`（头像）关联 `image` 表，用户设置头像时校验图片归属。
-5. **列表与详情分离**：`GET /users/` 仅返回列表展示字段（`id`/`username`/`balance`/`is_superuser`/`is_active`，余额联查钱包）；`GET /users/{user_id}` 返回详情（含 `level_name`），仅超管可访问，编辑页打开时调用。
+5. **列表与详情分离**：`GET /users/` 仅返回列表展示字段（`id`/`username`/`balance`/`is_superuser`/`is_active`，余额联查钱包）；`GET /users/{user_id}` 返回详情（含 `level_name`），要求 `user:view`，编辑页打开时调用。
 6. **列表搜索**：`GET /users/` 的 `search` 参数对 `username` / `email` / `full_name` 做大小写不敏感的模糊匹配（`ilike`），命中任一字段即返回，搜索词为空时不生效。
 7. **删除账号开关**：`DELETE /users/me` 受系统设置 `allow_delete_account` 控制，默认关闭（返回 403）。
+8. **权限声明**：管理端接口统一使用 `app/api/deps.py` 的 `require_permission` 声明权限码，不再使用 `get_current_active_superuser`；权限码清单见 `app/init_models_data/permissions.py`。
 
 ## 六、重构记录
 

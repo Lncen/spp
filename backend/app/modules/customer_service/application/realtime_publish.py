@@ -79,7 +79,7 @@ def publish_conversation_deleted(
 def conversation_participant_ids(
     *,
     conversation: Conversation,
-    admin_ids: list[uuid.UUID],
+    agent_ids: list[uuid.UUID],
 ) -> list[uuid.UUID]:
-    """会话参与者：用户本人 + 全部启用管理员"""
-    return [conversation.user_id, *admin_ids]
+    """会话参与者：用户本人 + 全部启用客服坐席"""
+    return [conversation.user_id, *agent_ids]

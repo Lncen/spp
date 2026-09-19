@@ -7,7 +7,9 @@ from sqlmodel import Session
 
 from app.core.config import settings
 from app.modules.customer_service.application import realtime_publish
+from app.modules.user.application.user_query import get_user_by_email
 from tests.utils.user import authentication_token_from_email, create_random_user
+from tests.utils.utils import random_email, random_lower_string
 
 
 def _create_user_headers(client: TestClient, db: Session) -> tuple[dict[str, str], object]:
@@ -26,6 +28,49 @@ def _create_my_conversation(client: TestClient, headers: dict[str, str]) -> str:
     )
     assert response.status_code == 200
     return response.json()["id"]
+
+
+def _create_agent_headers(
+    *,
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> dict[str, str]:
+    """创建一个持有客服接待权限的普通用户，返回其认证头"""
+    listed = client.get(
+        f"{settings.API_V1_STR}/permissions", headers=superuser_token_headers
+    )
+    assert listed.status_code == 200, listed.text
+    permission_ids = {
+        item["code"]: item["id"] for item in listed.json()["data"]
+    }
+
+    role = client.post(
+        f"{settings.API_V1_STR}/roles",
+        headers=superuser_token_headers,
+        json={"code": f"agent_{random_lower_string()}", "name": "客服坐席"},
+    )
+    assert role.status_code == 200, role.text
+    role_id = role.json()["id"]
+
+    granted = client.put(
+        f"{settings.API_V1_STR}/roles/{role_id}/permissions",
+        headers=superuser_token_headers,
+        json={"permission_ids": [permission_ids["customer_service:view"]]},
+    )
+    assert granted.status_code == 200, granted.text
+
+    email = random_email()
+    headers = authentication_token_from_email(client=client, email=email, db=db)
+    user = get_user_by_email(session=db, email=email)
+    assert user is not None and user.id is not None
+    assigned = client.post(
+        f"{settings.API_V1_STR}/users/{user.id}/roles",
+        headers=superuser_token_headers,
+        json={"role_id": role_id},
+    )
+    assert assigned.status_code == 200, assigned.text
+    return headers
 
 
 def test_user_get_or_create_conversation(
@@ -157,6 +202,55 @@ def test_admin_lists_conversations_and_replies(
     )
     assert reply.status_code == 200
     assert reply.json()["sender_role"] == "admin"
+
+
+def test_agent_permission_is_enough_to_receive_all_conversations(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    """非超管持有 customer_service:view 即为客服坐席：可查看全部会话并以管理端身份回复"""
+    user_headers, _ = _create_user_headers(client, db)
+    conversation_id = _create_my_conversation(client, user_headers)
+
+    agent_headers = _create_agent_headers(
+        client=client,
+        db=db,
+        superuser_token_headers=superuser_token_headers,
+    )
+
+    listed = client.get(
+        f"{settings.API_V1_STR}/customer-service/conversations",
+        headers=agent_headers,
+    )
+    assert listed.status_code == 200
+    assert any(item["id"] == conversation_id for item in listed.json()["data"])
+
+    reply = client.post(
+        f"{settings.API_V1_STR}/customer-service/conversations/"
+        f"{conversation_id}/messages",
+        headers=agent_headers,
+        json={"content": "客服坐席回复"},
+    )
+    assert reply.status_code == 200
+    assert reply.json()["sender_role"] == "admin"
+
+
+def test_user_without_agent_permission_lists_only_own_conversations(
+    client: TestClient,
+    db: Session,
+) -> None:
+    """未持有客服权限的普通用户，会话列表中看不到他人会话"""
+    owner_headers, _ = _create_user_headers(client, db)
+    other_headers, _ = _create_user_headers(client, db)
+    _create_my_conversation(client, owner_headers)
+
+    listed = client.get(
+        f"{settings.API_V1_STR}/customer-service/conversations",
+        headers=other_headers,
+    )
+    assert listed.status_code == 200
+    assert listed.json()["data"] == []
 
 
 def test_message_send_publishes_realtime(

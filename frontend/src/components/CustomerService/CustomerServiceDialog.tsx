@@ -1,22 +1,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { Bell } from "lucide-react"
 import { useEffect, useState } from "react"
 
-import {
-  type ConversationPublic,
-  CustomerServiceService,
-  NotificationsService,
-} from "@/client"
+import { type ConversationPublic, CustomerServiceService } from "@/client"
 import { ChatPanel } from "@/components/CustomerService/ChatPanel"
 import {
   CS_CONVERSATIONS_QUERY_KEY,
   useCustomerService,
 } from "@/components/CustomerService/CustomerServiceProvider"
-import {
-  MY_NOTIFICATIONS_UNREAD_QUERY_KEY,
-  MY_UNREAD_SUMMARY_QUERY_KEY,
-} from "@/components/Notifications/constants"
-import { NotificationPanel } from "@/components/Notifications/NotificationPanel"
+import { MY_UNREAD_SUMMARY_QUERY_KEY } from "@/components/Notifications/constants"
 import {
   Dialog,
   DialogContent,
@@ -29,12 +20,11 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar"
-import useAuth from "@/hooks/useAuth"
+import usePermissions from "@/hooks/usePermissions"
 import { formatRelativeTime } from "@/lib/format-relative-time"
 import { cn } from "@/lib/utils"
 import {
@@ -52,24 +42,19 @@ function getConversationsQueryOptions() {
 
 export function CustomerServiceDialog() {
   const queryClient = useQueryClient()
-  const { user } = useAuth()
   const { socket } = useRealtime()
-  const { open, view, conversationId, setView, closeCustomerService } =
-    useCustomerService()
-  const isSuperuser = user?.is_superuser ?? false
+  const { open, conversationId, closeCustomerService } = useCustomerService()
+  const { hasPermission } = usePermissions()
+  // 客服坐席：可查看全部会话；删除会话需单独权限
+  const isAgent = hasPermission("customer_service:view")
+  const canDeleteConversation = hasPermission("customer_service:delete")
   const [activeId, setActiveId] = useState<string | null>(null)
 
   const conversationsQuery = useQuery({
     ...getConversationsQueryOptions(),
-    enabled: open,
+    enabled: open && isAgent,
   })
   const conversations = conversationsQuery.data?.data ?? []
-
-  const unreadQuery = useQuery({
-    queryKey: MY_NOTIFICATIONS_UNREAD_QUERY_KEY,
-    queryFn: () => NotificationsService.readUnreadCount(),
-    enabled: open,
-  })
 
   // 弹窗级实时监听：无论当前是否选中会话，都刷新会话列表
   useEffect(() => {
@@ -120,7 +105,7 @@ export function CustomerServiceDialog() {
 
   // 普通用户：打开弹窗即获取或创建自己的进行中会话
   useEffect(() => {
-    if (!open || isSuperuser) return
+    if (!open || isAgent) return
     CustomerServiceService.createConversationEndpoint({}).then(
       (conversation) => {
         setActiveId(conversation.id)
@@ -129,7 +114,7 @@ export function CustomerServiceDialog() {
         })
       },
     )
-  }, [open, isSuperuser, queryClient])
+  }, [open, isAgent, queryClient])
 
   return (
     <Dialog
@@ -144,39 +129,16 @@ export function CustomerServiceDialog() {
         <SidebarProvider className="h-full min-h-0">
           <Sidebar collapsible="none" className="hidden md:flex">
             <SidebarContent className="overflow-y-auto">
-              <SidebarGroup>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        isActive={view === "notifications"}
-                        onClick={() => setView("notifications")}
-                        className="h-12"
-                      >
-                        <Bell />
-                        <span>系统通知</span>
-                        {unreadQuery.data?.unread_count ? (
-                          <SidebarMenuBadge className="bg-destructive text-destructive-foreground">
-                            {unreadQuery.data.unread_count}
-                          </SidebarMenuBadge>
-                        ) : null}
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-              {isSuperuser ? (
+              {/* 会话列表：坐席可查看全部会话，普通用户直接进入自己的会话 */}
+              {isAgent ? (
                 <SidebarGroup>
                   <SidebarGroupContent>
                     <SidebarMenu>
                       {conversations.map((item: ConversationPublic) => (
                         <SidebarMenuItem key={item.id}>
                           <SidebarMenuButton
-                            isActive={view === "chat" && item.id === activeId}
-                            onClick={() => {
-                              setView("chat")
-                              setActiveId(item.id)
-                            }}
+                            isActive={item.id === activeId}
+                            onClick={() => setActiveId(item.id)}
                             className="flex-col items-start gap-1"
                           >
                             <span className="flex w-full items-center justify-between gap-2">
@@ -224,12 +186,11 @@ export function CustomerServiceDialog() {
             </SidebarContent>
           </Sidebar>
           <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-            {view === "notifications" ? (
-              <NotificationPanel active={open && view === "notifications"} />
-            ) : activeId ? (
+            {activeId ? (
               <ChatPanel
                 conversationId={activeId}
-                isSuperuser={isSuperuser}
+                isAgent={isAgent}
+                canDelete={canDeleteConversation}
                 onConversationDeleted={() => setActiveId(null)}
               />
             ) : (

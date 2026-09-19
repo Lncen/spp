@@ -6989,6 +6989,23 @@ export const UserCreateSchema = {
     description: '创建用户请求'
 } as const;
 
+export const UserDeniedPermissionsUpdateSchema = {
+    properties: {
+        permission_ids: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: 'Permission Ids'
+        }
+    },
+    type: 'object',
+    required: ['permission_ids'],
+    title: 'UserDeniedPermissionsUpdate',
+    description: '设置用户直授拒绝请求：全量覆盖'
+} as const;
+
 export const UserDetailPublicSchema = {
     properties: {
         username: {
@@ -7162,6 +7179,51 @@ export const UserListPublicSchema = {
     required: ['data', 'count'],
     title: 'UserListPublic',
     description: '用户列表响应（管理端）'
+} as const;
+
+export const UserPermissionsPublicSchema = {
+    properties: {
+        user_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'User Id'
+        },
+        allow_codes: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Allow Codes'
+        },
+        deny_codes: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Deny Codes'
+        }
+    },
+    type: 'object',
+    required: ['user_id', 'allow_codes', 'deny_codes'],
+    title: 'UserPermissionsPublic',
+    description: '用户直授权限响应：直接授予与显式拒绝两类'
+} as const;
+
+export const UserPermissionsUpdateSchema = {
+    properties: {
+        permission_ids: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: 'Permission Ids'
+        }
+    },
+    type: 'object',
+    required: ['permission_ids'],
+    title: 'UserPermissionsUpdate',
+    description: '设置用户直授权限请求：全量覆盖'
 } as const;
 
 export const UserPublicSchema = {

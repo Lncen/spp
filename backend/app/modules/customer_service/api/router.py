@@ -5,11 +5,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
+from app.api.deps import CurrentUser, SessionDep, require_permission
 from app.common.models import Message
 from app.modules.customer_service.application.conversation_manage import (
     delete_conversation,
     get_or_create_conversation,
+    is_agent,
     list_conversations,
     to_conversation_public,
     update_conversation_status,
@@ -59,12 +60,13 @@ def create_conversation_endpoint(
     current_user: CurrentUser,
     body: ConversationCreate | None = None,
 ) -> ConversationPublic:
-    """发起会话：普通用户获取自己的进行中会话；管理端为指定用户发起"""
-    if current_user.is_superuser:
+    """发起会话：普通用户获取自己的进行中会话；客服坐席为指定用户发起"""
+    can_view_all = is_agent(session=session, user=current_user)
+    if can_view_all:
         if body is None or body.user_id is None:
             raise HTTPException(
                 status_code=400,
-                detail="管理端发起会话需指定用户",
+                detail="客服坐席发起会话需指定用户",
             )
         target = session.get(User, body.user_id)
         if target is None:
@@ -81,7 +83,7 @@ def create_conversation_endpoint(
     return to_conversation_public(
         session=session,
         conversation=conversation,
-        include_user_info=current_user.is_superuser,
+        include_user_info=can_view_all,
         reader_id=current_user.id,
     )
 
@@ -145,14 +147,14 @@ def read_conversation(
     return to_conversation_public(
         session=session,
         conversation=conversation,
-        include_user_info=current_user.is_superuser,
+        include_user_info=is_agent(session=session, user=current_user),
         reader_id=current_user.id,
     )
 
 
 @router.patch(
     "/conversations/{conversation_id}/status",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("customer_service:update"))],
     response_model=ConversationPublic,
 )
 def update_status_endpoint(
@@ -161,7 +163,7 @@ def update_status_endpoint(
     conversation_id: uuid.UUID,
     body: ConversationStatusUpdate,
 ) -> ConversationPublic:
-    """管理端开关会话（open / closed）"""
+    """管理端开关会话（open / closed），需 `customer_service:update`"""
     conversation = update_conversation_status(
         session=session,
         conversation_id=conversation_id,
@@ -177,14 +179,14 @@ def update_status_endpoint(
 
 @router.delete(
     "/conversations/{conversation_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("customer_service:delete"))],
     response_model=Message,
 )
 def delete_conversation_endpoint(
     session: SessionDep,
     conversation_id: uuid.UUID,
 ) -> Message:
-    """删除会话及其全部消息（仅管理端可删除）"""
+    """删除会话及其全部消息，需 `customer_service:delete`"""
     delete_conversation(
         session=session,
         conversation_id=conversation_id,
@@ -194,11 +196,11 @@ def delete_conversation_endpoint(
 
 @router.get(
     "/online",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("customer_service:view"))],
     response_model=OnlineStatusPublic,
 )
 def read_online_status(
     user_ids: Annotated[list[uuid.UUID], Query()],
 ) -> OnlineStatusPublic:
-    """管理端批量查询用户在线状态"""
+    """管理端批量查询用户在线状态，需 `customer_service:view`"""
     return OnlineStatusPublic(online=batch_online(user_ids))

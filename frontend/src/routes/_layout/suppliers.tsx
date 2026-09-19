@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute, redirect } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 import type { PaginationState } from "@tanstack/react-table"
 import { Suspense, useState } from "react"
 
@@ -8,7 +8,7 @@ import Pending from "@/components/Admin/Pending/PendingItems"
 import AddSupplier from "@/components/Admin/Suppliers/AddSupplier"
 import { columns } from "@/components/Admin/Suppliers/columns"
 import { DataTable } from "@/components/Common/DataTable"
-import { getCurrentUserQueryOptions } from "@/hooks/useAuth"
+import { ensurePermission } from "@/hooks/usePermissions"
 
 function getSuppliersQueryOptions(pagination: PaginationState) {
   return {
@@ -25,16 +25,8 @@ function getSuppliersQueryOptions(pagination: PaginationState) {
 
 export const Route = createFileRoute("/_layout/suppliers")({
   component: Suppliers,
-  beforeLoad: async ({ context }) => {
-    const user = await context.queryClient.ensureQueryData(
-      getCurrentUserQueryOptions(),
-    )
-    if (!user.is_superuser) {
-      throw redirect({
-        to: "/",
-      })
-    }
-  },
+  beforeLoad: ({ context }) =>
+    ensurePermission(context.queryClient, "supplier:view"),
   head: () => ({
     meta: [
       {

@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.api.deps import SessionDep, get_current_active_superuser
+from app.api.deps import SessionDep, require_permission
 from app.common.models import Message
 from app.modules.automation.application.schedule import get_task_status
 from app.modules.automation.schemas import TaskStatusPublic
@@ -57,7 +57,7 @@ router = APIRouter(prefix="/suppliers", tags=["suppliers"])
 
 @router.get(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("supplier:view"))],
     response_model=SuppliersPublic,
 )
 def read_suppliers(
@@ -65,43 +65,43 @@ def read_suppliers(
     skip: int = 0,
     limit: int = 100,
 ) -> Any:
-    """获取供应商列表（超管权限）"""
+    """获取供应商列表"""
     return list_suppliers_app(session=session, skip=skip, limit=limit)
 
 
 @router.get(
     "/platform-options",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("supplier:view"))],
     response_model=PlatformOptionsPublic,
 )
 def get_platform_options() -> Any:
-    """获取平台枚举选项列表（超管权限，前端下拉菜单使用）"""
+    """获取平台枚举选项列表（前端下拉菜单使用）"""
     return get_platform_options_app()
 
 
 @router.get(
     "/{id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("supplier:view"))],
     response_model=SupplierPublic,
 )
 def read_supplier(
     session: SessionDep,
     id: uuid.UUID = ...,
 ) -> Any:
-    """根据 ID 获取供应商详情（超管权限）"""
+    """根据 ID 获取供应商详情"""
     return get_supplier_app(session=session, supplier_id=id)
 
 
 @router.get(
     "/{id}/balance",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("supplier:view"))],
     response_model=BalancePublic,
 )
 def read_supplier_balance(
     session: SessionDep,
     id: uuid.UUID,
 ) -> Any:
-    """获取供应商上游实时余额（超管权限）"""
+    """获取供应商上游实时余额"""
     try:
         balance = refresh_supplier_balance(session=session, supplier_id=id)
     except SupplierClientError as e:
@@ -111,7 +111,7 @@ def read_supplier_balance(
 
 @router.get(
     "/{id}/upstream-products",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("supplier:view"))],
     response_model=UpstreamProductsPublic,
 )
 def read_upstream_products(
@@ -119,7 +119,7 @@ def read_upstream_products(
     id: uuid.UUID,
     category_id: str | None = None,
 ) -> Any:
-    """获取上游商品列表并标记本地同步状态（超管权限）"""
+    """获取上游商品列表并标记本地同步状态"""
     try:
         items = list_upstream_products_app(
             session=session,
@@ -133,14 +133,14 @@ def read_upstream_products(
 
 @router.get(
     "/{id}/upstream-categories",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("supplier:view"))],
     response_model=UpstreamCategoriesPublic,
 )
 def read_upstream_categories(
     session: SessionDep,
     id: uuid.UUID,
 ) -> Any:
-    """获取上游商品分类列表（超管权限）"""
+    """获取上游商品分类列表"""
     try:
         items = list_upstream_categories_app(session=session, supplier_id=id)
     except SupplierClientError as e:
@@ -150,7 +150,7 @@ def read_upstream_categories(
 
 @router.post(
     "/{id}/upstream-products/sync",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("supplier:sync"))],
     response_model=UpstreamProductSyncPublic,
 )
 def create_upstream_products_sync(
@@ -158,7 +158,7 @@ def create_upstream_products_sync(
     id: uuid.UUID,
     sync_in: UpstreamProductSyncRequest,
 ) -> Any:
-    """按勾选的上游商品 ID 创建异步同步任务（超管权限）"""
+    """按勾选的上游商品 ID 创建异步同步任务"""
     task_id = create_upstream_products_sync_app(
         session=session,
         supplier_id=id,
@@ -170,7 +170,7 @@ def create_upstream_products_sync(
 
 @router.get(
     "/{id}/upstream-products/sync/{task_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("supplier:sync"))],
     response_model=TaskStatusPublic,
 )
 def read_upstream_products_sync_status(
@@ -178,14 +178,14 @@ def read_upstream_products_sync_status(
     id: uuid.UUID,
     task_id: str,
 ) -> Any:
-    """查询上游商品同步任务状态（超管权限）"""
+    """查询上游商品同步任务状态"""
     get_supplier_app(session=session, supplier_id=id)
     return get_task_status(task_id)
 
 
 @router.post(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("supplier:create"))],
     response_model=SupplierPublic,
 )
 def create_supplier(
@@ -193,14 +193,14 @@ def create_supplier(
     session: SessionDep,
     supplier_in: SupplierCreate,
 ) -> Any:
-    """创建供应商（超管权限）"""
+    """创建供应商"""
     supplier = create_supplier_app(session=session, supplier_in=supplier_in)
     return to_supplier_public(supplier)
 
 
 @router.put(
     "/{id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("supplier:update"))],
     response_model=SupplierPublic,
 )
 def update_supplier(
@@ -209,7 +209,7 @@ def update_supplier(
     id: uuid.UUID,
     supplier_in: SupplierUpdate,
 ) -> Any:
-    """更新供应商信息（超管权限，不含余额）"""
+    """更新供应商信息（不含余额）"""
     supplier = update_supplier_app(
         session=session,
         supplier_id=id,
@@ -220,13 +220,13 @@ def update_supplier(
 
 @router.delete(
     "/{id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("supplier:delete"))],
     response_model=Message,
 )
 def delete_supplier(
     session: SessionDep,
     id: uuid.UUID = ...,
 ) -> Message:
-    """删除供应商（超管权限）"""
+    """删除供应商"""
     delete_supplier_app(session=session, supplier_id=id)
     return Message(message="供应商已删除")

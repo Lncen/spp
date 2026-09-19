@@ -8,7 +8,8 @@ from sqlmodel import Session, col, select
 
 from app.core.time import get_datetime_cn
 from app.modules.customer_service.application.conversation_manage import (
-    list_active_superuser_ids,
+    is_agent,
+    list_active_agent_ids,
     to_conversation_public,
 )
 from app.modules.customer_service.application.realtime_publish import (
@@ -36,15 +37,17 @@ from app.modules.user.models import User
 
 def is_participant(
     *,
+    session: Session,
     conversation: Conversation,
     user: User,
 ) -> bool:
-    """会话参与者校验：本人或管理员"""
-    return user.is_superuser or (
+    """会话参与者校验：会话本人或客服坐席"""
+    is_owner = (
         conversation.user_id is not None
         and user.id is not None
         and conversation.user_id == user.id
     )
+    return is_owner or is_agent(session=session, user=user)
 
 
 def _get_participant_conversation(
@@ -59,7 +62,9 @@ def _get_participant_conversation(
     )
     if conversation is None:
         raise HTTPException(status_code=404, detail="会话不存在")
-    if not is_participant(conversation=conversation, user=user):
+    if not is_participant(
+        session=session, conversation=conversation, user=user
+    ):
         raise HTTPException(status_code=403, detail="无权访问该会话")
     return conversation
 
@@ -81,7 +86,11 @@ def send_message(
         raise HTTPException(status_code=400, detail="会话已关闭，无法发送消息")
     if sender.id is None:
         raise HTTPException(status_code=400, detail="用户 ID 缺失")
-    sender_role = SenderRole.ADMIN if sender.is_superuser else SenderRole.USER
+    sender_role = (
+        SenderRole.ADMIN
+        if is_agent(session=session, user=sender)
+        else SenderRole.USER
+    )
     now = get_datetime_cn()
     message = create_message(
         session=session,
@@ -99,11 +108,11 @@ def send_message(
     session.commit()
     session.refresh(message)
 
-    admin_ids = list_active_superuser_ids(session=session)
+    agent_ids = list_active_agent_ids(session=session)
     publish_message_created(
         participant_ids=conversation_participant_ids(
             conversation=conversation,
-            admin_ids=admin_ids,
+            agent_ids=agent_ids,
         ),
         message=message,
     )
@@ -138,7 +147,7 @@ def get_messages(
     conversation_public = to_conversation_public(
         session=session,
         conversation=conversation,
-        include_user_info=user.is_superuser,
+        include_user_info=is_agent(session=session, user=user),
         reader_id=user.id,
     )
     return MessagesPublic(
@@ -163,7 +172,11 @@ def mark_conversation_read(
         conversation_id=conversation_id,
         user=reader,
     )
-    reader_role = SenderRole.ADMIN if reader.is_superuser else SenderRole.USER
+    reader_role = (
+        SenderRole.ADMIN
+        if is_agent(session=session, user=reader)
+        else SenderRole.USER
+    )
     updated = mark_messages_read(
         session=session,
         conversation_id=conversation.id,
@@ -172,11 +185,11 @@ def mark_conversation_read(
     )
     session.commit()
     if updated:
-        admin_ids = list_active_superuser_ids(session=session)
+        agent_ids = list_active_agent_ids(session=session)
         publish_message_read(
             participant_ids=conversation_participant_ids(
                 conversation=conversation,
-                admin_ids=admin_ids,
+                agent_ids=agent_ids,
             ),
             conversation_id=conversation.id,
             reader_role=reader_role,

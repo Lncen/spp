@@ -1,8 +1,11 @@
-"""角色模块：权限缓存基础设施
+"""授权模块：权限缓存基础设施
 
-缓存键：``spp:perm:{version}:user:{user_id}``，值为权限码 JSON 列表。
+缓存键：``spp:perm:{version}:user:{user_id}``，值为用户有效权限码 JSON 列表。
 ``version`` 用于权限定义变更时整体失效，避免使用 SCAN 遍历删除。
 Redis 不可用时全部降级为缓存未命中，由调用方回落数据库。
+
+本文件是叶子基础设施，不引用任何业务模块的 application / repositories，
+以便其他模块（如角色管理）在清理授权后直接失效缓存而不会形成循环依赖。
 """
 
 import json

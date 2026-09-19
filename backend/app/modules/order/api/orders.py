@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Request
 from app.api.deps import (
     CurrentUser,
     SessionDep,
-    get_current_active_superuser,
+    require_permission,
 )
 from app.modules.order.application.after_sale.cancel import cancel_order
 from app.modules.order.application.after_sale.refund import refund_order
@@ -90,7 +90,7 @@ def read_user_orders(
 
 @router.post(
     "/admin",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("order:create"))],
     response_model=AdminOrdersPublic,
 )
 def create_admin_orders_api(
@@ -99,7 +99,7 @@ def create_admin_orders_api(
     current_user: CurrentUser,
     body: AdminOrdersCreate,
 ) -> Any:
-    """管理员批量下单（仅超管），跳过钱包与余额校验"""
+    """管理员批量下单，跳过钱包与余额校验"""
     return create_admin_orders(
         session=session,
         operator=current_user,
@@ -109,7 +109,7 @@ def create_admin_orders_api(
 
 @router.post(
     "/admin/preview",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("order:create"))],
     response_model=AdminOrdersPreviewPublic,
 )
 def preview_admin_orders_api(
@@ -118,7 +118,7 @@ def preview_admin_orders_api(
     current_user: CurrentUser,
     body: AdminOrdersCreate,
 ) -> Any:
-    """管理员批量下单结算预览（仅超管），不扣库存不落库"""
+    """管理员批量下单结算预览，不扣库存不落库"""
     return preview_admin_orders(
         session=session,
         operator=current_user,
@@ -165,7 +165,7 @@ def cancel_user_order(
 
 @router.get(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("order:view"))],
     response_model=OrdersPublic,
 )
 def read_orders(
@@ -176,7 +176,7 @@ def read_orders(
     user_id: uuid.UUID | None = None,
     keyword: str | None = None,
 ) -> Any:
-    """查看全部订单，可按用户、状态与关键字过滤（仅超级管理员可用）"""
+    """查看全部订单，可按用户、状态与关键字过滤"""
     orders, count = list_orders(
         session=session,
         skip=skip,
@@ -193,18 +193,18 @@ def read_orders(
 
 @router.get(
     "/{order_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("order:view"))],
     response_model=OrderPublic,
 )
 def read_order(*, session: SessionDep, order_id: uuid.UUID) -> Any:
-    """查看单个订单（仅超级管理员可用）"""
+    """查看单个订单"""
     db_order = get_order(session=session, order_id=order_id)
     return to_order_public(session=session, orders=[db_order])[0]
 
 
 @router.post(
     "/{order_id}/fulfill",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("order:fulfill"))],
     response_model=OrderPublic,
 )
 def fulfill_order_api(
@@ -214,7 +214,7 @@ def fulfill_order_api(
     order_id: uuid.UUID,
     body: OrderRemarkRequest | None = None,
 ) -> Any:
-    """履约订单（仅超级管理员可用）"""
+    """履约订单"""
     db_order = get_order(session=session, order_id=order_id)
     db_order = fulfill_order(
         session=session,
@@ -227,7 +227,7 @@ def fulfill_order_api(
 
 @router.post(
     "/{order_id}/cancel",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("order:cancel"))],
     response_model=OrderPublic,
 )
 def cancel_order_api(
@@ -266,7 +266,7 @@ def cancel_order_api(
 
 @router.post(
     "/{order_id}/refund",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("order:refund"))],
     response_model=OrderPublic,
 )
 def refund_order_api(
@@ -277,7 +277,7 @@ def refund_order_api(
     order_id: uuid.UUID,
     body: OrderRefundRequest,
 ) -> Any:
-    """管理员手动退款，按指定金额入账（仅超级管理员可用）"""
+    """管理员手动退款，按指定金额入账"""
     db_order = get_order(session=session, order_id=order_id)
     old_status = db_order.status
     refund_amount = str(body.amount)
@@ -310,7 +310,7 @@ def refund_order_api(
 
 @router.post(
     "/{order_id}/status",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("order:update"))],
     response_model=OrderPublic,
 )
 def update_order_status_api(
@@ -321,7 +321,7 @@ def update_order_status_api(
     order_id: uuid.UUID,
     body: OrderStatusUpdateRequest,
 ) -> Any:
-    """管理员手动设置订单状态（仅超级管理员可用）"""
+    """管理员手动设置订单状态"""
     db_order = get_order(session=session, order_id=order_id)
     old_status = db_order.status
     db_order = update_order_status(
@@ -348,7 +348,7 @@ def update_order_status_api(
 
 @router.post(
     "/{order_id}/sync-status",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("order:update"))],
     response_model=OrderPublic,
 )
 def sync_order_status_api(
@@ -356,7 +356,7 @@ def sync_order_status_api(
     session: SessionDep,
     order_id: uuid.UUID,
 ) -> Any:
-    """同步上游订单状态（仅超级管理员可用）"""
+    """同步上游订单状态"""
     db_order = get_order(session=session, order_id=order_id)
     db_order = sync_order_status(session=session, db_order=db_order)
     return to_order_public(session=session, orders=[db_order])[0]
@@ -364,7 +364,7 @@ def sync_order_status_api(
 
 @router.post(
     "/{order_id}/supplier-order-id",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("order:update"))],
     response_model=OrderPublic,
 )
 def record_supplier_order_id_api(
@@ -373,7 +373,7 @@ def record_supplier_order_id_api(
     order_id: uuid.UUID,
     body: SupplierOrderIdUpdateRequest,
 ) -> Any:
-    """人工确认上游已下单后补录供应商订单号（仅超级管理员）"""
+    """人工确认上游已下单后补录供应商订单号"""
     db_order = get_order(session=session, order_id=order_id)
     db_order = record_supplier_order_id(
         session=session,

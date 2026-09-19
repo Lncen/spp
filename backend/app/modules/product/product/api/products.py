@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-from app.api.deps import SessionDep, get_current_active_superuser
+from app.api.deps import SessionDep, require_permission
 from app.common.models import Message
 from app.modules.product.constants import (
     ProductStatus,
@@ -40,7 +40,7 @@ product_router = APIRouter(prefix="/products", tags=["products"])
 
 @product_router.get(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("product:view"))],
     response_model=ProductsPublic,
 )
 def read_products(
@@ -54,7 +54,7 @@ def read_products(
     is_closed: bool | None = None,
     name: str | None = None,
 ) -> Any:
-    """分页查询商品（仅超管）"""
+    """分页查询商品"""
     return list_products(
         session=session,
         skip=skip,
@@ -70,28 +70,28 @@ def read_products(
 
 @product_router.post(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("product:create"))],
     response_model=ProductPublic,
 )
 def create_product(*, session: SessionDep, product_in: ProductCreate) -> Any:
-    """创建商品及其关联配置（仅超管）"""
+    """创建商品及其关联配置"""
     product = create_product_service(session=session, product_in=product_in)
     return to_products_public(session, [product])[0]
 
 
 @product_router.get(
     "/{product_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("product:view"))],
     response_model=ProductPublic,
 )
 def read_product(session: SessionDep, product_id: uuid.UUID) -> Any:
-    """根据 ID 获取商品（仅超管）"""
+    """根据 ID 获取商品"""
     return get_product_service(session=session, product_id=product_id)
 
 
 @product_router.put(
     "/{product_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("product:update"))],
     response_model=ProductPublic,
 )
 def update_product(
@@ -100,7 +100,7 @@ def update_product(
     product_id: uuid.UUID,
     product_in: ProductUpdate,
 ) -> Any:
-    """更新商品及其关联配置（仅超管）"""
+    """更新商品及其关联配置"""
     product = update_product_service(
         session=session,
         product_id=product_id,
@@ -111,10 +111,10 @@ def update_product(
 
 @product_router.delete(
     "/{product_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission("product:delete"))],
     response_model=Message,
 )
 def delete_product(session: SessionDep, product_id: uuid.UUID) -> Message:
-    """删除商品及其关联配置（仅超管）"""
+    """删除商品及其关联配置"""
     delete_product_service(session=session, product_id=product_id)
     return Message(message="商品已删除")

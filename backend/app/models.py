@@ -8,6 +8,11 @@
 from sqlmodel import SQLModel
 
 from app.modules.auth.models import RefreshToken
+from app.modules.authorization.models import (
+    RolePermission,
+    UserPermission,
+    UserRole,
+)
 from app.modules.automation.models import (
     AutomationEvent,
     AutomationRule,
@@ -36,7 +41,7 @@ from app.modules.product.product.models import (
     ProductPricing,
     ProductSupplier,
 )
-from app.modules.role.models import Role, RolePermission, UserRole
+from app.modules.role.models import Role
 from app.modules.setting.models import AppSetting
 from app.modules.supplier.models import Supplier
 from app.modules.system_log.models import AuditLog, SystemLog
@@ -77,6 +82,7 @@ __all__ = [
     "ProductBuyParam",
     "Role",
     "RolePermission",
+    "UserPermission",
     "UserRole",
     "Wallet",
     "WalletTransaction",

@@ -80,19 +80,21 @@ backend/app/modules/supplier/
 
 ## 四、API 路由
 
-| 方法 | 路径 | 说明 |
-| --- | --- | --- |
-| GET | /suppliers/ | 供应商列表（超管） |
-| GET | /suppliers/platform-options | 平台枚举选项（超管，前端下拉） |
-| GET | /suppliers/{id} | 供应商详情（超管） |
-| POST | /suppliers/ | 创建供应商（超管） |
-| PUT | /suppliers/{id} | 更新供应商（超管，不含余额） |
-| DELETE | /suppliers/{id} | 删除供应商（超管） |
-| GET | /suppliers/{id}/balance | 查询并写回上游实时余额（超管） |
-| GET | /suppliers/{id}/upstream-products | 上游商品列表并标记本地同步状态（超管） |
-| GET | /suppliers/{id}/upstream-categories | 上游商品分类列表（超管） |
-| POST | /suppliers/{id}/upstream-products/sync | 创建上游商品异步同步任务（超管） |
-| GET | /suppliers/{id}/upstream-products/sync/{task_id} | 查询同步任务状态（超管） |
+| 方法 | 路径 | 权限码 | 说明 |
+| --- | --- | --- | --- |
+| GET | /suppliers/ | `supplier:view` | 供应商列表 |
+| GET | /suppliers/platform-options | `supplier:view` | 平台枚举选项（前端下拉） |
+| GET | /suppliers/{id} | `supplier:view` | 供应商详情 |
+| POST | /suppliers/ | `supplier:create` | 创建供应商 |
+| PUT | /suppliers/{id} | `supplier:update` | 更新供应商（不含余额） |
+| DELETE | /suppliers/{id} | `supplier:delete` | 删除供应商 |
+| GET | /suppliers/{id}/balance | `supplier:view` | 查询并写回上游实时余额 |
+| GET | /suppliers/{id}/upstream-products | `supplier:view` | 上游商品列表并标记本地同步状态 |
+| GET | /suppliers/{id}/upstream-categories | `supplier:view` | 上游商品分类列表 |
+| POST | /suppliers/{id}/upstream-products/sync | `supplier:sync` | 创建上游商品异步同步任务 |
+| GET | /suppliers/{id}/upstream-products/sync/{task_id} | `supplier:sync` | 查询同步任务状态 |
+
+权限码清单见 `app/init_models_data/permissions.py` 的「供应商管理」分类，接口统一使用 `app/api/deps.py` 的 `require_permission` 声明。
 
 ## 五、关键设计
 

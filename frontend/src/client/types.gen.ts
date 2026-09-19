@@ -2003,6 +2003,13 @@ export type UserCreate = {
 };
 
 /**
+ * 设置用户直授拒绝请求：全量覆盖
+ */
+export type UserDeniedPermissionsUpdate = {
+    permission_ids: Array<(string)>;
+};
+
+/**
  * 用户详情响应（管理端）
  */
 export type UserDetailPublic = {
@@ -2044,6 +2051,22 @@ export type UserListItemPublic = {
 export type UserListPublic = {
     data: Array<UserListItemPublic>;
     count: number;
+};
+
+/**
+ * 用户直授权限响应：直接授予与显式拒绝两类
+ */
+export type UserPermissionsPublic = {
+    user_id: string;
+    allow_codes: Array<(string)>;
+    deny_codes: Array<(string)>;
+};
+
+/**
+ * 设置用户直授权限请求：全量覆盖
+ */
+export type UserPermissionsUpdate = {
+    permission_ids: Array<(string)>;
 };
 
 /**
@@ -2832,6 +2855,33 @@ export type RolesRemoveUserRoleData = {
 };
 
 export type RolesRemoveUserRoleResponse = (Message);
+
+export type RolesReadUserPermissionsData = {
+    userId: string;
+};
+
+export type RolesReadUserPermissionsResponse = (UserPermissionsPublic);
+
+export type RolesSetUserPermissionsEndpointData = {
+    requestBody: UserPermissionsUpdate;
+    userId: string;
+};
+
+export type RolesSetUserPermissionsEndpointResponse = (UserPermissionsPublic);
+
+export type RolesSetUserDeniedPermissionsEndpointData = {
+    requestBody: UserDeniedPermissionsUpdate;
+    userId: string;
+};
+
+export type RolesSetUserDeniedPermissionsEndpointResponse = (UserPermissionsPublic);
+
+export type RolesRemoveUserPermissionEndpointData = {
+    permissionId: string;
+    userId: string;
+};
+
+export type RolesRemoveUserPermissionEndpointResponse = (Message);
 
 export type SchedulesReadSchedulesData = {
     limit?: number;
