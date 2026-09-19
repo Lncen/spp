@@ -16,6 +16,7 @@ class ConversationPublic(SQLModel):
     last_message_preview: str | None = None
     created_at: datetime | None = None
     user_name: str | None = Field(default=None, title="用户展示名（管理端）")
+    user_avatar_url: str | None = Field(default=None, title="用户头像 URL（管理端）")
     user_online: bool = Field(default=False, title="用户是否在线（管理端）")
     unread_count: int = Field(
         default=0,

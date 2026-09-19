@@ -64,7 +64,7 @@ def test_permission_catalog_requires_login(
         for category in response.json()["data"]
         for permission in category["permissions"]
     }
-    assert actions <= {"view", "create", "update", "manage"}
+    assert actions <= {"view", "reply", "create", "update", "manage"}
 
     categories = client.get(
         f"{API}/permission-categories", headers=superuser_token_headers
@@ -116,7 +116,9 @@ def test_role_assignment_grants_and_revokes_permission(
 
     assert client.get(f"{API}/roles", headers=user_headers).status_code == 403
     me = client.get(f"{API}/users/me/permissions", headers=user_headers)
-    assert me.json() == {"is_superuser": False, "permission_codes": []}
+    # 新用户默认持有内置「普通用户」角色的会话自助权限，但不应包含角色模块权限
+    assert me.json()["is_superuser"] is False
+    assert "role:view" not in me.json()["permission_codes"]
 
     response = client.post(
         f"{API}/users/{user_id}/roles",
@@ -290,7 +292,7 @@ def test_delete_role_clears_permission_and_user_assignment(
     assert client.get(f"{API}/roles", headers=user_headers).status_code == 403
     roles = client.get(f"{API}/users/{user_id}/roles", headers=superuser_token_headers)
     assert roles.status_code == 200, roles.text
-    assert roles.json()["count"] == 0
+    assert all(item["id"] != role_id for item in roles.json()["data"])
 
     # 重复删除幂等：第二次返回 404
     assert (
@@ -321,7 +323,9 @@ def test_user_permission_grant_takes_effect_and_can_be_revoked(
 
     assert client.get(f"{API}/roles", headers=user_headers).status_code == 403
     me = client.get(f"{API}/users/me/permissions", headers=user_headers)
-    assert me.json() == {"is_superuser": False, "permission_codes": []}
+    # 新用户默认持有内置「普通用户」角色的会话自助权限，但不应包含角色模块权限
+    assert me.json()["is_superuser"] is False
+    assert "role:view" not in me.json()["permission_codes"]
 
     response = client.put(
         f"{API}/users/{user_id}/permissions",

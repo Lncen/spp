@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Send, Trash2 } from "lucide-react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { Send } from "lucide-react"
+import { Fragment, useCallback, useEffect, useRef, useState } from "react"
 
 import {
   type ConversationPublic,
@@ -8,21 +8,9 @@ import {
   type MessagePublic,
   type MessagesPublic,
 } from "@/client"
-import { formatDateTime } from "@/components/Admin/Automation/tasks/constants"
 import { CS_CONVERSATIONS_QUERY_KEY } from "@/components/CustomerService/CustomerServiceProvider"
 import { MY_UNREAD_SUMMARY_QUERY_KEY } from "@/components/Notifications/constants"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Bubble, BubbleContent } from "@/components/ui/bubble"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,38 +18,67 @@ import {
   Message,
   MessageAvatar,
   MessageContent,
-  MessageFooter,
   MessageGroup,
-  MessageHeader,
 } from "@/components/ui/message"
 import useAuth from "@/hooks/useAuth"
-import { cn } from "@/lib/utils"
+import useCustomToast from "@/hooks/useCustomToast"
+import usePermissions from "@/hooks/usePermissions"
 import {
   REALTIME_EVENT_CUSTOMER_SERVICE_MESSAGE_CREATED,
   REALTIME_EVENT_CUSTOMER_SERVICE_MESSAGE_READ,
   REALTIME_EVENT_CUSTOMER_SERVICE_TYPING,
 } from "@/realtime/events"
 import { useRealtime } from "@/realtime/RealtimeProvider"
+import { handleError } from "@/utils"
 
 const CS_MESSAGES_QUERY_KEY = ["customer-service-messages"]
 const TYPING_EMIT_INTERVAL_MS = 800
 const MESSAGES_PAGE_SIZE = 50
 const MESSAGES_LOAD_MORE_THRESHOLD = 120
+/** 相邻消息间隔超过该时长时插入居中的时间分隔 */
+const TIME_DIVIDER_GAP_MS = 5 * 60 * 1000
+
+/** 时间分隔文案：当天只显示 HH:mm，跨天补上日期 */
+function formatMessageTime(value?: string | null): string {
+  if (!value) return ""
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ""
+  const time = date.toLocaleTimeString("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+  if (date.toDateString() === new Date().toDateString()) return time
+  return `${date.getMonth() + 1}月${date.getDate()}日 ${time}`
+}
+
+/** 首条消息、跨天或与上一条间隔超过 5 分钟时显示时间分隔 */
+function shouldShowTimeDivider(
+  messages: MessagePublic[],
+  index: number,
+): boolean {
+  const current = messages[index]
+  if (!current?.created_at) return index === 0
+  if (index === 0) return true
+  const previous = messages[index - 1]
+  const currentAt = new Date(current.created_at).getTime()
+  const previousAt = previous?.created_at
+    ? new Date(previous.created_at).getTime()
+    : Number.NaN
+  if (Number.isNaN(currentAt) || Number.isNaN(previousAt)) return true
+  return currentAt - previousAt >= TIME_DIVIDER_GAP_MS
+}
 
 export function ChatPanel({
   conversationId,
-  isAgent,
-  canDelete,
-  onConversationDeleted,
 }: {
   conversationId: string
-  isAgent: boolean
-  canDelete: boolean
-  onConversationDeleted?: () => void
 }) {
   const queryClient = useQueryClient()
   const { socket } = useRealtime()
   const { user } = useAuth()
+  const { hasPermission } = usePermissions()
+  const { showErrorToast } = useCustomToast()
   const currentUserId = user?.id
   const [messages, setMessages] = useState<MessagePublic[]>([])
   const [input, setInput] = useState("")
@@ -120,15 +137,7 @@ export function ChatPanel({
     onSuccess: (message) => {
       mergeMessageIntoCache(message)
     },
-  })
-
-  const deleteMutation = useMutation({
-    mutationFn: () =>
-      CustomerServiceService.deleteConversationEndpoint({ conversationId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: CS_CONVERSATIONS_QUERY_KEY })
-      onConversationDeleted?.()
-    },
+    onError: handleError.bind(showErrorToast),
   })
 
   const loadMoreMutation = useMutation({
@@ -147,6 +156,7 @@ export function ChatPanel({
         return older.length ? [...older, ...current] : current
       })
     },
+    onError: handleError.bind(showErrorToast),
   })
 
   const markReadMutation = useMutation({
@@ -165,6 +175,7 @@ export function ChatPanel({
         queryKey: MY_UNREAD_SUMMARY_QUERY_KEY,
       })
     },
+    onError: handleError.bind(showErrorToast),
   })
 
   // 打开会话时，将对方发来的既有消息标记为已读；
@@ -248,7 +259,23 @@ export function ChatPanel({
 
   const conversation: ConversationPublic | undefined =
     messagesQuery.data?.conversation
+  // 会话数据未加载完成前不限制输入，避免闪烁；
+  // 加载后按规则控制：会话参与者（本人或坐席）持有「回复会话」权限才能发送
+  const isConversationOpen = conversation?.status === "open"
+  const canSend =
+    conversation === undefined
+      ? true
+      : isConversationOpen && hasPermission("conversation:reply")
+  const sendPlaceholder = !conversation
+    ? "输入消息…"
+    : !isConversationOpen
+      ? "会话已关闭"
+      : canSend
+        ? "输入消息…"
+        : "无权发送消息"
   const hasMore = (messagesQuery.data?.count ?? 0) > messages.length
+  // 接口按最新在前返回，本地也按此顺序合并，渲染前翻转为时间正序
+  const chronologicalMessages = messages.slice().reverse()
 
   // 新消息/输入状态变化时自动滚动到底；用户手动上翻历史时暂停自动滚动
   // biome-ignore lint/correctness/useExhaustiveDependencies: 依赖仅用于触发滚动，effect 内无需读取其值
@@ -286,55 +313,14 @@ export function ChatPanel({
   }, [messages])
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <header className="flex h-12 shrink-0 items-center justify-between border-b px-4 pr-12">
-        <span className="text-sm font-medium">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <header className="flex h-12 min-w-0 shrink-0 items-center justify-between gap-3 border-b px-4">
+        <span
+          className="min-w-0 flex-1 truncate text-xs font-medium"
+          title={conversation?.user_name ?? undefined}
+        >
           {conversation?.user_name ?? "客服会话"}
         </span>
-        <div className="flex items-center gap-2">
-          {isAgent ? (
-            <span
-              className={cn(
-                "text-xs",
-                conversation?.user_online
-                  ? "text-emerald-500"
-                  : "text-muted-foreground",
-              )}
-            >
-              {conversation?.user_online ? "在线" : "离线"}
-            </span>
-          ) : null}
-          {canDelete ? (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>删除会话</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    删除后该会话的全部聊天记录将不可恢复，确定删除吗？
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>取消</AlertDialogCancel>
-                  <AlertDialogAction
-                    disabled={deleteMutation.isPending}
-                    onClick={() => deleteMutation.mutate()}
-                  >
-                    删除
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          ) : null}
-        </div>
       </header>
 
       <div
@@ -343,21 +329,30 @@ export function ChatPanel({
         className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-4"
       >
         {loadMoreMutation.isPending ? (
-          <div className="py-1 text-center text-xs text-muted-foreground">
+          <div className="py-1 text-center text-[11px] text-muted-foreground">
             加载更早消息…
           </div>
         ) : null}
         <MessageGroup>
-          {messages
-            .slice()
-            .reverse()
-            .map((item) => {
-              const isMine = item.sender_id === currentUserId
-              return (
-                <Message key={item.id} align={isMine ? "end" : "start"}>
-                  <MessageAvatar>
-                    <Avatar>
-                      <AvatarFallback className="text-xs">
+          {chronologicalMessages.map((item, index) => {
+            const isMine = item.sender_id === currentUserId
+            return (
+              <Fragment key={item.id}>
+                {shouldShowTimeDivider(chronologicalMessages, index) ? (
+                  <div className="py-1 text-center text-[11px] text-muted-foreground">
+                    {formatMessageTime(item.created_at)}
+                  </div>
+                ) : null}
+                <Message align={isMine ? "end" : "start"}>
+                  <MessageAvatar className="self-start rounded-[5px]">
+                    <Avatar className="size-8 rounded-[5px]">
+                      {!isMine && conversation?.user_avatar_url ? (
+                        <AvatarImage
+                          src={conversation.user_avatar_url}
+                          alt={conversation.user_name ?? "用户头像"}
+                        />
+                      ) : null}
+                      <AvatarFallback className="rounded-[5px] text-xs font-medium">
                         {isMine
                           ? "我"
                           : (conversation?.user_name ?? "客").slice(0, 1)}
@@ -365,32 +360,29 @@ export function ChatPanel({
                     </Avatar>
                   </MessageAvatar>
                   <MessageContent>
-                    <MessageHeader>
-                      <span>
-                        {isMine ? "我" : (conversation?.user_name ?? "客服")}
-                      </span>
-                    </MessageHeader>
                     <Bubble variant={isMine ? "default" : "muted"}>
-                      <BubbleContent>{item.content}</BubbleContent>
+                      {/* 行高 20px + 上下各 5px + 边框 = 32px，与 size-8 头像等高 */}
+                      <BubbleContent className="rounded-[5px] px-3 py-[5px] text-xs leading-5">
+                        {item.content}
+                      </BubbleContent>
                     </Bubble>
-                    <MessageFooter>
-                      <span>{formatDateTime(item.created_at)}</span>
-                      {isMine && item.read_at ? <span>已读</span> : null}
-                    </MessageFooter>
                   </MessageContent>
                 </Message>
-              )
-            })}
+              </Fragment>
+            )
+          })}
         </MessageGroup>
         {typingFrom ? (
-          <div className="text-xs text-muted-foreground">对方正在输入…</div>
+          <div className="text-[11px] text-muted-foreground">对方正在输入…</div>
         ) : null}
       </div>
 
       <footer className="flex shrink-0 items-center gap-2 border-t p-3">
         <Input
+          className="text-xs"
           value={input}
-          placeholder="输入消息…"
+          placeholder={sendPlaceholder}
+          disabled={!canSend}
           onChange={(event) => handleInputChange(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.nativeEvent.isComposing) {
@@ -398,7 +390,11 @@ export function ChatPanel({
             }
           }}
         />
-        <Button size="icon" onClick={handleSend} disabled={!input.trim()}>
+        <Button
+          size="icon"
+          onClick={handleSend}
+          disabled={!canSend || !input.trim()}
+        >
           <Send data-icon="inline" />
         </Button>
       </footer>

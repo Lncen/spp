@@ -28,6 +28,14 @@ export function RealtimeCustomerServiceBridge() {
     if (!socket) return
 
     const handleCreated = (payload: MessagePublic) => {
+      if (import.meta.env.DEV) {
+        // 收到实时消息即打印，便于确认事件是否真的到达浏览器
+        console.debug(
+          "[realtime] customer_service.message.created",
+          payload.conversation_id,
+          payload.sender_id,
+        )
+      }
       // 自己发的消息不提醒
       if (payload.sender_id === currentUserId) return
       queryClient.invalidateQueries({

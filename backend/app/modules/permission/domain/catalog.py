@@ -13,6 +13,7 @@ class ActionType(StrEnum):
     """权限动作类型"""
 
     VIEW = "view"
+    REPLY = "reply"
     CREATE = "create"
     UPDATE = "update"
     MANAGE = "manage"

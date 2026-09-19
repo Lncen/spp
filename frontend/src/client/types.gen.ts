@@ -408,6 +408,7 @@ export type ConversationPublic = {
     last_message_preview?: (string | null);
     created_at?: (string | null);
     user_name?: (string | null);
+    user_avatar_url?: (string | null);
     user_online?: boolean;
     /**
      * 当前查看者视角下对方发来且未读的消息数量

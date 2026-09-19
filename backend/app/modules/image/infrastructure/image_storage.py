@@ -87,3 +87,15 @@ def delete_storage_file(rel_path: str) -> None:
     file_path = Path(settings.UPLOAD_DIR) / rel_path
     if file_path.exists():
         file_path.unlink()
+
+
+def build_image_url(file_path: str) -> str:
+    """构建图片可访问 URL
+
+    若配置了 STATIC_URL_BASE（如 CDN 域名）则使用之，否则用相对路径。
+    相对路径在生产环境由反向代理（Nginx/Traefik）直接提供服务。
+    """
+    if settings.STATIC_URL_BASE:
+        base = settings.STATIC_URL_BASE.rstrip("/")
+        return f"{base}/uploads/{file_path}"
+    return f"/uploads/{file_path}"

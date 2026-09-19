@@ -10,6 +10,7 @@ class SettingType(StrEnum):
     SYSTEM = "system"  # 系统级设置
     AUTH = "auth"  # 认证模块
     AUTOMATION = "automation"  # 自动化模块
+    CUSTOMER_SERVICE = "customer_service"  # 客服模块
     IMAGE = "image"  # 图片模块
     ITEM = "item"  # 商品条目模块
     LEVEL = "level"  # 等级模块
@@ -26,6 +27,9 @@ class SettingType(StrEnum):
 
 # 自动化任务归档数据保留天数
 AUTOMATION_TASK_RETENTION_DAYS = "automation_task_retention_days"
+
+# 客服会话数据保留天数
+CONVERSATION_RETENTION_DAYS = "conversation_retention_days"
 
 # 通知记录数据保留天数
 NOTIFICATION_RETENTION_DAYS = "notification_retention_days"
@@ -81,6 +85,11 @@ DEFAULT_SETTINGS: dict[str, dict[str, Any]] = {
         "value": 30,
         "description": "通知记录数据保留天数，到期后物理删除",
         "type": SettingType.NOTIFICATION,
+    },
+    CONVERSATION_RETENTION_DAYS: {
+        "value": 7,
+        "description": "客服会话数据保留天数，到期后物理删除（含全部会话消息）",
+        "type": SettingType.CUSTOMER_SERVICE,
     },
     ORDER_RETENTION_DAYS: {
         "value": 7,

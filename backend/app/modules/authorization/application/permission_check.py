@@ -4,6 +4,7 @@
 """
 
 import uuid
+from collections.abc import Iterable
 
 from sqlmodel import Session
 
@@ -41,6 +42,27 @@ def has_permission(*, session: Session, user: User, code: str) -> bool:
         is_active=user.is_active,
         is_superuser=user.is_superuser,
         permission_codes=permission_codes,
+    )
+
+
+def has_any_permission(
+    *, session: Session, user: User, codes: Iterable[str]
+) -> bool:
+    """判断用户是否持有任意一个权限码
+
+    有效权限码只取一次（命中缓存），避免逐码查询；停用账号与超管的判定仍走领域规则。
+    """
+    permission_codes: set[str] = set()
+    if user.is_active and not user.is_superuser:
+        permission_codes = get_user_permission_codes(session=session, user=user)
+    return any(
+        is_permission_granted(
+            code=code,
+            is_active=user.is_active,
+            is_superuser=user.is_superuser,
+            permission_codes=permission_codes,
+        )
+        for code in codes
     )
 
 

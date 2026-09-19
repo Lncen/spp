@@ -10,6 +10,9 @@ from app.modules.automation.infrastructure.tasks.auth_cleanup import (
 from app.modules.automation.infrastructure.tasks.cleanup import (
     cleanup_automation_task_archives,
 )
+from app.modules.automation.infrastructure.tasks.conversation_cleanup import (
+    cleanup_conversations,
+)
 from app.modules.automation.infrastructure.tasks.event_redispatch import (
     redispatch_stale_automation_events,
 )
@@ -48,6 +51,7 @@ __all__ = [
     "automation_task_scan",
     "cleanup_automation_task_archives",
     "cleanup_completed_orders",
+    "cleanup_conversations",
     "cleanup_expired_data",
     "cleanup_expired_refresh_tokens",
     "cleanup_notification_records",

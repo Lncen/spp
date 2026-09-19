@@ -14,7 +14,8 @@ from app.modules.customer_service.application.realtime_publish import (
     publish_conversation_deleted,
 )
 from app.modules.customer_service.domain.constants import (
-    AGENT_PERMISSION_CODE,
+    CONVERSATION_SELF_VIEW_PERMISSION_CODE,
+    CONVERSATION_VIEW_PERMISSION_CODE,
     ConversationStatus,
 )
 from app.modules.customer_service.models import Conversation, ConversationMessage
@@ -26,24 +27,49 @@ from app.modules.customer_service.repositories.conversation import (
     get_open_conversation_by_user,
     list_all_conversations,
     list_conversations_by_user,
+    lock_conversation_owner,
     set_conversation_status,
 )
 from app.modules.customer_service.schemas.conversation import (
     ConversationPublic,
     ConversationsPublic,
 )
+from app.modules.image.infrastructure.image_storage import build_image_url
+from app.modules.image.models import Image
 from app.modules.realtime.manager import batch_online
 from app.modules.user.models import User
 
 
 def _user_display_name(user: User) -> str:
-    """发送者展示名：全名，为空时显示 用户 + ID 后 6 位"""
-    return user.full_name or f"用户{str(user.id)[-6:]}"
+    """展示名：昵称 → 用户名 → 邮箱，均为空时回退为 用户 + ID 后 6 位"""
+    return user.full_name or user.username or user.email or f"用户{str(user.id)[-6:]}"
+
+
+def _user_avatar_urls(
+    *, session: Session, users: dict[uuid.UUID, User]
+) -> dict[uuid.UUID, str]:
+    """批量组装用户头像 URL（未设置头像或图片已删除的用户不返回）"""
+    avatar_ids = {user.avatar_id for user in users.values() if user.avatar_id}
+    if not avatar_ids:
+        return {}
+    paths = {
+        image.id: image.file_path
+        for image in session.exec(
+            select(Image).where(col(Image.id).in_(avatar_ids))
+        ).all()
+    }
+    return {
+        user_id: build_image_url(paths[user.avatar_id])
+        for user_id, user in users.items()
+        if user.avatar_id is not None and user.avatar_id in paths
+    }
 
 
 def is_agent(*, session: Session, user: User) -> bool:
-    """是否客服坐席：持有客服权限码即为接待方，超级管理员天然持有"""
-    return has_permission(session=session, user=user, code=AGENT_PERMISSION_CODE)
+    """是否客服坐席：持有「查看全部会话」权限码即为接待方，超级管理员天然持有"""
+    return has_permission(
+        session=session, user=user, code=CONVERSATION_VIEW_PERMISSION_CODE
+    )
 
 
 def _latest_other_sender_names(
@@ -52,16 +78,12 @@ def _latest_other_sender_names(
     conversation_ids: list[uuid.UUID],
     reader_id: uuid.UUID,
 ) -> dict[uuid.UUID, str]:
-    """各会话中最近一条他人发来消息的发送者展示名（发送人全名，为空显示 用户 + ID 后 6 位）"""
+    """各会话中最近一条他人发来消息的发送者展示名（昵称 → 用户名 → 邮箱）"""
     names: dict[uuid.UUID, str] = {}
     if not conversation_ids:
         return names
     rows = session.exec(
-        select(
-            ConversationMessage.conversation_id,
-            User.id,
-            User.full_name,
-        )
+        select(ConversationMessage.conversation_id, User)
         .join(User, User.id == ConversationMessage.sender_id)
         .where(
             col(ConversationMessage.conversation_id).in_(conversation_ids),
@@ -72,28 +94,36 @@ def _latest_other_sender_names(
             ConversationMessage.id.desc(),
         )
     ).all()
-    for row in rows:
-        conversation_id = row[0]
+    for conversation_id, sender in rows:
         if conversation_id not in names:
-            names[conversation_id] = row[2] or f"用户{str(row[1])[-6:]}"
+            names[conversation_id] = _user_display_name(sender)
     return names
 
 
 def get_total_conversation_unread(*, session: Session, user: User) -> int:
-    """当前查看者可见会话中他人发来且未读的消息总数（侧边栏角标汇总用，客服坐席统计全部会话）"""
+    """当前查看者可见会话中他人发来且未读的消息总数（侧边栏角标汇总用，客服坐席统计全部会话）
+
+    未持有会话查看权限（自助查看或坐席查看）时返回 0，
+    避免侧边栏角标向无会话权限的账号暴露会话未读数。
+    """
     if user.id is None:
+        return 0
+    can_view_all = is_agent(session=session, user=user)
+    if not can_view_all and not has_permission(
+        session=session, user=user, code=CONVERSATION_SELF_VIEW_PERMISSION_CODE
+    ):
         return 0
     return count_unread_total(
         session=session,
         user_id=user.id,
-        can_view_all=is_agent(session=session, user=user),
+        can_view_all=can_view_all,
     )
 
 
 def list_active_agent_ids(*, session: Session) -> list[uuid.UUID]:
     """当前启用的客服坐席 ID 列表（会话接待方）"""
     return list_active_user_ids_with_permission(
-        session=session, code=AGENT_PERMISSION_CODE
+        session=session, code=CONVERSATION_VIEW_PERMISSION_CODE
     )
 
 
@@ -102,9 +132,16 @@ def get_or_create_conversation(
     session: Session,
     user_id: uuid.UUID,
 ) -> Conversation:
-    """获取用户的进行中会话，不存在则创建（用户联系客服 / 管理端主动联系共用）"""
+    """获取用户的进行中会话，不存在则创建（用户联系客服 / 管理端主动联系共用）
+
+    先对用户行加排他锁（``lock_conversation_owner``）再查询/创建，
+    避免同一用户的并发请求各建一条进行中会话；命中已有会话时显式提交，
+    让事务立即结束、尽快释放行锁，不把锁持有到请求结束。
+    """
+    lock_conversation_owner(session=session, user_id=user_id)
     existing = get_open_conversation_by_user(session=session, user_id=user_id)
     if existing:
+        session.commit()
         return existing
     conversation = create_conversation(session=session, user_id=user_id)
     session.commit()
@@ -176,6 +213,7 @@ def _to_conversation_items(
     }
     users: dict[uuid.UUID, User] = {}
     online: dict[str, bool] = {}
+    avatar_urls: dict[uuid.UUID, str] = {}
     if include_user_info and user_ids:
         users = {
             user.id: user
@@ -185,6 +223,7 @@ def _to_conversation_items(
             if user.id is not None
         }
         online = batch_online(list(user_ids))
+        avatar_urls = _user_avatar_urls(session=session, users=users)
 
     conversation_ids = [
         conversation.id
@@ -216,9 +255,13 @@ def _to_conversation_items(
             and conversation.user_id == reader_id
         ):
             user_name = counterpart_names.get(conversation.id, "客服")
+            user_avatar_url = None
         else:
             user = users.get(conversation.user_id) if conversation.user_id else None
             user_name = _user_display_name(user) if user else None
+            user_avatar_url = (
+                avatar_urls.get(conversation.user_id) if conversation.user_id else None
+            )
         items.append(
             ConversationPublic(
                 id=conversation.id,
@@ -228,6 +271,7 @@ def _to_conversation_items(
                 last_message_preview=conversation.last_message_preview,
                 created_at=conversation.created_at,
                 user_name=user_name,
+                user_avatar_url=user_avatar_url,
                 user_online=(
                     online.get(str(conversation.user_id), False)
                     if conversation.user_id

@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/sidebar"
 import useAuth from "@/hooks/useAuth"
 import usePermissions from "@/hooks/usePermissions"
+import { useRealtime } from "@/realtime/RealtimeProvider"
 import { type ItemGroup, Main } from "./Main"
 import { NavProjects, type Project } from "./NavProjects"
 import { TeamSwitcher } from "./TeamSwitcher"
@@ -202,12 +203,15 @@ export function AppSidebar() {
   const { openCustomerService } = useCustomerService()
   const { openNotifications } = useNotifications()
   const { user: currentUser } = useAuth()
-  const { hasPermission } = usePermissions()
+  const { hasPermission, hasAnyPermission } = usePermissions()
+  const { isConnected } = useRealtime()
 
   const { data: unreadData } = useQuery({
     queryKey: MY_UNREAD_SUMMARY_QUERY_KEY,
     queryFn: () => NotificationsService.readUnreadSummary(),
     enabled: Boolean(currentUser),
+    // 实时通道断开时兜底轮询，避免角标一直停在旧值
+    refetchInterval: isConnected ? false : 60_000,
   })
 
   const groups = navGroups
@@ -226,13 +230,16 @@ export function AppSidebar() {
       badge: unreadData?.notification_unread_count,
       onClick: () => openNotifications(),
     },
-    {
+  ]
+  // 会话入口与接口/路由的权限口径一致：持有自助查看或坐席查看任一权限才展示
+  if (hasAnyPermission("conversation:self_view", "conversation:view")) {
+    projects.push({
       name: "会话",
       icon: MessagesSquare,
       badge: unreadData?.conversation_unread_count,
       onClick: () => openCustomerService(),
-    },
-  ]
+    })
+  }
 
   return (
     <Sidebar collapsible="icon">

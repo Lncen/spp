@@ -56,3 +56,11 @@ publish_to_user(user_id, RealtimeEvent.NOTIFICATION_CREATED, payload)
 - 生产多 worker（如 `fastapi run --workers 4`）时，Socket.IO 使用 WebSocket 传输需要负载均衡层**粘性会话**（sticky session），否则握手后的帧可能被路由到其他 worker；
 - 建议保持 `transports=["websocket"]`，避免 long-polling 带来的粘性会话与代理配置复杂度；
 - Redis 故障时实时提醒缺失，但业务数据不受影响，前端通过打开通知中心等操作兜底刷新。
+
+## 六、重要约定
+
+- Socket.IO 事件处理器（`connect` / `disconnect` / 业务事件）运行在主事件循环线程内，**禁止在其中执行同步阻塞调用**（数据库查询、同步 Redis、`run_redis_sync`）；
+  业务侧的同步查询必须通过 `starlette.concurrency.run_in_threadpool` 转交线程池执行，否则会阻塞所有连接与请求。
+- `run_redis_sync` 在事件循环线程内调用时会立即抛错（由调用方快速降级），避免同步等待自己调度的协程导致事件循环停滞数秒。
+- 业务模块通过 `register_conversation_participants` 注册的「会话参与者」回调是**同步实现**（数据库 + 权限缓存），由本模块在线程池中调用：
+  返回 `None` 表示拒绝，返回参与者 ID 列表表示放行；新增回调时不要在其中 `await`。

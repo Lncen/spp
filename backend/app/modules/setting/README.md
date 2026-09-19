@@ -32,7 +32,7 @@ backend/app/modules/setting/
 │   └── setting_update.py             # update_setting（upsert + 缓存刷新）
 ├── domain/                           # 领域逻辑：默认值与常量定义
 │   ├── __init__.py
-│   └── constants.py                  # SettingType 设置类型枚举、保留天数常量（AUTOMATION_TASK_RETENTION_DAYS / NOTIFICATION_RETENTION_DAYS / ORDER_RETENTION_DAYS）、DEFAULT_SETTINGS、get_default_setting
+│   └── constants.py                  # SettingType 设置类型枚举、保留天数常量（AUTOMATION_TASK_RETENTION_DAYS / CONVERSATION_RETENTION_DAYS / NOTIFICATION_RETENTION_DAYS / ORDER_RETENTION_DAYS）、DEFAULT_SETTINGS、get_default_setting
 ├── infrastructure/                   # 基础设施：Redis 缓存读写
 │   ├── __init__.py
 │   └── cache.py                      # SETTINGS_CACHE_KEY、缓存序列化 / 读取 / 懒加载 / 更新

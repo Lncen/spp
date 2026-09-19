@@ -26,6 +26,7 @@ from app.modules.image.application.image_update import (
 from app.modules.image.application.image_upload import (
     upload_image as upload_image_service,
 )
+from app.modules.image.infrastructure.image_storage import build_image_url
 from app.modules.image.models import Image
 from app.modules.image.schemas import (
     ImagePublic,
@@ -39,18 +40,6 @@ router = APIRouter(prefix="/images", tags=["images"])
 IMAGE_VIEW = require_permission("image:view")
 IMAGE_UPDATE = require_permission("image:update")
 IMAGE_DELETE = require_permission("image:delete")
-
-
-def _build_image_url(image: Image) -> str:
-    """构建图片可访问 URL
-
-    若配置了 STATIC_URL_BASE（如 CDN 域名）则使用之，否则用相对路径。
-    相对路径在生产环境由反向代理（Nginx/Traefik）直接提供服务。
-    """
-    if settings.STATIC_URL_BASE:
-        base = settings.STATIC_URL_BASE.rstrip("/")
-        return f"{base}/uploads/{image.file_path}"
-    return f"/uploads/{image.file_path}"
 
 
 @router.get("/", response_model=ImagesPublic)
@@ -81,7 +70,9 @@ def read_images(
     )
     return ImagesPublic(
         data=[
-            ImagePublic.model_validate(img, update={"url": _build_image_url(img)})
+            ImagePublic.model_validate(
+                img, update={"url": build_image_url(img.file_path)}
+            )
             for img in images
         ],
         count=count,
@@ -97,7 +88,9 @@ def read_image(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) ->
         image_id=id,
         can_view_all=IMAGE_VIEW.check(session=session, current_user=current_user),
     )
-    return ImagePublic.model_validate(image, update={"url": _build_image_url(image)})
+    return ImagePublic.model_validate(
+        image, update={"url": build_image_url(image.file_path)}
+    )
 
 
 @router.post(
@@ -155,7 +148,9 @@ async def upload_image(
     # 同步分类计数
     if category:
         sync_category_image_count(session=session, category_name=category)
-    return ImagePublic.model_validate(image, update={"url": _build_image_url(image)})
+    return ImagePublic.model_validate(
+        image, update={"url": build_image_url(image.file_path)}
+    )
 
 
 @router.delete("/{id}")
@@ -192,4 +187,6 @@ def update_image(
         raise HTTPException(status_code=403, detail="权限不足")
 
     image = update_image_service(session=session, image=image, data=data)
-    return ImagePublic.model_validate(image, update={"url": _build_image_url(image)})
+    return ImagePublic.model_validate(
+        image, update={"url": build_image_url(image.file_path)}
+    )

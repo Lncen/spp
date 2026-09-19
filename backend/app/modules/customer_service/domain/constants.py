@@ -15,6 +15,11 @@ class SenderRole:
     ADMIN = "admin"
 
 
-# 客服坐席权限码：持有即视为接待方，可查看全部会话并以管理端身份回复
-# 权限码定义见 app/init_models_data/permissions.py 的「客服管理」分类
-AGENT_PERMISSION_CODE = "customer_service:view"
+# 会话权限码，定义见 app/init_models_data/permissions.py 的「会话」分类
+# 用户自助：查看自己的会话（普通用户默认能力）
+CONVERSATION_SELF_VIEW_PERMISSION_CODE = "conversation:self_view"
+# 客服坐席：查看全部会话 / 操作 / 删除
+CONVERSATION_VIEW_PERMISSION_CODE = "conversation:view"
+CONVERSATION_REPLY_PERMISSION_CODE = "conversation:reply"
+CONVERSATION_UPDATE_PERMISSION_CODE = "conversation:update"
+CONVERSATION_DELETE_PERMISSION_CODE = "conversation:delete"

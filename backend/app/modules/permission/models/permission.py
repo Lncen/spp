@@ -69,7 +69,7 @@ class Permission(BaseModelMixin, SQLModel, table=True):
         nullable=False,
         index=True,
         title="动作类型",
-        description="动作类型，如 view / create / update / manage",
+        description="动作类型，如 view / reply / create / update / manage",
     )
     name: str = Field(
         max_length=128,

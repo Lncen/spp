@@ -28,7 +28,11 @@ class SystemRoleData(TypedDict):
     permission_codes: list[str]
 
 
-# 内置角色清单：admin 取权限清单内全部权限，新增权限自动纳入
+# 内置「普通用户」角色码：注册与后台创建的新用户默认分配
+DEFAULT_USER_ROLE_CODE = "user"
+
+# 内置角色清单：admin 取权限清单内全部权限，新增权限自动纳入；
+# user 只持有用户自助能力，权限码取自 ``app/init_models_data/permissions.py``
 SYSTEM_ROLES_DATA: list[SystemRoleData] = [
     {
         "code": "admin",
@@ -36,6 +40,16 @@ SYSTEM_ROLES_DATA: list[SystemRoleData] = [
         "description": "拥有全部权限（超级管理员账号仍为系统级 bypass）",
         "sort_order": 1,
         "permission_codes": sorted(ALL_PERMISSION_CODES),
+    },
+    {
+        "code": DEFAULT_USER_ROLE_CODE,
+        "name": "普通用户",
+        "description": "默认角色：查看与发送自己的会话",
+        "sort_order": 2,
+        "permission_codes": [
+            "conversation:self_view",
+            "conversation:reply",
+        ],
     },
 ]
 

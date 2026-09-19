@@ -4,10 +4,11 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import func
-from sqlmodel import Session, col, select
+from sqlmodel import Session, col, delete, select
 
 from app.modules.customer_service.domain.constants import ConversationStatus
 from app.modules.customer_service.models import Conversation, ConversationMessage
+from app.modules.user.models import User
 
 
 def create_conversation(
@@ -47,6 +48,25 @@ def get_open_conversation_by_user(
     ).first()
 
 
+def lock_conversation_owner(
+    *,
+    session: Session,
+    user_id: uuid.UUID,
+) -> None:
+    """锁定会话所属用户行，串行化同一用户的并发建会话
+
+    会话表没有 ``(user_id, status=open)`` 唯一约束（新增约束需改 Migration，暂不引入），
+    「先查后插」在并发下会建出多条进行中会话，因此建会话前先对用户行加排他锁，
+    把同一用户的并发请求串行化；锁随事务提交/回滚释放。
+    仅支持行锁的数据库（PostgreSQL）生效，SQLite 等会忽略该语句。
+    """
+    session.exec(
+        select(User.id)
+        .where(col(User.id) == user_id)
+        .with_for_update()
+    ).first()
+
+
 def list_conversations_by_user(
     *,
     session: Session,
@@ -55,10 +75,17 @@ def list_conversations_by_user(
     limit: int,
 ) -> tuple[int, list[Conversation]]:
     """分页查询用户自己的会话"""
-    stmt = select(Conversation).where(col(Conversation.user_id) == user_id)
-    count = len(session.exec(stmt).all())
+    condition = col(Conversation.user_id) == user_id
+    count = session.exec(
+        select(func.count()).select_from(Conversation).where(condition)
+    ).one()
     conversations = session.exec(
-        stmt.order_by(Conversation.last_message_at.desc(), Conversation.created_at.desc())
+        select(Conversation)
+        .where(condition)
+        .order_by(
+            Conversation.last_message_at.desc(),
+            Conversation.created_at.desc(),
+        )
         .offset(skip)
         .limit(limit)
     ).all()
@@ -72,10 +99,15 @@ def list_all_conversations(
     limit: int,
 ) -> tuple[int, list[Conversation]]:
     """分页查询全部会话（管理端）"""
-    stmt = select(Conversation)
-    count = len(session.exec(stmt).all())
+    count = session.exec(
+        select(func.count()).select_from(Conversation)
+    ).one()
     conversations = session.exec(
-        stmt.order_by(Conversation.last_message_at.desc(), Conversation.created_at.desc())
+        select(Conversation)
+        .order_by(
+            Conversation.last_message_at.desc(),
+            Conversation.created_at.desc(),
+        )
         .offset(skip)
         .limit(limit)
     ).all()
@@ -145,3 +177,33 @@ def set_conversation_status(
 ) -> None:
     """更新会话状态"""
     conversation.status = status
+
+
+def purge_old_conversations(
+    *,
+    session: Session,
+    before: datetime,
+    limit: int,
+) -> int:
+    """物理删除超期会话，返回删除条数
+
+    超期判定以最后消息时间为准（无消息时取创建时间）：早于 ``before`` 的会话
+    连同一会话消息一并删除，消息由数据库外键 ``ON DELETE CASCADE`` 级联清理；
+    单次最多删除 ``limit`` 条，分批由调用方控制。
+    """
+    ids = session.exec(
+        select(Conversation.id)
+        .where(
+            func.coalesce(
+                Conversation.last_message_at, Conversation.created_at
+            )
+            < before
+        )
+        .order_by(Conversation.created_at)
+        .limit(limit)
+    ).all()
+    if not ids:
+        return 0
+    session.exec(delete(Conversation).where(col(Conversation.id).in_(ids)))
+    session.commit()
+    return len(ids)

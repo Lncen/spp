@@ -3,10 +3,13 @@
 import uuid
 
 from fastapi import HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from app.core.security import get_password_hash
+from app.init_models_data.roles import DEFAULT_USER_ROLE_CODE
+from app.modules.authorization.models import UserRole
 from app.modules.level.models import UserLevel
+from app.modules.role.models import Role
 from app.modules.user.domain.constants import default_username
 from app.modules.user.infrastructure.emails import send_new_account_email
 from app.modules.user.models import User
@@ -24,6 +27,16 @@ def _get_default_level_id(*, session: Session) -> uuid.UUID | None:
         select(UserLevel).where(UserLevel.is_default == True)  # noqa: E712
     ).first()
     return level.id if level else None
+
+
+def _assign_default_role(*, session: Session, user: User) -> None:
+    """为新用户分配内置「普通用户」角色（角色未播种时跳过）"""
+    role = session.exec(
+        select(Role).where(col(Role.code) == DEFAULT_USER_ROLE_CODE)
+    ).first()
+    if role is None or user.id is None:
+        return
+    session.add(UserRole(user_id=user.id, role_id=role.id))
 
 
 def create_user(
@@ -68,6 +81,8 @@ def create_user_private(*, session: Session, user_in: PrivateUserCreate) -> User
     )
     user.level_id = _get_default_level_id(session=session)
     session.add(user)
+    session.flush()
+    _assign_default_role(session=session, user=user)
     session.commit()
     return user
 
@@ -87,6 +102,7 @@ def _persist_user(
         hashed_password=get_password_hash(user_create.password),
     )
     user.level_id = _get_default_level_id(session=session)
+    _assign_default_role(session=session, user=user)
     session.commit()
     session.refresh(user)
     if send_notification:

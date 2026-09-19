@@ -455,7 +455,7 @@ export class CustomerServiceService {
     
     /**
      * Create Conversation Endpoint
-     * 发起会话：普通用户获取自己的进行中会话；管理端为指定用户发起
+     * 发起会话：普通用户获取自己的进行中会话；客服坐席为指定用户发起
      * @param data The data for the request.
      * @param data.requestBody
      * @returns ConversationPublic Successful Response
@@ -547,7 +547,7 @@ export class CustomerServiceService {
     
     /**
      * Update Status Endpoint
-     * 管理端开关会话（open / closed），需 `customer_service:update`
+     * 管理端开关会话（open / closed），需 `conversation:update`
      * @param data The data for the request.
      * @param data.conversationId
      * @param data.requestBody
@@ -571,7 +571,7 @@ export class CustomerServiceService {
     
     /**
      * Delete Conversation Endpoint
-     * 删除会话及其全部消息，需 `customer_service:delete`
+     * 删除会话及其全部消息，需 `conversation:delete`
      * @param data The data for the request.
      * @param data.conversationId
      * @returns Message Successful Response
@@ -592,7 +592,7 @@ export class CustomerServiceService {
     
     /**
      * Read Online Status
-     * 管理端批量查询用户在线状态，需 `customer_service:view`
+     * 管理端批量查询用户在线状态，需 `conversation:view`
      * @param data The data for the request.
      * @param data.userIds
      * @returns OnlineStatusPublic Successful Response

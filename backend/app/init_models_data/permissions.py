@@ -371,23 +371,35 @@ PERMISSION_CATEGORIES_DATA: list[PermissionCategoryData] = [
     },
     {
         "name": "会话",
-        "description": "会话的管理端操作",
+        "description": "用户自助会话能力与客服坐席的会话管理",
         "sort_order": 11,
         "permissions": [
             {
-                "code": "customer_service:view",
+                "code": "conversation:self_view",
                 "action": ActionType.VIEW,
-                "name": "会话",
-                "description": "查看全部会话与用户在线状态，并作为接待方回复",
+                "name": "查看自己的会话",
+                "description": "获取或发起自己的会话，查看会话消息并标记已读",
             },
             {
-                "code": "customer_service:update",
+                "code": "conversation:view",
+                "action": ActionType.VIEW,
+                "name": "查看全部会话",
+                "description": "客服坐席：查看全部会话列表、详情与用户在线状态",
+            },
+            {
+                "code": "conversation:reply",
+                "action": ActionType.REPLY,
+                "name": "回复会话",
+                "description": "作为会话参与者发送消息（会话本人或客服坐席）",
+            },
+            {
+                "code": "conversation:update",
                 "action": ActionType.UPDATE,
-                "name": "开关会话",
-                "description": "管理端开启或关闭会话",
+                "name": "操作会话",
+                "description": "客服坐席：开启或关闭会话",
             },
             {
-                "code": "customer_service:delete",
+                "code": "conversation:delete",
                 "action": ActionType.MANAGE,
                 "name": "删除会话",
                 "description": "删除会话及其全部消息",

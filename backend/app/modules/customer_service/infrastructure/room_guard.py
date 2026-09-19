@@ -14,7 +14,9 @@ from app.modules.authorization.application.permission_check import (
     has_permission,
     list_active_user_ids_with_permission,
 )
-from app.modules.customer_service.domain.constants import AGENT_PERMISSION_CODE
+from app.modules.customer_service.domain.constants import (
+    CONVERSATION_VIEW_PERMISSION_CODE,
+)
 from app.modules.customer_service.models import Conversation
 from app.modules.realtime.server import register_conversation_participants
 from app.modules.user.models import User
@@ -38,14 +40,14 @@ def _conversation_participant_ids(
         if not (
             is_owner
             or has_permission(
-                session=session, user=user, code=AGENT_PERMISSION_CODE
+                session=session, user=user, code=CONVERSATION_VIEW_PERMISSION_CODE
             )
         ):
             return None
         return [
             conversation.user_id,
             *list_active_user_ids_with_permission(
-                session=session, code=AGENT_PERMISSION_CODE
+                session=session, code=CONVERSATION_VIEW_PERMISSION_CODE
             ),
         ]
 

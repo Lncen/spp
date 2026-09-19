@@ -1420,6 +1420,17 @@ export const ConversationPublicSchema = {
             ],
             title: '用户展示名（管理端）'
         },
+        user_avatar_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '用户头像 URL（管理端）'
+        },
         user_online: {
             type: 'boolean',
             title: '用户是否在线（管理端）',

@@ -1,7 +1,7 @@
 """Redis 客户端封装"""
 
 import asyncio
-from collections.abc import AsyncIterator, Awaitable
+from collections.abc import AsyncIterator, Awaitable, Coroutine
 from contextlib import asynccontextmanager
 
 from redis.asyncio import Redis as AsyncRedis
@@ -65,15 +65,31 @@ def run_redis_sync[T](awaitable: Awaitable[T], *, timeout: float = 5.0) -> T:
     """在同步上下文（如 FastAPI 线程池路由）中执行 Redis 命令
 
     将协程调度到应用主事件循环，避免连接跨事件循环复用。
+
+    若调用方本身就在主事件循环线程内（如 Socket.IO 事件处理器、async 路由），
+    同步等待自己调度的协程会一直等到 timeout，期间事件循环完全停滞；
+    因此这种情况直接抛错，由调用方快速降级。
     """
     if _event_loop is None or _event_loop.is_closed():
         raise RuntimeError("Redis 主事件循环未就绪")
+    if _running_loop() is _event_loop:
+        if isinstance(awaitable, Coroutine):
+            awaitable.close()
+        raise RuntimeError("禁止在事件循环线程内同步等待 Redis 结果")
 
     async def _run() -> T:
         return await awaitable
 
     future = asyncio.run_coroutine_threadsafe(_run(), _event_loop)
     return future.result(timeout=timeout)
+
+
+def _running_loop() -> asyncio.AbstractEventLoop | None:
+    """当前线程正在运行的事件循环；不在协程/回调上下文时返回 None"""
+    try:
+        return asyncio.get_running_loop()
+    except RuntimeError:
+        return None
 
 
 @asynccontextmanager

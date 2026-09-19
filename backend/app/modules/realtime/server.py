@@ -5,6 +5,7 @@ import uuid
 from collections.abc import Callable, Mapping
 
 import socketio
+from starlette.concurrency import run_in_threadpool
 
 from app.core.config import settings
 from app.core.redis import get_redis_url
@@ -22,7 +23,9 @@ logger = logging.getLogger(__name__)
 
 USER_ROOM_PREFIX = "user:"
 
-# 会话参与者回调（依赖倒置）：业务模块注册后，Socket.IO 才具备会话级校验能力
+# 会话参与者回调（依赖倒置）：业务模块注册后，Socket.IO 才具备会话级校验能力。
+# 回调是同步阻塞实现（数据库 + 权限缓存），调用方必须放到线程池执行，
+# 否则会阻塞 Socket.IO 所在的主事件循环。
 ConversationParticipantsFn = Callable[
     [uuid.UUID, uuid.UUID], list[uuid.UUID] | None
 ]
@@ -58,7 +61,8 @@ sio = socketio.AsyncServer(
 async def connect(sid: str, _environ: Mapping, auth: Mapping | None) -> None:
     """握手鉴权：token 有效则绑定用户房间，否则拒绝连接"""
     token = (auth or {}).get("token") if isinstance(auth, Mapping) else None
-    user = authenticate_token(token) if token else None
+    # 鉴权是同步实现（JWT 解析 + 数据库查询），放到线程池避免阻塞事件循环
+    user = await run_in_threadpool(authenticate_token, token) if token else None
     if user is None or user.id is None:
         raise socketio.exceptions.ConnectionRefusedError("unauthorized")
     add_connection(user.id, sid)
@@ -99,7 +103,8 @@ async def customer_service_typing(sid: str, data: Mapping) -> None:
         return
     participant_ids: list[uuid.UUID] | None = None
     for fn in _conversation_participants_fns:
-        participant_ids = fn(user_id, conversation_id)
+        # 回调内部是同步数据库查询与权限检查，必须在线程池执行
+        participant_ids = await run_in_threadpool(fn, user_id, conversation_id)
         if participant_ids is not None:
             break
     if not participant_ids:

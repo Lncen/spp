@@ -5,7 +5,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.api.deps import CurrentUser, SessionDep, require_permission
+from app.api.deps import (
+    CurrentUser,
+    SessionDep,
+    require_any_permission,
+    require_permission,
+)
 from app.common.models import Message
 from app.modules.customer_service.application.conversation_manage import (
     delete_conversation,
@@ -37,8 +42,25 @@ from app.modules.user.models import User
 
 router = APIRouter(prefix="/customer-service", tags=["customer-service"])
 
+# 会话读取权限：本人自助查看或客服坐席查看全部（任一即可，可见范围在应用层区分）
+# 无权限时返回 400（业务性无权限），避免前端把 403 当作登录态失效
+CONVERSATION_READ_PERMISSION = require_any_permission(
+    "conversation:self_view",
+    "conversation:view",
+    detail="无会话访问权限",
+)
+# 会话发送权限：本人自助发送或客服坐席接待回复（码与归属的对应在应用层判定）
+CONVERSATION_SEND_PERMISSION = require_any_permission(
+    "conversation:reply",
+    detail="无回复会话权限",
+)
 
-@router.get("/conversations", response_model=ConversationsPublic)
+
+@router.get(
+    "/conversations",
+    dependencies=[Depends(CONVERSATION_READ_PERMISSION)],
+    response_model=ConversationsPublic,
+)
 def read_conversations(
     session: SessionDep,
     current_user: CurrentUser,
@@ -54,7 +76,11 @@ def read_conversations(
     )
 
 
-@router.post("/conversations", response_model=ConversationPublic)
+@router.post(
+    "/conversations",
+    dependencies=[Depends(CONVERSATION_READ_PERMISSION)],
+    response_model=ConversationPublic,
+)
 def create_conversation_endpoint(
     session: SessionDep,
     current_user: CurrentUser,
@@ -90,6 +116,7 @@ def create_conversation_endpoint(
 
 @router.get(
     "/conversations/{conversation_id}/messages",
+    dependencies=[Depends(CONVERSATION_READ_PERMISSION)],
     response_model=MessagesPublic,
 )
 def read_messages(
@@ -111,6 +138,7 @@ def read_messages(
 
 @router.post(
     "/conversations/{conversation_id}/messages",
+    dependencies=[Depends(CONVERSATION_SEND_PERMISSION)],
     response_model=MessagePublic,
 )
 def send_message_endpoint(
@@ -131,6 +159,7 @@ def send_message_endpoint(
 
 @router.post(
     "/conversations/{conversation_id}/read",
+    dependencies=[Depends(CONVERSATION_READ_PERMISSION)],
     response_model=ConversationPublic,
 )
 def read_conversation(
@@ -154,7 +183,7 @@ def read_conversation(
 
 @router.patch(
     "/conversations/{conversation_id}/status",
-    dependencies=[Depends(require_permission("customer_service:update"))],
+    dependencies=[Depends(require_permission("conversation:update"))],
     response_model=ConversationPublic,
 )
 def update_status_endpoint(
@@ -163,7 +192,7 @@ def update_status_endpoint(
     conversation_id: uuid.UUID,
     body: ConversationStatusUpdate,
 ) -> ConversationPublic:
-    """管理端开关会话（open / closed），需 `customer_service:update`"""
+    """管理端开关会话（open / closed），需 `conversation:update`"""
     conversation = update_conversation_status(
         session=session,
         conversation_id=conversation_id,
@@ -179,14 +208,14 @@ def update_status_endpoint(
 
 @router.delete(
     "/conversations/{conversation_id}",
-    dependencies=[Depends(require_permission("customer_service:delete"))],
+    dependencies=[Depends(require_permission("conversation:delete"))],
     response_model=Message,
 )
 def delete_conversation_endpoint(
     session: SessionDep,
     conversation_id: uuid.UUID,
 ) -> Message:
-    """删除会话及其全部消息，需 `customer_service:delete`"""
+    """删除会话及其全部消息，需 `conversation:delete`"""
     delete_conversation(
         session=session,
         conversation_id=conversation_id,
@@ -196,11 +225,11 @@ def delete_conversation_endpoint(
 
 @router.get(
     "/online",
-    dependencies=[Depends(require_permission("customer_service:view"))],
+    dependencies=[Depends(require_permission("conversation:view"))],
     response_model=OnlineStatusPublic,
 )
 def read_online_status(
     user_ids: Annotated[list[uuid.UUID], Query()],
 ) -> OnlineStatusPublic:
-    """管理端批量查询用户在线状态，需 `customer_service:view`"""
+    """管理端批量查询用户在线状态，需 `conversation:view`"""
     return OnlineStatusPublic(online=batch_online(user_ids))

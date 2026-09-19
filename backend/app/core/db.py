@@ -7,8 +7,10 @@ from app.init_models_data.levels import seed_levels
 from app.init_models_data.permissions import seed_permission_catalog
 from app.init_models_data.price_templates import seed_price_templates
 from app.init_models_data.product_category import seed_product_category_templates
-from app.init_models_data.roles import seed_system_roles
+from app.init_models_data.roles import DEFAULT_USER_ROLE_CODE, seed_system_roles
 from app.init_models_data.supplier import seed_supplier_templates
+from app.modules.authorization.models import UserRole
+from app.modules.role.models import Role
 from app.modules.user.application.user_create import create_user
 from app.modules.user.models import User
 from app.modules.user.schemas import UserCreate
@@ -81,3 +83,20 @@ def init_db(session: Session) -> None:
         session.add(u)
     if users_no_level:
         session.commit()
+
+    # 为未分配任何角色的普通用户补内置「普通用户」角色：
+    # 历史账号缺少该角色时会话自助接口会因缺 conversation:self_* 权限码而被拒绝
+    default_role = session.exec(
+        select(Role).where(Role.code == DEFAULT_USER_ROLE_CODE)
+    ).first()
+    if default_role is not None:
+        users_without_role = session.exec(
+            select(User).where(
+                User.is_superuser.is_(False),
+                ~User.id.in_(select(UserRole.user_id)),
+            )
+        ).all()
+        for user in users_without_role:
+            session.add(UserRole(user_id=user.id, role_id=default_role.id))
+        if users_without_role:
+            session.commit()

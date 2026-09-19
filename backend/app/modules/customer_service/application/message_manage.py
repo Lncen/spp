@@ -7,6 +7,7 @@ from sqlalchemy import func
 from sqlmodel import Session, col, select
 
 from app.core.time import get_datetime_cn
+from app.modules.authorization.application.permission_check import has_permission
 from app.modules.customer_service.application.conversation_manage import (
     is_agent,
     list_active_agent_ids,
@@ -17,7 +18,10 @@ from app.modules.customer_service.application.realtime_publish import (
     publish_message_created,
     publish_message_read,
 )
-from app.modules.customer_service.domain.constants import SenderRole
+from app.modules.customer_service.domain.constants import (
+    CONVERSATION_REPLY_PERMISSION_CODE,
+    SenderRole,
+)
 from app.modules.customer_service.models import Conversation, ConversationMessage
 from app.modules.customer_service.repositories.conversation import (
     get_conversation,
@@ -35,19 +39,25 @@ from app.modules.customer_service.schemas.message import (
 from app.modules.user.models import User
 
 
+def _is_conversation_owner(*, conversation: Conversation, user: User) -> bool:
+    """是否会话所属用户本人"""
+    return (
+        conversation.user_id is not None
+        and user.id is not None
+        and conversation.user_id == user.id
+    )
+
+
 def is_participant(
     *,
     session: Session,
     conversation: Conversation,
     user: User,
 ) -> bool:
-    """会话参与者校验：会话本人或客服坐席"""
-    is_owner = (
-        conversation.user_id is not None
-        and user.id is not None
-        and conversation.user_id == user.id
+    """会话参与者校验：会话本人或客服坐席（持有查看全部会话权限）"""
+    return _is_conversation_owner(conversation=conversation, user=user) or is_agent(
+        session=session, user=user
     )
-    return is_owner or is_agent(session=session, user=user)
 
 
 def _get_participant_conversation(
@@ -65,7 +75,8 @@ def _get_participant_conversation(
     if not is_participant(
         session=session, conversation=conversation, user=user
     ):
-        raise HTTPException(status_code=403, detail="无权访问该会话")
+        # 无权限访问按业务性拒绝返回 400：403 会被前端当作登录态失效处理
+        raise HTTPException(status_code=400, detail="无权访问该会话")
     return conversation
 
 
@@ -86,6 +97,12 @@ def send_message(
         raise HTTPException(status_code=400, detail="会话已关闭，无法发送消息")
     if sender.id is None:
         raise HTTPException(status_code=400, detail="用户 ID 缺失")
+    # 发送规则：会话参与者（会话本人或接待方坐席）持有「回复会话」权限码时才能发送；
+    # 非参与者已由 _get_participant_conversation 拦截（400 无权访问该会话）
+    if not has_permission(
+        session=session, user=sender, code=CONVERSATION_REPLY_PERMISSION_CODE
+    ):
+        raise HTTPException(status_code=400, detail="无回复会话权限")
     sender_role = (
         SenderRole.ADMIN
         if is_agent(session=session, user=sender)

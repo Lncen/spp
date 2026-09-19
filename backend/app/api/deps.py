@@ -13,7 +13,10 @@ from app.core.config import settings
 from app.core.db import engine
 from app.init_models_data.permissions import is_registered_permission
 from app.modules.auth.schemas import TokenPayload
-from app.modules.authorization.application.permission_check import has_permission
+from app.modules.authorization.application.permission_check import (
+    has_any_permission,
+    has_permission,
+)
 from app.modules.user.models import User
 
 reusable_oauth2 = OAuth2PasswordBearer(
@@ -98,3 +101,40 @@ def require_permission(code: str) -> PermissionChecker:
     if not is_registered_permission(code):
         raise RuntimeError(f"未登记的权限码：{code}")
     return PermissionChecker(code)
+
+
+class AnyPermissionChecker:
+    """权限校验依赖：持有任意一个权限码即通过
+
+    缺失时按「业务性无权限」返回 400，而不是 403：
+    403 表示 API 级权限码不足，会触发前端清登录态跳登录页，
+    自助类接口（如会话自助能力）用 400 更合适。
+    """
+
+    def __init__(self, *codes: str, detail: str = "无访问权限") -> None:
+        self.codes = codes
+        self.detail = detail
+
+    def __call__(
+        self,
+        session: SessionDep,
+        current_user: CurrentUser,
+    ) -> None:
+        if not has_any_permission(session=session, user=current_user, codes=self.codes):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=self.detail,
+            )
+
+
+def require_any_permission(
+    *codes: str, detail: str = "无访问权限"
+) -> AnyPermissionChecker:
+    """声明接口所需权限码之一（任一满足即可，缺失返回 400 业务性无权限）
+
+    与 require_permission 一样在模块导入期校验权限码已登记。
+    """
+    for code in codes:
+        if not is_registered_permission(code):
+            raise RuntimeError(f"未登记的权限码：{code}")
+    return AnyPermissionChecker(*codes, detail=detail)
