@@ -18,7 +18,6 @@ import { formatDateTime } from "@/components/Admin/Automation/tasks/constants"
 import {
   MY_NOTIFICATIONS_QUERY_KEY,
   MY_NOTIFICATIONS_UNREAD_QUERY_KEY,
-  MY_UNREAD_SUMMARY_QUERY_KEY,
 } from "@/components/Notifications/constants"
 import {
   AlertDialog,
@@ -103,9 +102,6 @@ export function NotificationPanel({ active }: { active: boolean }) {
       queryClient.invalidateQueries({
         queryKey: MY_NOTIFICATIONS_UNREAD_QUERY_KEY,
       })
-      queryClient.invalidateQueries({
-        queryKey: MY_UNREAD_SUMMARY_QUERY_KEY,
-      })
     }
   }, [active, queryClient])
 
@@ -183,7 +179,7 @@ export function NotificationPanel({ active }: { active: boolean }) {
         ),
       }))
       queryClient.invalidateQueries({
-        queryKey: MY_UNREAD_SUMMARY_QUERY_KEY,
+        queryKey: MY_NOTIFICATIONS_UNREAD_QUERY_KEY,
       })
     },
     onError: handleError.bind(showErrorToast),
@@ -206,7 +202,7 @@ export function NotificationPanel({ active }: { active: boolean }) {
         () => ({ unread_count: 0 }),
       )
       queryClient.invalidateQueries({
-        queryKey: MY_UNREAD_SUMMARY_QUERY_KEY,
+        queryKey: MY_NOTIFICATIONS_UNREAD_QUERY_KEY,
       })
       showSuccessToast("已全部标记为已读")
     },
@@ -221,7 +217,7 @@ export function NotificationPanel({ active }: { active: boolean }) {
     onSuccess: (_message, item) => {
       removeFromNotificationCache(item.id, !item.read_at)
       queryClient.invalidateQueries({
-        queryKey: MY_UNREAD_SUMMARY_QUERY_KEY,
+        queryKey: MY_NOTIFICATIONS_UNREAD_QUERY_KEY,
       })
       showSuccessToast("通知已删除")
     },

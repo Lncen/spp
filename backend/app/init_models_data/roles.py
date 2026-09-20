@@ -44,11 +44,12 @@ SYSTEM_ROLES_DATA: list[SystemRoleData] = [
     {
         "code": DEFAULT_USER_ROLE_CODE,
         "name": "普通用户",
-        "description": "默认角色：查看与发送自己的会话",
+        "description": "默认角色：系统注册用户的兜底角色",
         "sort_order": 2,
         "permission_codes": [
-            "conversation:self_view",
-            "conversation:reply",
+            "chat:self_view",
+            "chat:send",
+            "chat:create",
         ],
     },
 ]

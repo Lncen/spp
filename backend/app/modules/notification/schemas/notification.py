@@ -15,7 +15,6 @@ class NotificationPublic(SQLModel):
     title: str
     content: str
     event_type: str
-    payload_snapshot: dict[str, Any]
     created_at: datetime | None
     read_at: datetime | None
 
@@ -32,14 +31,6 @@ class UnreadCount(SQLModel):
     """未读通知数"""
 
     unread_count: int
-
-
-class UnreadSummary(SQLModel):
-    """侧边栏总未读：系统通知 + 客服会话未读"""
-
-    notification_unread_count: int
-    conversation_unread_count: int
-    total_unread: int
 
 
 class DeliveryPublic(SQLModel):

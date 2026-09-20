@@ -57,13 +57,13 @@ init_tasks = {
         ),
         "schedule": crontab(hour=3, minute=30),
     },
-    # 客服会话历史数据清理 —— 每天凌晨 5:45 执行
-    "客服_历史数据清理": {
+    # 通知事件消费重试 —— 每分钟重新消费失败或中断的事件
+    "通知_事件消费重试": {
         "task": (
             "app.modules.automation.infrastructure.tasks."
-            "cleanup_conversations"
+            "retry_notification_consumptions"
         ),
-        "schedule": crontab(hour=5, minute=45),
+        "schedule": timedelta(minutes=1),
     },
     # 自动化任务归档数据清理 —— 每天凌晨 4:00 执行
     "自动化_归档数据清理": {

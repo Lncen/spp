@@ -3,7 +3,7 @@
 /**
  * 权限动作类型
  */
-export type ActionType = 'view' | 'create' | 'update' | 'manage';
+export type ActionType = 'view' | 'reply' | 'create' | 'update' | 'manage';
 
 /**
  * 管理员下单结算预览商品行
@@ -388,47 +388,71 @@ export type Body_login_login_access_token = {
 };
 
 /**
- * 发起会话请求（管理端为指定用户发起时必填 user_id）
+ * 创建（或复用）与指定用户的私聊
  */
-export type ConversationCreate = {
-    /**
-     * 管理端主动联系的用户；普通用户忽略此字段
-     */
-    user_id?: (string | null);
+export type ChatDirectCreate = {
+    user_id: string;
 };
 
 /**
- * 会话对外展示结构
+ * 创建群聊
  */
-export type ConversationPublic = {
-    id: string;
-    user_id?: (string | null);
-    status: string;
-    last_message_at?: (string | null);
-    last_message_preview?: (string | null);
-    created_at?: (string | null);
-    user_name?: (string | null);
-    user_avatar_url?: (string | null);
-    user_online?: boolean;
+export type ChatGroupCreate = {
+    name: string;
     /**
-     * 当前查看者视角下对方发来且未读的消息数量
+     * 除创建者（群主）外的初始成员，去重后加入
      */
+    member_ids?: Array<(string)>;
+};
+
+/**
+ * 聊天展示结构
+ */
+export type ChatPublic = {
+    id: string;
+    type: string;
+    status: string;
+    name?: (string | null);
+    /**
+     * 按聊天类型解析：私聊为对方昵称，群聊为群名
+     */
+    display_name?: (string | null);
+    display_avatar_url?: (string | null);
+    last_message_preview?: (string | null);
+    last_message_at?: (string | null);
+    unread_count?: number;
+    created_at?: (string | null);
+};
+
+/**
+ * 标记已读请求体
+ */
+export type ChatReadBody = {
+    message_id: string;
+};
+
+/**
+ * 标记已读结果
+ */
+export type ChatReadResult = {
+    chat_id: string;
+    last_read_message_id?: (string | null);
     unread_count?: number;
 };
 
 /**
- * 会话列表
+ * 聊天列表
  */
-export type ConversationsPublic = {
-    data: Array<ConversationPublic>;
+export type ChatsPublic = {
+    data: Array<ChatPublic>;
     count: number;
 };
 
 /**
- * 会话状态更新请求
+ * 消息未读总数（侧边栏聊天角标）
  */
-export type ConversationStatusUpdate = {
-    status: string;
+export type ChatUnreadCount = {
+    unread_count: number;
 };
 
 /**
@@ -631,32 +655,33 @@ export type Message = {
 };
 
 /**
- * 发送消息请求
- */
-export type MessageCreate = {
-    content: string;
-};
-
-/**
- * 消息对外展示结构
+ * 消息展示结构
  */
 export type MessagePublic = {
     id: string;
-    conversation_id: string;
+    chat_id: string;
+    /**
+     * 发送者；用户被删除后为 None
+     */
     sender_id?: (string | null);
-    sender_role: string;
+    sender_name?: (string | null);
+    message_type: string;
     content: string;
-    read_at?: (string | null);
+    file_name?: (string | null);
+    file_path?: (string | null);
+    client_message_id?: (string | null);
     created_at?: (string | null);
 };
 
 /**
- * 会话消息列表
+ * 消息分页结果
  */
 export type MessagesPublic = {
     data: Array<MessagePublic>;
+    /**
+     * 前端据此判断是否还有更早的历史消息
+     */
     count: number;
-    conversation: ConversationPublic;
 };
 
 /**
@@ -702,9 +727,6 @@ export type NotificationPublic = {
     title: string;
     content: string;
     event_type: string;
-    payload_snapshot: {
-        [key: string]: unknown;
-    };
     created_at: (string | null);
     read_at: (string | null);
 };
@@ -742,15 +764,6 @@ export type NotificationsPublic = {
     data: Array<NotificationPublic>;
     count: number;
     unread_count: number;
-};
-
-/**
- * 在线状态批量查询结果
- */
-export type OnlineStatusPublic = {
-    online: {
-        [key: string]: (boolean);
-    };
 };
 
 /**
@@ -875,6 +888,42 @@ export type OrderStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
  */
 export type OrderStatusUpdateRequest = {
     status: OrderStatus;
+};
+
+/**
+ * 把用户加入群聊（成员管理）
+ */
+export type ParticipantAdd = {
+    user_id: string;
+    /**
+     * 留空时按聊天类型使用默认角色
+     */
+    role?: (string | null);
+};
+
+/**
+ * 聊天成员展示结构
+ */
+export type ParticipantPublic = {
+    id: string;
+    user_id: string;
+    role: string;
+    display_name?: (string | null);
+    display_avatar_url?: (string | null);
+    /**
+     * 来自 realtime 的 Presence（Redis），Redis 不可用时按离线展示
+     */
+    is_online?: boolean;
+    joined_at?: (string | null);
+    last_read_message_id?: (string | null);
+};
+
+/**
+ * 聊天成员列表
+ */
+export type ParticipantsPublic = {
+    data: Array<ParticipantPublic>;
+    count: number;
 };
 
 /**
@@ -1658,7 +1707,7 @@ export type SettingsRead = {
 /**
  * 设置类型：值对应模块名，便于识别设置归属
  */
-export type SettingType = 'system' | 'auth' | 'automation' | 'image' | 'item' | 'level' | 'notification' | 'order' | 'price_template' | 'product' | 'setting' | 'supplier' | 'user' | 'wallet' | 'other';
+export type SettingType = 'system' | 'auth' | 'automation' | 'chat' | 'image' | 'item' | 'level' | 'notification' | 'order' | 'price_template' | 'product' | 'setting' | 'supplier' | 'user' | 'wallet' | 'other';
 
 /**
  * 更新设置请求
@@ -1883,15 +1932,6 @@ export type Token = {
  */
 export type UnreadCount = {
     unread_count: number;
-};
-
-/**
- * 侧边栏总未读：系统通知 + 客服会话未读
- */
-export type UnreadSummary = {
-    notification_unread_count: number;
-    conversation_unread_count: number;
-    total_unread: number;
 };
 
 /**
@@ -2351,58 +2391,76 @@ export type BackupsDeleteBackupData = {
 
 export type BackupsDeleteBackupResponse = (Message);
 
-export type CustomerServiceReadConversationsData = {
+export type ChatReadMyChatsData = {
     limit?: number;
     skip?: number;
 };
 
-export type CustomerServiceReadConversationsResponse = (ConversationsPublic);
+export type ChatReadMyChatsResponse = (ChatsPublic);
 
-export type CustomerServiceCreateConversationEndpointData = {
-    requestBody?: (ConversationCreate | null);
+export type ChatReadMyUnreadCountResponse = (ChatUnreadCount);
+
+export type ChatCreateDirectChatData = {
+    requestBody: ChatDirectCreate;
 };
 
-export type CustomerServiceCreateConversationEndpointResponse = (ConversationPublic);
+export type ChatCreateDirectChatResponse = (ChatPublic);
 
-export type CustomerServiceReadMessagesData = {
+export type ChatCreateGroupData = {
+    requestBody: ChatGroupCreate;
+};
+
+export type ChatCreateGroupResponse = (ChatPublic);
+
+export type ChatReadChatData = {
+    chatId: string;
+};
+
+export type ChatReadChatResponse = (ChatPublic);
+
+export type ChatDeleteChatData = {
+    chatId: string;
+};
+
+export type ChatDeleteChatResponse = (Message);
+
+export type ChatReadChatMessagesData = {
+    /**
+     * 返回该消息之前（更早）的一页
+     */
     before?: (string | null);
-    conversationId: string;
+    chatId: string;
     limit?: number;
 };
 
-export type CustomerServiceReadMessagesResponse = (MessagesPublic);
+export type ChatReadChatMessagesResponse = (MessagesPublic);
 
-export type CustomerServiceSendMessageEndpointData = {
-    conversationId: string;
-    requestBody: MessageCreate;
+export type ChatMarkReadData = {
+    chatId: string;
+    requestBody: ChatReadBody;
 };
 
-export type CustomerServiceSendMessageEndpointResponse = (MessagePublic);
+export type ChatMarkReadResponse = (ChatReadResult);
 
-export type CustomerServiceReadConversationData = {
-    conversationId: string;
+export type ChatReadChatParticipantsData = {
+    chatId: string;
 };
 
-export type CustomerServiceReadConversationResponse = (ConversationPublic);
+export type ChatReadChatParticipantsResponse = (ParticipantsPublic);
 
-export type CustomerServiceUpdateStatusEndpointData = {
-    conversationId: string;
-    requestBody: ConversationStatusUpdate;
+export type ChatAddParticipantData = {
+    chatId: string;
+    requestBody: ParticipantAdd;
 };
 
-export type CustomerServiceUpdateStatusEndpointResponse = (ConversationPublic);
+export type ChatAddParticipantResponse = (ParticipantsPublic);
 
-export type CustomerServiceDeleteConversationEndpointData = {
-    conversationId: string;
+export type ChatDeleteParticipantData = {
+    chatId: string;
+    userId: string;
 };
 
-export type CustomerServiceDeleteConversationEndpointResponse = (Message);
-
-export type CustomerServiceReadOnlineStatusData = {
-    userIds: Array<(string)>;
-};
-
-export type CustomerServiceReadOnlineStatusResponse = (OnlineStatusPublic);
+export type ChatDeleteParticipantResponse = (ParticipantsPublic);
 
 export type ImageCategoriesReadCategoriesResponse = (ImageCategoriesPublic);
 
@@ -2535,8 +2593,6 @@ export type NotificationsReadMyNotificationsData = {
 export type NotificationsReadMyNotificationsResponse = (NotificationsPublic);
 
 export type NotificationsReadUnreadCountResponse = (UnreadCount);
-
-export type NotificationsReadUnreadSummaryResponse = (UnreadSummary);
 
 export type NotificationsMarkReadData = {
     notificationId: string;

@@ -40,11 +40,11 @@ def discover_tasks() -> None:
     import app.modules.automation.infrastructure.tasks  # noqa: F401
     import app.modules.automation.infrastructure.tasks.auth_cleanup  # noqa: F401
     import app.modules.automation.infrastructure.tasks.cleanup  # noqa: F401
-    import app.modules.automation.infrastructure.tasks.conversation_cleanup  # noqa: F401
     import app.modules.automation.infrastructure.tasks.event_redispatch  # noqa: F401
     import app.modules.automation.infrastructure.tasks.expired_data  # noqa: F401
     import app.modules.automation.infrastructure.tasks.notification_cleanup  # noqa: F401
     import app.modules.automation.infrastructure.tasks.notification_delivery  # noqa: F401
+    import app.modules.automation.infrastructure.tasks.notification_retry  # noqa: F401
     import app.modules.automation.infrastructure.tasks.order_cleanup  # noqa: F401
     import app.modules.automation.infrastructure.tasks.order_status  # noqa: F401
     import app.modules.automation.infrastructure.tasks.product_sync  # noqa: F401

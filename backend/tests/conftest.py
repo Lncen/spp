@@ -20,11 +20,9 @@ from app.modules.automation.models import (
     AutomationTask,
     AutomationTaskArchive,
 )
-from app.modules.customer_service.models import (
-    Conversation,
-    ConversationMessage,
-)
+from app.modules.chat.models import Chat, ChatParticipant, Message
 from app.modules.image.models import Image, ImageCategory
+from app.modules.notification.models import NotificationEventConsumption
 from app.modules.order.models import Order, OrderParam
 from app.modules.permission.models import Permission, PermissionCategory
 from app.modules.price_template.models import PriceTemplate, PriceTemplateRule
@@ -170,17 +168,40 @@ def db() -> Generator[Session]:
             conn.execute(
                 text("CREATE INDEX IF NOT EXISTS ix_orders_sku_id ON orders (sku_id)")
             )
+            # 通知幂等与投递唯一：新增列 / 索引由项目迁移流程生成，
+            # 测试库先幂等补齐，保证既有测试库也能直接跑新用例
+            conn.execute(
+                text(
+                    "ALTER TABLE notifications "
+                    "ADD COLUMN IF NOT EXISTS dedupe_key VARCHAR(255)"
+                )
+            )
+            conn.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS "
+                    "uq_notifications_dedupe_key ON notifications (dedupe_key)"
+                )
+            )
+            conn.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS "
+                    "uq_notification_deliveries_notification_channel "
+                    "ON notification_deliveries (notification_id, channel)"
+                )
+            )
         # 新模块表尚未生成迁移，测试环境单独建表；产品库由 Alembic 迁移建表
         SQLModel.metadata.create_all(
             engine,
             tables=[
                 RefreshToken.__table__,
-                Conversation.__table__,
-                ConversationMessage.__table__,
                 AutomationTask.__table__,
                 AutomationTaskArchive.__table__,
                 AutomationEvent.__table__,
                 AutomationRule.__table__,
+                Chat.__table__,
+                ChatParticipant.__table__,
+                Message.__table__,
+                NotificationEventConsumption.__table__,
                 PriceTemplate.__table__,
                 PriceTemplateRule.__table__,
                 ProductCategory.__table__,
@@ -211,9 +232,11 @@ def db() -> Generator[Session]:
         session.execute(statement)
         statement = delete(Order)
         session.execute(statement)
-        statement = delete(ConversationMessage)
+        statement = delete(Message)
         session.execute(statement)
-        statement = delete(Conversation)
+        statement = delete(ChatParticipant)
+        session.execute(statement)
+        statement = delete(Chat)
         session.execute(statement)
         statement = delete(ProductBuyParam)
         session.execute(statement)

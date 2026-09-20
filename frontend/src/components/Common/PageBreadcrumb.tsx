@@ -1,5 +1,12 @@
 import { Link as RouterLink, useRouterState } from "@tanstack/react-router"
-import { Fragment } from "react"
+import {
+  createContext,
+  Fragment,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react"
 
 import {
   Breadcrumb,
@@ -32,10 +39,43 @@ const segmentTitles: Record<string, string> = {
   events: "事件",
 }
 
+interface BreadcrumbLabelContextValue {
+  /** 页面追加的面包屑末级标签，null 表示不追加 */
+  label: string | null
+  setLabel: (label: string | null) => void
+}
+
+const BreadcrumbLabelContext = createContext<BreadcrumbLabelContextValue>({
+  label: null,
+  setLabel: () => {},
+})
+
+/** 为面包屑提供页面级标签状态，需包裹面包屑与页面内容 */
+export function BreadcrumbLabelProvider({ children }: { children: ReactNode }) {
+  const [label, setLabel] = useState<string | null>(null)
+
+  return (
+    <BreadcrumbLabelContext.Provider value={{ label, setLabel }}>
+      {children}
+    </BreadcrumbLabelContext.Provider>
+  )
+}
+
+/** 页面用当前选中项的名称追加面包屑末级标签，卸载或标签为 null 时自动移除 */
+export function useBreadcrumbLabel(label: string | null) {
+  const { setLabel } = useContext(BreadcrumbLabelContext)
+
+  useEffect(() => {
+    setLabel(label)
+    return () => setLabel(null)
+  }, [setLabel, label])
+}
+
 export function PageBreadcrumb() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
+  const { label } = useContext(BreadcrumbLabelContext)
   const segments = pathname.split("/").filter(Boolean)
 
   return (
@@ -66,6 +106,14 @@ export function PageBreadcrumb() {
             </Fragment>
           )
         })}
+        {label ? (
+          <>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{label}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </>
+        ) : null}
       </BreadcrumbList>
     </Breadcrumb>
   )

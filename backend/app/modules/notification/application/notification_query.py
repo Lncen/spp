@@ -5,9 +5,6 @@ import uuid
 from sqlmodel import Session
 
 from app.core.time import get_datetime_cn
-from app.modules.customer_service.application.conversation_manage import (
-    get_total_conversation_unread,
-)
 from app.modules.notification.models import Notification
 from app.modules.notification.repositories.notification import (
     count_unread_notifications,
@@ -21,9 +18,7 @@ from app.modules.notification.repositories.notification import (
 from app.modules.notification.schemas.notification import (
     NotificationsPublic,
     UnreadCount,
-    UnreadSummary,
 )
-from app.modules.user.models import User
 
 
 def get_my_notifications(
@@ -53,21 +48,6 @@ def get_unread_count(*, session: Session, user_id: uuid.UUID) -> UnreadCount:
     """查询当前用户未读通知数"""
     return UnreadCount(
         unread_count=count_unread_notifications(session=session, user_id=user_id)
-    )
-
-
-def get_unread_summary(*, session: Session, user: User) -> UnreadSummary:
-    """查询侧边栏总未读：系统通知未读 + 客服会话未读"""
-    notification_unread = count_unread_notifications(
-        session=session, user_id=user.id
-    )
-    conversation_unread = get_total_conversation_unread(
-        session=session, user=user
-    )
-    return UnreadSummary(
-        notification_unread_count=notification_unread,
-        conversation_unread_count=conversation_unread,
-        total_unread=notification_unread + conversation_unread,
     )
 
 

@@ -63,12 +63,12 @@ export function RolePermissionCard({ role }: RolePermissionCardProps) {
     roleId: string
     codes: string[] | null
   }>({ roleId: role.id, codes: null })
-  /** 搜索与折叠状态，同样按角色隔离 */
+  /** 搜索与展开状态，同样按角色隔离；默认为空数组，即所有分类默认折叠 */
   const [uiState, setUiState] = useState<{
     roleId: string
     keyword: string
-    collapsedIds: string[]
-  }>({ roleId: role.id, keyword: "", collapsedIds: [] })
+    expandedIds: string[]
+  }>({ roleId: role.id, keyword: "", expandedIds: [] })
 
   const draftCodes = draftState.roleId === role.id ? draftState.codes : null
   const setDraftCodes = (codes: string[] | null) =>
@@ -77,9 +77,9 @@ export function RolePermissionCard({ role }: RolePermissionCardProps) {
   const ui =
     uiState.roleId === role.id
       ? uiState
-      : { roleId: role.id, keyword: "", collapsedIds: [] }
+      : { roleId: role.id, keyword: "", expandedIds: [] }
   const keyword = ui.keyword
-  const collapsedIds = ui.collapsedIds
+  const expandedIds = ui.expandedIds
 
   const baselineCodes = useMemo(
     () => rolePermissions?.permission_codes ?? [],
@@ -131,9 +131,9 @@ export function RolePermissionCard({ role }: RolePermissionCardProps) {
   const toggleCategory = (categoryId: string) => {
     setUiState({
       ...ui,
-      collapsedIds: collapsedIds.includes(categoryId)
-        ? collapsedIds.filter((id) => id !== categoryId)
-        : [...collapsedIds, categoryId],
+      expandedIds: expandedIds.includes(categoryId)
+        ? expandedIds.filter((id) => id !== categoryId)
+        : [...expandedIds, categoryId],
     })
   }
 
@@ -221,7 +221,7 @@ export function RolePermissionCard({ role }: RolePermissionCardProps) {
               category={category}
               permissions={permissions}
               selected={selected}
-              collapsed={collapsedIds.includes(category.id)}
+              expanded={expandedIds.includes(category.id)}
               isSearching={Boolean(normalizedKeyword)}
               onToggleCategory={toggleCategory}
               onTogglePermission={togglePermission}
@@ -237,7 +237,7 @@ interface PermissionCategorySectionProps {
   category: PermissionTreeCategory
   permissions: PermissionTreeCategory["permissions"]
   selected: Set<string>
-  collapsed: boolean
+  expanded: boolean
   isSearching: boolean
   onToggleCategory: (categoryId: string) => void
   onTogglePermission: (code: string, checked: boolean) => void
@@ -247,7 +247,7 @@ function PermissionCategorySection({
   category,
   permissions,
   selected,
-  collapsed,
+  expanded,
   isSearching,
   onToggleCategory,
   onTogglePermission,
@@ -255,7 +255,7 @@ function PermissionCategorySection({
   const selectedCount = category.permissions.filter((permission) =>
     selected.has(permission.code),
   ).length
-  const isExpanded = isSearching || !collapsed
+  const isExpanded = isSearching || expanded
 
   return (
     <section className="flex flex-col gap-3 rounded-lg border p-4">

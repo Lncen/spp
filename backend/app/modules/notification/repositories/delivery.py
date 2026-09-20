@@ -19,14 +19,19 @@ def create_delivery(
     session: Session,
     notification_id: uuid.UUID,
     channel: str,
+    status: str = DeliveryStatus.PENDING,
 ) -> NotificationDelivery:
-    """创建投递记录并加入会话（不提交，由调用方控制事务）"""
+    """创建投递记录并加入会话（不提交，由调用方控制事务）
+
+    `status=SENT` 用于站内通知：通知落库即视为送达，不经过异步投递。
+    """
     delivery = NotificationDelivery(
         notification_id=notification_id,
         channel=channel,
-        status=DeliveryStatus.PENDING,
+        status=status,
         attempt_count=0,
         max_attempts=DEFAULT_MAX_ATTEMPTS,
+        sent_at=get_datetime_cn() if status == DeliveryStatus.SENT else None,
     )
     session.add(delivery)
     return delivery

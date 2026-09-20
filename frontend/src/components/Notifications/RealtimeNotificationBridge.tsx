@@ -5,7 +5,6 @@ import { toast } from "sonner"
 import {
   MY_NOTIFICATIONS_QUERY_KEY,
   MY_NOTIFICATIONS_UNREAD_QUERY_KEY,
-  MY_UNREAD_SUMMARY_QUERY_KEY,
 } from "@/components/Notifications/constants"
 import { useMessageCueVolume } from "@/hooks/useMessageCueVolume"
 import { notifyNewMessage, playMessageCue } from "@/lib/new-message-alert"
@@ -18,9 +17,7 @@ type NotificationCreatedPayload = {
   title: string
   content: string
   event_type: string
-  payload_snapshot: Record<string, unknown>
   created_at: string | null
-  read_at: string | null
 }
 
 /**
@@ -38,16 +35,13 @@ export function RealtimeNotificationBridge() {
     const handleCreated = (payload: NotificationCreatedPayload) => {
       // 页面不在前台时闪烁任务栏标签
       flashTabTitle()
-      notifyNewMessage(payload.title, payload.content || undefined)
+      notifyNewMessage(payload.title, payload.content || undefined, payload.id)
       playMessageCue()
       queryClient.invalidateQueries({
         queryKey: MY_NOTIFICATIONS_UNREAD_QUERY_KEY,
       })
       queryClient.invalidateQueries({
         queryKey: MY_NOTIFICATIONS_QUERY_KEY,
-      })
-      queryClient.invalidateQueries({
-        queryKey: MY_UNREAD_SUMMARY_QUERY_KEY,
       })
       if (document.hasFocus()) {
         toast(payload.title, {

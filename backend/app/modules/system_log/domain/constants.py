@@ -40,6 +40,6 @@ RESOURCE_KEY_MAP: dict[str, str] = {
     "wallet_id": "wallet",
     "task_id": "automation_task",
     "event_id": "automation_event",
-    "conversation_id": "conversation",
+    "chat_id": "chat",
     "image_id": "image",
 }

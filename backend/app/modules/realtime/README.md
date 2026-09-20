@@ -24,43 +24,79 @@ Socket.IO  = 客户端实时连接
 
 ```text
 realtime/
-├── server.py      # Socket.IO 服务端：连接/断开处理、用户房间绑定
+├── server.py      # Socket.IO 服务端：连接鉴权、房间命名、Presence 生命周期
 ├── publisher.py   # 发布入口：向用户/房间发布实时事件（同步 + 异步）
 ├── auth.py        # 握手鉴权（复用现有 JWT）
-├── manager.py     # 进程内在线连接管理
-├── events.py      # 实时事件名常量
+├── manager.py     # 进程内连接绑定 + Redis 跨进程 Presence
+├── events.py      # 实时通道事件名常量
 └── README.md
 ```
 
-## 三、发布方式
+## 三、房间与事件
 
-业务模块（如 notification）在事务提交后调用：
+房间统一三种命名，业务模块通过 `server` 提供的构造函数加入：
 
-```python
-from app.modules.realtime.events import RealtimeEvent
-from app.modules.realtime.publisher import publish_to_user
+| 房间 | 用途 |
+| --- | --- |
+| `user:{user_id}` | 与该用户强相关的提醒：通知、未读数变化 |
+| `chat:{chat_id}` | 单个聊天内的事件：新消息、typing、已读 |
+| `presence:{user_id}` | 订阅某个用户在线状态变化的连接 |
 
-publish_to_user(user_id, RealtimeEvent.NOTIFICATION_CREATED, payload)
+实时通道自身只产生两个事件：
+
+| 事件 | 方向 | 说明 |
+| --- | --- | --- |
+| `presence.heartbeat` | Client → Server | 心跳，续期在线状态 TTL |
+| `realtime.presence.changed` | Server → Client | 某个用户在线状态变化，发给 `presence:{user_id}` 订阅者 |
+
+`connect` / `disconnect` 不再广播业务事件；聊天与通知等业务事件名由各自业务模块定义。
+
+## 四、在线状态（Presence）
+
+```text
+connect                heartbeat（每 30 秒）      disconnect
+   ↓                        ↓                       ↓
+SADD + EXPIRE 90s      SADD + EXPIRE 90s      Lua：SREM → SCARD →（0 时）DEL
 ```
 
-多用户发布使用 `publish_to_users(ids, event, data)`；指定房间使用 `publish_to_room(room, event, data)`。
+- `realtime:online:{user_id}` 是该用户的在线连接集合（多设备多 sid，跨 worker 共享）；
+- TTL 90 秒由心跳续期：worker 崩溃 / 进程被杀后，最长 90 秒自动离线，不需要清理任务；
+- 断开连接由 Lua 原子完成 `SREM + SCARD + DEL`，不会残留空 Set（历史上 `EXISTS` 判断空 Set 会让用户长期显示在线）；
+- 只有「集合中已无任何 sid」才广播离线；同进程仍有该用户其他连接时不会误判离线。
 
-## 四、进程拓扑
+## 五、发布方式
 
-- **Web 进程**：启动时 `init_publisher()` 将发布器绑定到主事件循环与完整 `AsyncRedisManager`（读写）；
-- **Celery worker 等无主循环进程**：首次发布时惰性创建 `write_only=True` 的 `AsyncRedisManager` 实例与后台事件循环，只写 Redis 不订阅；
+业务模块在事务提交后调用，同步与异步入口严格分开：
+
+| 场景 | 入口 |
+| --- | --- |
+| FastAPI 同步路由（线程池）、Celery worker、同步事件监听器 | `publish_to_user` / `publish_to_users` / `publish_to_room` |
+| async 路由、Socket.IO 事件处理器 | `publish_to_user_async` / `publish_to_users_async` / `publish_to_room_async` |
+
+```python
+from app.modules.realtime.publisher import publish_to_user
+
+publish_to_user(user_id, "notification.created", payload)
+```
+
+同步入口使用 `write_only=True` 的 `RedisManager`，只向 Socket.IO 的 Redis 通道写消息，
+可在任意线程直接调用，不需要后台事件循环；异步入口使用 `AsyncRedisManager` 并支持批量并发发布。
+两种发布器都与各 Web 进程 Socket.IO 服务订阅的通道一致，因此跨进程投递到客户端。
+
+## 六、进程拓扑
+
+- **Web 进程**：Socket.IO 服务持有读写 `AsyncRedisManager`，负责订阅 Redis 并投递到本进程连接；
+- **Celery worker / 脚本进程**：首次发布时惰性创建 `write_only=True` 的发布器（只写不订阅），无需启动事件循环；
 - 发布消息经 Redis 通道广播，所有 Web 进程的 Socket.IO 服务按用户 room 定向投递。
 
-## 五、部署注意事项
+## 七、部署注意事项
 
 - 生产多 worker（如 `fastapi run --workers 4`）时，Socket.IO 使用 WebSocket 传输需要负载均衡层**粘性会话**（sticky session），否则握手后的帧可能被路由到其他 worker；
 - 建议保持 `transports=["websocket"]`，避免 long-polling 带来的粘性会话与代理配置复杂度；
 - Redis 故障时实时提醒缺失，但业务数据不受影响，前端通过打开通知中心等操作兜底刷新。
 
-## 六、重要约定
+## 八、重要约定
 
 - Socket.IO 事件处理器（`connect` / `disconnect` / 业务事件）运行在主事件循环线程内，**禁止在其中执行同步阻塞调用**（数据库查询、同步 Redis、`run_redis_sync`）；
   业务侧的同步查询必须通过 `starlette.concurrency.run_in_threadpool` 转交线程池执行，否则会阻塞所有连接与请求。
 - `run_redis_sync` 在事件循环线程内调用时会立即抛错（由调用方快速降级），避免同步等待自己调度的协程导致事件循环停滞数秒。
-- 业务模块通过 `register_conversation_participants` 注册的「会话参与者」回调是**同步实现**（数据库 + 权限缓存），由本模块在线程池中调用：
-  返回 `None` 表示拒绝，返回参与者 ID 列表表示放行；新增回调时不要在其中 `await`。

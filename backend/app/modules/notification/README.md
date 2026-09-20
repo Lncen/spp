@@ -15,11 +15,13 @@
 ```text
 业务模块 publish 事件 -> EventBus 落库 AutomationEvent
     -> notification 监听器（listen "*"）
-    -> 匹配 NotificationRule -> 生成 Notification + NotificationDelivery
+    -> 登记 NotificationEventConsumption（消费状态）
+    -> 匹配 NotificationRule -> 生成 Notification + NotificationDelivery（dedupe_key 幂等）
     -> 实时发布 notification.created（realtime 模块，best-effort）
-    -> Celery 异步投递（in_app 落库即达 / email 复用 SMTP）
+    -> in_app 落库即送达 / email 进入 Celery 复用 SMTP
     -> 记录投递结果（成功 / 失败重试 / 失败终态）
     -> 兜底扫描（每 5 分钟）恢复超时的 pending/sending 投递并重新入队
+    -> 消费重试（每 1 分钟）重新消费失败或中断的事件
 ```
 
 **实时提醒**：站内通知创建并提交后，向接收用户发布 `notification.created`（走 `realtime` 模块的 Redis Pub/Sub + Socket.IO）。实时通道只是提醒，PostgreSQL 中的 `Notification` 才是事实来源；发布失败不影响落库，前端可在打开通知中心时重新拉取。
@@ -29,7 +31,9 @@
 - **同步段只做规则匹配与落库**，慢渠道调用一律放入 Celery 任务，不阻塞业务事务；
 - **通知与投递分离**：`Notification` 表达「给谁、发什么」，`NotificationDelivery` 表达「哪个渠道、发了几次、结果如何」；
 - **注册不做导入副作用**：渠道注册在 `infrastructure/channels/registry.py` + `loader.py` 显式完成；规则在 `domain/rules.py` 注册，首次查询时惰性初始化（幂等），不依赖模块导入顺序；
-- **投递幂等 + 兜底恢复**：投递任务通过条件更新认领（仅 `pending`/`failed` 可进入 `sending`），并发重投不会重复发送；投递记录落库即唯一事实源，入队失败不阻断接口（仅记日志），由 beat 兜底扫描恢复超时未推进的投递并补投，防止消息丢失导致永不发送。
+- **投递幂等 + 兜底恢复**：投递任务通过条件更新认领（仅 `pending`/`failed` 可进入 `sending`），并发重投不会重复发送；投递记录落库即唯一事实源，入队失败不阻断接口（仅记日志），由 beat 兜底扫描恢复超时未推进的投递并补投，防止消息丢失导致永不发送；
+- **消费可靠（重试 + 幂等）**：EventBus 只保证尽力分发（监听器失败仅记日志，自动化事件补发也不会重跑 EventBus 监听器），因此通知消费自己记录状态：失败 / worker 中断的消费由 `retry_notification_consumptions`（每分钟）按指数退避重试，`dedupe_key` 保证重复消费不产生重复通知；
+- **站内通知不走异步**：`in_app` 通知落库即视为送达（投递记录直接 `sent`），只有邮件进入 Celery，避免制造无意义的队列任务。
 
 ## 二、目录结构
 
@@ -128,17 +132,8 @@ class DingTalkChannel(BaseChannel):
 
 响应 `UnreadCount`：`unread_count`（当前用户未读通知数）。
 
-**侧边栏总未读（通知 + 会话）**：`GET /notifications/unread-summary`
-
-响应 `UnreadSummary`：
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| `notification_unread_count` | int | 系统通知未读 |
-| `conversation_unread_count` | int | 客服会话未读（管理端统计全部会话，普通用户统计自己的会话） |
-| `total_unread` | int | 两者之和 |
-
-主页面侧边栏「通知」「会话」角标分别使用该接口的 `notification_unread_count` / `conversation_unread_count`；通知与客服消息的实时事件（`notification.created` / `customer_service.message.created`）都会触发其刷新，本地已读 / 删除操作也会同步失效缓存。
+主页面侧边栏「通知」角标使用该接口；`notification.created` 实时事件与本地已读 / 删除操作都会触发其刷新。
+聊天未读属于 `chat` 模块（`GET /chat/unread-count`），由前端各自组合展示，`notification` 不感知聊天数据。
 
 ### 3. 标记单条已读
 
@@ -215,14 +210,17 @@ class DingTalkChannel(BaseChannel):
 | `title` | str | 通知标题 |
 | `content` | str | 通知内容 |
 | `event_type` | str | 触发事件类型 |
-| `payload_snapshot` | dict | 事件载荷快照 |
 | `created_at` | datetime | 创建时间 |
 | `read_at` | datetime \| null | 已读时间，未读为 null |
 
+`payload_snapshot` 只在服务端内部使用（管理端记录与邮件模板渲染），用户接口与实时推送都不返回，
+避免把内部事件载荷暴露给浏览器。
+
 ## 五、数据模型
 
-- `notifications`：通知实例（接收人、标题、内容、事件载荷快照、已读时间）；
-- `notification_deliveries`：渠道投递记录（状态机 `pending -> sending -> sent / failed / canceled`，失败自动重试，`attempt_count >= max_attempts` 进入 `failed` 终态）。投递任务以条件更新幂等认领，防止重复发送；超过 `NOTIFICATION_STALE_MINUTES`（默认 30 分钟）仍停留在 `pending`/`sending` 的投递由兜底任务恢复为 `pending` 并重新入队。
+- `notifications`：通知实例（接收人、标题、内容、事件载荷快照、已读时间）。`dedupe_key`（`事件 ID:规则:接收人`）唯一，事件重放 / 重试不会重复通知；手动发送留空，允许重复发送；
+- `notification_deliveries`：渠道投递记录（状态机 `pending -> sending -> sent / failed / canceled`，失败自动重试，`attempt_count >= max_attempts` 进入 `failed` 终态），`UNIQUE(notification_id, channel)` 保证一条通知的每个渠道只有一条记录。投递任务以条件更新幂等认领，防止重复发送；超过 `NOTIFICATION_STALE_MINUTES`（默认 30 分钟）仍停留在 `pending`/`sending` 的投递由兜底任务恢复为 `pending` 并重新入队；
+- `notification_event_consumptions`：事件消费状态（`pending -> processing -> done / failed`，含 `attempt_count` / `next_retry_at` / `last_error`）。`processing` 超过 15 分钟视为 worker 中断，由重试任务重新认领。
 - **数据清理**：通知记录默认保留 30 天，保留天数由全局设置 `notification_retention_days`（管理端「全局设置」页可改，最小 1 天）控制；beat 每天凌晨 03:30 执行 `cleanup_notification_records`，按批次（每批 500 条）物理删除超期通知及其全部投递记录，避免长事务。
 
 ## 六、当前内置规则
@@ -233,6 +231,7 @@ class DingTalkChannel(BaseChannel):
 
 手动发送通知（管理端）使用通用邮件模板 `notification_manual.html`（`{{ project_name }}` / `{{ title }}` / `{{ content }}`）。
 
+
 ## 七、前端入口
 
 - **用户侧通知弹窗**：`frontend/src/components/Notifications/NotificationsDialog.tsx`（列表面板 `NotificationPanel.tsx`，弹窗开关由 `NotificationsProvider.tsx` 管理）
@@ -240,6 +239,6 @@ class DingTalkChannel(BaseChannel):
   - 入口位于侧边栏「项目 → 通知」（`AppSidebar.tsx` 挂载），与「项目 → 会话」（客服工作台）相互独立，点击打开弹窗；
   - 列表**懒加载**：每页 20 条（`skip`/`limit` 分页），滚动到底部自动加载下一页；顶部计数用轻量请求（`limit=1`）获取，未读视图带 `unread_only=true`；点击单条自动标记已读，支持「全部已读」；
   - 单条支持**删除**（`DELETE /notifications/{id}`，AlertDialog 二次确认），删除后同步更新列表与计数缓存；
-  - 侧边栏「通知」项显示未读数角标（取自 `GET /notifications/unread-summary` 的 `notification_unread_count`，弹窗关闭时失效缓存，避免频繁请求）。
+  - 侧边栏「通知」项显示未读数角标（取自 `GET /notifications/unread-count`，弹窗关闭时失效缓存，避免频繁请求）。
 - **管理端通知记录**：`frontend/src/components/Admin/Notifications/`，路由 `/notifications`（管理端页面，需 `notification:view` 等权限码，含群发通知、失败重试、投递详情）；
 - **用户表发送通知**：`frontend/src/components/Admin/Users/` 用户行内操作菜单「发送通知」，向指定单个用户发送（事件类型下拉不含群发）。

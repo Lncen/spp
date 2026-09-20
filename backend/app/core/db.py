@@ -85,7 +85,7 @@ def init_db(session: Session) -> None:
         session.commit()
 
     # 为未分配任何角色的普通用户补内置「普通用户」角色：
-    # 历史账号缺少该角色时会话自助接口会因缺 conversation:self_* 权限码而被拒绝
+    # 历史账号缺少该角色时用户自助接口会因缺权限码而被拒绝
     default_role = session.exec(
         select(Role).where(Role.code == DEFAULT_USER_ROLE_CODE)
     ).first()

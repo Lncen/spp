@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 
 import { RolesService } from "@/client"
+import { useBreadcrumbLabel } from "@/components/Common/PageBreadcrumb"
 import {
   Card,
   CardDescription,
@@ -31,6 +32,8 @@ export const Roles = () => {
   const roles = data?.data ?? []
   const activeRole =
     roles.find((role) => role.id === selectedRoleId) ?? roles[0]
+
+  useBreadcrumbLabel(activeRole?.name ?? null)
 
   return (
     <div className="flex flex-col gap-6">

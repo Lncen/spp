@@ -134,11 +134,12 @@ def send_manual_notification(
     user_ids: list[uuid.UUID],
     channels: list[str],
     broadcast: bool = False,
-) -> tuple[int, int]:
-    """手动发送通知：为每个接收人生成通知与投递记录，异步投递。
+) -> tuple[int, int, int]:
+    """手动发送通知：为每个接收人生成通知与投递记录。
 
     broadcast=True 时接收人为全部启用用户（忽略 user_ids）；
-    返回 (创建的投递条数, 成功入队条数)；入队失败不抛异常，
+    返回 (投递条数, 站内已送达条数, 邮件成功入队条数)；
+    站内通知落库即送达，不经过异步投递；邮件入队失败不抛异常，
     未入队的记录保持 pending 由兜底扫描任务补投。
     """
     invalid_channels = set(channels) - VALID_CHANNELS
@@ -172,8 +173,9 @@ def send_manual_notification(
             )
 
     payload: dict[str, Any] = {"title": title, "content": content}
-    pending_deliveries: list[NotificationDelivery] = []
+    email_deliveries: list[NotificationDelivery] = []
     in_app_notifications: list[Notification] = []
+    delivery_count = 0
     for user in users:
         if user.id is None:
             continue
@@ -191,23 +193,31 @@ def send_manual_notification(
         )
         session.flush()
         for channel in channels:
-            pending_deliveries.append(
+            delivery_count += 1
+            if channel == ChannelType.IN_APP:
                 create_delivery(
                     session=session,
                     notification_id=notification.id,
                     channel=channel,
+                    status=DeliveryStatus.SENT,
                 )
-            )
-        if ChannelType.IN_APP in channels:
-            in_app_notifications.append(notification)
+                in_app_notifications.append(notification)
+            else:
+                email_deliveries.append(
+                    create_delivery(
+                        session=session,
+                        notification_id=notification.id,
+                        channel=channel,
+                    )
+                )
     session.commit()
     for notification in in_app_notifications:
         publish_notification_created(notification)
     enqueued = 0
-    for delivery in pending_deliveries:
+    for delivery in email_deliveries:
         if enqueue_delivery(str(delivery.id)):
             enqueued += 1
-    return len(pending_deliveries), enqueued
+    return delivery_count, len(in_app_notifications), enqueued
 
 
 def retry_delivery(

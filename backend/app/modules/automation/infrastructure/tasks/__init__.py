@@ -10,9 +10,6 @@ from app.modules.automation.infrastructure.tasks.auth_cleanup import (
 from app.modules.automation.infrastructure.tasks.cleanup import (
     cleanup_automation_task_archives,
 )
-from app.modules.automation.infrastructure.tasks.conversation_cleanup import (
-    cleanup_conversations,
-)
 from app.modules.automation.infrastructure.tasks.event_redispatch import (
     redispatch_stale_automation_events,
 )
@@ -26,6 +23,9 @@ from app.modules.automation.infrastructure.tasks.notification_delivery import (
     deliver_notification,
     enqueue_delivery,
     requeue_stale_notification_deliveries,
+)
+from app.modules.automation.infrastructure.tasks.notification_retry import (
+    retry_notification_consumptions,
 )
 from app.modules.automation.infrastructure.tasks.order_cleanup import (
     cleanup_completed_orders,
@@ -51,7 +51,6 @@ __all__ = [
     "automation_task_scan",
     "cleanup_automation_task_archives",
     "cleanup_completed_orders",
-    "cleanup_conversations",
     "cleanup_expired_data",
     "cleanup_expired_refresh_tokens",
     "cleanup_notification_records",
@@ -61,6 +60,7 @@ __all__ = [
     "enqueue_delivery",
     "requeue_stale_notification_deliveries",
     "redispatch_stale_automation_events",
+    "retry_notification_consumptions",
     "sync_order_status_periodic",
     "sync_product_status",
     "sync_upstream_products",

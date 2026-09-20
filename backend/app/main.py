@@ -12,7 +12,6 @@ from app.api.main import api_router
 from app.core.config import settings
 from app.core.middleware import MaintenanceMiddleware, SecurityHeadersMiddleware
 from app.core.redis import close_redis, init_redis
-from app.modules.realtime.publisher import init_publisher
 from app.modules.realtime.server import sio as realtime_sio
 
 
@@ -24,7 +23,6 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 async def lifespan(_app: FastAPI):
     """应用生命周期：启动时初始化 Redis，关闭时清理"""
     await init_redis()
-    init_publisher()
     if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
         import sentry_sdk
         sentry_sdk.init(dsn=str(settings.SENTRY_DSN), enable_tracing=True)

@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime
+from sqlalchemy import JSON, DateTime, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 from app.core.mixin.models import BaseModelMixin
@@ -18,6 +18,9 @@ class Notification(BaseModelMixin, SQLModel, table=True):
     """通知实例：由事件按规则生成，供用户查询与已读管理"""
 
     __tablename__ = "notifications"
+    __table_args__ = (
+        UniqueConstraint("dedupe_key", name="uq_notifications_dedupe_key"),
+    )
 
     event_id: uuid.UUID | None = Field(
         default=None,
@@ -38,6 +41,15 @@ class Notification(BaseModelMixin, SQLModel, table=True):
         index=True,
         title="规则标识",
         description="命中的通知规则标识（代码注册表键）",
+    )
+    dedupe_key: str | None = Field(
+        default=None,
+        max_length=255,
+        title="幂等键",
+        description=(
+            "事件触发的通知按「事件 ID:规则:接收人」唯一，事件重放 / 重试不会重复生成；"
+            "手动发送的通知留空，允许重复发送"
+        ),
     )
     user_id: uuid.UUID | None = Field(
         default=None,

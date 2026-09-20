@@ -6,8 +6,8 @@
 
 import logging
 
+from app.modules.notification.domain.constants import NotificationRealtimeEvent
 from app.modules.notification.models import Notification
-from app.modules.realtime.events import RealtimeEvent
 from app.modules.realtime.publisher import publish_to_user
 
 logger = logging.getLogger(__name__)
@@ -22,20 +22,14 @@ def publish_notification_created(notification: Notification) -> bool:
         "title": notification.title,
         "content": notification.content,
         "event_type": notification.event_type,
-        "payload_snapshot": notification.payload_snapshot,
         "created_at": (
             notification.created_at.isoformat()
             if notification.created_at is not None
             else None
         ),
-        "read_at": (
-            notification.read_at.isoformat()
-            if notification.read_at is not None
-            else None
-        ),
     }
     return publish_to_user(
         notification.user_id,
-        RealtimeEvent.NOTIFICATION_CREATED,
+        NotificationRealtimeEvent.CREATED,
         payload,
     )

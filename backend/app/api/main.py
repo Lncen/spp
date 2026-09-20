@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 import app.modules.automation.infrastructure.event_listeners  # noqa: F401  注册事件监听器
-import app.modules.customer_service.infrastructure.room_guard  # noqa: F401  注册实时会话守卫
+import app.modules.chat.infrastructure.socket  # noqa: F401  注册聊天 Socket.IO 处理器
 import app.modules.notification.infrastructure.event_listeners  # noqa: F401  注册通知事件监听器
 import app.modules.system_log.infrastructure.event_listeners  # noqa: F401  注册系统日志监听器
 from app.common.router import router as utils_router
@@ -24,7 +24,12 @@ from app.modules.automation.api import (
     schedule_tasks_router,
 )
 from app.modules.backup.api import router as backup_router
-from app.modules.customer_service.api import router as customer_service_router
+from app.modules.chat.api import router as chat_router
+from app.modules.chat.models import (  # noqa: F401
+    Chat,
+    ChatParticipant,
+)
+from app.modules.chat.models import Message as ChatMessage  # noqa: F401
 from app.modules.image.api import (
     category_router as image_category_router,
 )
@@ -90,7 +95,7 @@ api_router.include_router(wallet_router)
 api_router.include_router(utils_router)
 api_router.include_router(level_router)
 api_router.include_router(notification_router)
-api_router.include_router(customer_service_router)
+api_router.include_router(chat_router)
 api_router.include_router(order_router)
 api_router.include_router(image_router)
 api_router.include_router(image_category_router)

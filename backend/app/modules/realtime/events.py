@@ -8,10 +8,7 @@
 class RealtimeEvent:
     """实时通道事件名"""
 
-    NOTIFICATION_CREATED = "notification.created"
-    CUSTOMER_SERVICE_MESSAGE_CREATED = "customer_service.message.created"
-    CUSTOMER_SERVICE_MESSAGE_READ = "customer_service.message.read"
-    CUSTOMER_SERVICE_CONVERSATION_DELETED = "customer_service.conversation.deleted"
-    CUSTOMER_SERVICE_TYPING = "customer_service.typing"
-    SYSTEM_CONNECTED = "system.connected"
-    SYSTEM_DISCONNECTED = "system.disconnected"
+    # 客户端 → 服务端：在线状态心跳
+    PRESENCE_HEARTBEAT = "presence.heartbeat"
+    # 服务端 → 客户端：某个用户在线状态变化（发给 presence room 订阅者）
+    PRESENCE_CHANGED = "realtime.presence.changed"

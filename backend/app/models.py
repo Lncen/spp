@@ -19,15 +19,13 @@ from app.modules.automation.models import (
     AutomationTask,
     AutomationTaskArchive,
 )
-from app.modules.customer_service.models import (
-    Conversation,
-    ConversationMessage,
-)
+from app.modules.chat.models import Chat, ChatParticipant, Message
 from app.modules.image.models import Image, ImageCategory
 from app.modules.level.models import UserLevel
 from app.modules.notification.models import (
     Notification,
     NotificationDelivery,
+    NotificationEventConsumption,
 )
 from app.modules.order.models import Order, OrderParam
 from app.modules.permission.models import Permission, PermissionCategory
@@ -55,11 +53,13 @@ __all__ = [
     "AutomationTaskArchive",
     "AutomationEvent",
     "AutomationRule",
-    "Conversation",
-    "ConversationMessage",
+    "Chat",
+    "ChatParticipant",
+    "Message",
     "UserLevel",
     "Notification",
     "NotificationDelivery",
+    "NotificationEventConsumption",
     "User",
     "Image",
     "ImageCategory",

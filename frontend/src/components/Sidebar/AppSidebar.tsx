@@ -10,7 +10,7 @@ import {
   Image,
   ListTodo,
   Medal,
-  MessagesSquare,
+  MessageSquare,
   Package,
   Percent,
   ReceiptText,
@@ -25,10 +25,11 @@ import {
   Zap,
 } from "lucide-react"
 
-import { NotificationsService } from "@/client"
+import { ChatService, NotificationsService } from "@/client"
+import { useChat } from "@/components/Chat/ChatProvider"
+import { MY_CHATS_UNREAD_QUERY_KEY } from "@/components/Chat/constants"
 import { SidebarAppearance } from "@/components/Common/Appearance"
-import { useCustomerService } from "@/components/CustomerService/CustomerServiceProvider"
-import { MY_UNREAD_SUMMARY_QUERY_KEY } from "@/components/Notifications/constants"
+import { MY_NOTIFICATIONS_UNREAD_QUERY_KEY } from "@/components/Notifications/constants"
 import { useNotifications } from "@/components/Notifications/NotificationsProvider"
 import {
   Sidebar,
@@ -200,16 +201,23 @@ const navGroups: ItemGroup[] = [
 ]
 
 export function AppSidebar() {
-  const { openCustomerService } = useCustomerService()
   const { openNotifications } = useNotifications()
+  const { openChat } = useChat()
   const { user: currentUser } = useAuth()
-  const { hasPermission, hasAnyPermission } = usePermissions()
+  const { hasPermission } = usePermissions()
   const { isConnected } = useRealtime()
 
   const { data: unreadData } = useQuery({
-    queryKey: MY_UNREAD_SUMMARY_QUERY_KEY,
-    queryFn: () => NotificationsService.readUnreadSummary(),
+    queryKey: MY_NOTIFICATIONS_UNREAD_QUERY_KEY,
+    queryFn: () => NotificationsService.readUnreadCount(),
     enabled: Boolean(currentUser),
+    // 实时通道断开时兜底轮询，避免角标一直停在旧值
+    refetchInterval: isConnected ? false : 60_000,
+  })
+  const { data: chatUnreadData } = useQuery({
+    queryKey: MY_CHATS_UNREAD_QUERY_KEY,
+    queryFn: () => ChatService.readMyUnreadCount(),
+    enabled: Boolean(currentUser) && hasPermission("chat:self_view"),
     // 实时通道断开时兜底轮询，避免角标一直停在旧值
     refetchInterval: isConnected ? false : 60_000,
   })
@@ -227,17 +235,17 @@ export function AppSidebar() {
     {
       name: "通知",
       icon: Bell,
-      badge: unreadData?.notification_unread_count,
+      badge: unreadData?.unread_count,
       onClick: () => openNotifications(),
     },
   ]
-  // 会话入口与接口/路由的权限口径一致：持有自助查看或坐席查看任一权限才展示
-  if (hasAnyPermission("conversation:self_view", "conversation:view")) {
+  // 聊天入口与接口权限口径一致：持有查看自己聊天权限才展示
+  if (hasPermission("chat:self_view")) {
     projects.push({
-      name: "会话",
-      icon: MessagesSquare,
-      badge: unreadData?.conversation_unread_count,
-      onClick: () => openCustomerService(),
+      name: "聊天",
+      icon: MessageSquare,
+      badge: chatUnreadData?.unread_count,
+      onClick: () => openChat(),
     })
   }
 

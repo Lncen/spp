@@ -47,6 +47,7 @@ def create_notification(
     content: str,
     template_name: str | None,
     payload: dict[str, Any],
+    dedupe_key: str | None = None,
 ) -> Notification:
     """创建通知实例并加入会话（不提交，由调用方控制事务）"""
     notification = Notification(
@@ -59,9 +60,19 @@ def create_notification(
         content=content,
         template_name=template_name,
         payload_snapshot=payload,
+        dedupe_key=dedupe_key,
     )
     session.add(notification)
     return notification
+
+
+def get_notification_by_dedupe_key(
+    *, session: Session, dedupe_key: str
+) -> Notification | None:
+    """按幂等键查询通知（事件重放 / 重试时用于跳过已生成的接收人）"""
+    return session.exec(
+        select(Notification).where(col(Notification.dedupe_key) == dedupe_key)
+    ).first()
 
 
 def list_user_notifications(

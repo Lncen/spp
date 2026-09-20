@@ -76,12 +76,12 @@ backend/app/modules/automation/
 │       ├── scan.py                 # automation_task_scan：任务池扫描执行
 │       ├── event_redispatch.py     # redispatch_stale_automation_events：事件补发
 │       ├── cleanup.py              # cleanup_automation_task_archives：归档与事件清理
-│       ├── conversation_cleanup.py # cleanup_conversations：客服会话历史数据清理
 │       ├── order_status.py         # sync_order_status_periodic：订单状态同步
 │       ├── order_cleanup.py        # cleanup_completed_orders：已完成订单数据清理
 │       ├── product_sync.py         # sync_product_status：已同步商品成本价 / 关单状态分发
 │       ├── supplier_sync.py        # sync_upstream_products + dispatch_upstream_products_sync：上游商品同步
 │       ├── notification_delivery.py  # deliver_notification + requeue_stale_notification_deliveries：通知投递与兜底扫描
+│       ├── notification_retry.py   # retry_notification_consumptions：通知事件消费重试
 │       ├── notification_cleanup.py # cleanup_notification_records：通知记录清理
 │       ├── wallet_cleanup.py       # cleanup_wallet_transactions：钱包流水清理
 │       ├── auth_cleanup.py         # cleanup_expired_refresh_tokens：过期刷新令牌清理
@@ -145,7 +145,7 @@ backend/app/modules/automation/
 | `sync_product_status` | 1 小时 |
 | `cleanup_completed_orders` | 每天 03:00 |
 | `cleanup_notification_records` | 每天 03:30 |
-| `cleanup_conversations` | 每天 05:45 |
+| `retry_notification_consumptions` | 1 分钟 |
 | `cleanup_automation_task_archives` | 每天 04:00 |
 | `cleanup_wallet_transactions` | 每天 04:30 |
 | `cleanup_expired_refresh_tokens` | 每天 05:00 |
@@ -240,7 +240,7 @@ Celery beat 触发 → infrastructure/tasks/* → 业务模块能力
 8. **保留期可配置**：清理任务通过 `infrastructure/tasks/retention.py` 读取全局设置，
    非法值回退默认值且最少保留 1 天 —— 归档 / 事件 `automation_task_retention_days`（3 天）、
    订单 `order_retention_days`（7 天）、钱包流水 `wallet_transaction_retention_days`（7 天）、
-   通知记录 `notification_retention_days`（30 天）、客服会话 `conversation_retention_days`（7 天）。
+   通知记录 `notification_retention_days`（30 天）。
 9. **不改变对外契约**：路由路径、响应模型、字段名与路由函数名（决定 OpenAPI `operationId`）
    变更需明确评审，前端客户端由 `scripts/generate-client.sh` 从 OpenAPI 生成。
 10. **数据库迁移**：模块内不编写 / 修改 migration 文件，新增表与字段按项目规范另行生成。

@@ -2,7 +2,7 @@
 
 export const ActionTypeSchema = {
     type: 'string',
-    enum: ['view', 'create', 'update', 'manage'],
+    enum: ['view', 'reply', 'create', 'update', 'manage'],
     title: 'ActionType',
     description: '权限动作类型'
 } as const;
@@ -1330,49 +1330,103 @@ export const Body_login_login_access_tokenSchema = {
     title: 'Body_login-login_access_token'
 } as const;
 
-export const ConversationCreateSchema = {
+export const ChatDirectCreateSchema = {
     properties: {
         user_id: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'uuid'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: '目标用户 ID',
-            description: '管理端主动联系的用户；普通用户忽略此字段'
+            type: 'string',
+            format: 'uuid',
+            title: '对方用户 ID'
         }
     },
     type: 'object',
-    title: 'ConversationCreate',
-    description: '发起会话请求（管理端为指定用户发起时必填 user_id）'
+    required: ['user_id'],
+    title: 'ChatDirectCreate',
+    description: '创建（或复用）与指定用户的私聊'
 } as const;
 
-export const ConversationPublicSchema = {
+export const ChatGroupCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 100,
+            minLength: 1,
+            title: '群名称'
+        },
+        member_ids: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: '初始成员',
+            description: '除创建者（群主）外的初始成员，去重后加入'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'ChatGroupCreate',
+    description: '创建群聊'
+} as const;
+
+export const ChatPublicSchema = {
     properties: {
         id: {
             type: 'string',
             format: 'uuid',
             title: 'Id'
         },
-        user_id: {
+        type: {
+            type: 'string',
+            title: 'Type'
+        },
+        status: {
+            type: 'string',
+            title: 'Status'
+        },
+        name: {
             anyOf: [
                 {
-                    type: 'string',
-                    format: 'uuid'
+                    type: 'string'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'User Id'
+            title: 'Name'
         },
-        status: {
-            type: 'string',
-            title: 'Status'
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '展示名称',
+            description: '按聊天类型解析：私聊为对方昵称，群聊为群名'
+        },
+        display_avatar_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '展示头像 URL'
+        },
+        last_message_preview: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Last Message Preview'
         },
         last_message_at: {
             anyOf: [
@@ -1386,16 +1440,10 @@ export const ConversationPublicSchema = {
             ],
             title: 'Last Message At'
         },
-        last_message_preview: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Last Message Preview'
+        unread_count: {
+            type: 'integer',
+            title: '未读消息数',
+            default: 0
         },
         created_at: {
             anyOf: [
@@ -1408,66 +1456,77 @@ export const ConversationPublicSchema = {
                 }
             ],
             title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'type', 'status'],
+    title: 'ChatPublic',
+    description: '聊天展示结构'
+} as const;
+
+export const ChatReadBodySchema = {
+    properties: {
+        message_id: {
+            type: 'string',
+            format: 'uuid',
+            title: '已读到的消息 ID'
+        }
+    },
+    type: 'object',
+    required: ['message_id'],
+    title: 'ChatReadBody',
+    description: '标记已读请求体'
+} as const;
+
+export const ChatReadResultSchema = {
+    properties: {
+        chat_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Chat Id'
         },
-        user_name: {
+        last_read_message_id: {
             anyOf: [
                 {
-                    type: 'string'
+                    type: 'string',
+                    format: 'uuid'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: '用户展示名（管理端）'
-        },
-        user_avatar_url: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: '用户头像 URL（管理端）'
-        },
-        user_online: {
-            type: 'boolean',
-            title: '用户是否在线（管理端）',
-            default: false
+            title: 'Last Read Message Id'
         },
         unread_count: {
             type: 'integer',
-            title: '对方发来的未读消息数',
-            description: '当前查看者视角下对方发来且未读的消息数量',
+            title: '该聊天剩余未读数',
             default: 0
         }
     },
     type: 'object',
-    required: ['id', 'status'],
-    title: 'ConversationPublic',
-    description: '会话对外展示结构'
+    required: ['chat_id'],
+    title: 'ChatReadResult',
+    description: '标记已读结果'
 } as const;
 
-export const ConversationStatusUpdateSchema = {
+export const ChatUnreadCountSchema = {
     properties: {
-        status: {
-            type: 'string',
-            maxLength: 16,
-            title: 'open / closed'
+        unread_count: {
+            type: 'integer',
+            title: 'Unread Count'
         }
     },
     type: 'object',
-    required: ['status'],
-    title: 'ConversationStatusUpdate',
-    description: '会话状态更新请求'
+    required: ['unread_count'],
+    title: 'ChatUnreadCount',
+    description: '消息未读总数（侧边栏聊天角标）'
 } as const;
 
-export const ConversationsPublicSchema = {
+export const ChatsPublicSchema = {
     properties: {
         data: {
             items: {
-                '$ref': '#/components/schemas/ConversationPublic'
+                '$ref': '#/components/schemas/ChatPublic'
             },
             type: 'array',
             title: 'Data'
@@ -1479,8 +1538,8 @@ export const ConversationsPublicSchema = {
     },
     type: 'object',
     required: ['data', 'count'],
-    title: 'ConversationsPublic',
-    description: '会话列表'
+    title: 'ChatsPublic',
+    description: '聊天列表'
 } as const;
 
 export const CrontabScheduleInSchema = {
@@ -2114,21 +2173,6 @@ export const MessageSchema = {
     description: '通用响应消息'
 } as const;
 
-export const MessageCreateSchema = {
-    properties: {
-        content: {
-            type: 'string',
-            maxLength: 2000,
-            minLength: 1,
-            title: '消息内容'
-        }
-    },
-    type: 'object',
-    required: ['content'],
-    title: 'MessageCreate',
-    description: '发送消息请求'
-} as const;
-
 export const MessagePublicSchema = {
     properties: {
         id: {
@@ -2136,10 +2180,10 @@ export const MessagePublicSchema = {
             format: 'uuid',
             title: 'Id'
         },
-        conversation_id: {
+        chat_id: {
             type: 'string',
             format: 'uuid',
-            title: 'Conversation Id'
+            title: 'Chat Id'
         },
         sender_id: {
             anyOf: [
@@ -2151,27 +2195,60 @@ export const MessagePublicSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Sender Id'
+            title: 'Sender Id',
+            description: '发送者；用户被删除后为 None'
         },
-        sender_role: {
-            type: 'string',
-            title: 'Sender Role'
-        },
-        content: {
-            type: 'string',
-            title: 'Content'
-        },
-        read_at: {
+        sender_name: {
             anyOf: [
                 {
-                    type: 'string',
-                    format: 'date-time'
+                    type: 'string'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'Read At'
+            title: 'Sender Name'
+        },
+        message_type: {
+            type: 'string',
+            title: 'Message Type'
+        },
+        content: {
+            type: 'string',
+            title: 'Content'
+        },
+        file_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'File Name'
+        },
+        file_path: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'File Path'
+        },
+        client_message_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Client Message Id'
         },
         created_at: {
             anyOf: [
@@ -2187,9 +2264,9 @@ export const MessagePublicSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'conversation_id', 'sender_role', 'content'],
+    required: ['id', 'chat_id', 'message_type', 'content'],
     title: 'MessagePublic',
-    description: '消息对外展示结构'
+    description: '消息展示结构'
 } as const;
 
 export const MessagesPublicSchema = {
@@ -2203,16 +2280,14 @@ export const MessagesPublicSchema = {
         },
         count: {
             type: 'integer',
-            title: 'Count'
-        },
-        conversation: {
-            '$ref': '#/components/schemas/ConversationPublic'
+            title: '聊天内消息总数',
+            description: '前端据此判断是否还有更早的历史消息'
         }
     },
     type: 'object',
-    required: ['data', 'count', 'conversation'],
+    required: ['data', 'count'],
     title: 'MessagesPublic',
-    description: '会话消息列表'
+    description: '消息分页结果'
 } as const;
 
 export const MyPermissionsPublicSchema = {
@@ -2365,11 +2440,6 @@ export const NotificationPublicSchema = {
             type: 'string',
             title: 'Event Type'
         },
-        payload_snapshot: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Payload Snapshot'
-        },
         created_at: {
             anyOf: [
                 {
@@ -2396,7 +2466,7 @@ export const NotificationPublicSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'title', 'content', 'event_type', 'payload_snapshot', 'created_at', 'read_at'],
+    required: ['id', 'title', 'content', 'event_type', 'created_at', 'read_at'],
     title: 'NotificationPublic',
     description: '通知对外展示结构'
 } as const;
@@ -2494,22 +2564,6 @@ export const NotificationsPublicSchema = {
     required: ['data', 'count', 'unread_count'],
     title: 'NotificationsPublic',
     description: '通知分页列表'
-} as const;
-
-export const OnlineStatusPublicSchema = {
-    properties: {
-        online: {
-            additionalProperties: {
-                type: 'boolean'
-            },
-            type: 'object',
-            title: 'Online'
-        }
-    },
-    type: 'object',
-    required: ['online'],
-    title: 'OnlineStatusPublic',
-    description: '在线状态批量查询结果'
 } as const;
 
 export const OrderCreateSchema = {
@@ -2984,6 +3038,127 @@ export const OrdersPublicSchema = {
     required: ['data', 'count'],
     title: 'OrdersPublic',
     description: '订单列表响应'
+} as const;
+
+export const ParticipantAddSchema = {
+    properties: {
+        user_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'User Id'
+        },
+        role: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '成员角色',
+            description: '留空时按聊天类型使用默认角色'
+        }
+    },
+    type: 'object',
+    required: ['user_id'],
+    title: 'ParticipantAdd',
+    description: '把用户加入群聊（成员管理）'
+} as const;
+
+export const ParticipantPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        user_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'User Id'
+        },
+        role: {
+            type: 'string',
+            title: 'Role'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name'
+        },
+        display_avatar_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Avatar Url'
+        },
+        is_online: {
+            type: 'boolean',
+            title: '是否在线',
+            description: '来自 realtime 的 Presence（Redis），Redis 不可用时按离线展示',
+            default: false
+        },
+        joined_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Joined At'
+        },
+        last_read_message_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Last Read Message Id'
+        }
+    },
+    type: 'object',
+    required: ['id', 'user_id', 'role'],
+    title: 'ParticipantPublic',
+    description: '聊天成员展示结构'
+} as const;
+
+export const ParticipantsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ParticipantPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ParticipantsPublic',
+    description: '聊天成员列表'
 } as const;
 
 export const PermissionCategoriesPublicSchema = {
@@ -5968,7 +6143,7 @@ export const SettingReadSchema = {
 
 export const SettingTypeSchema = {
     type: 'string',
-    enum: ['system', 'auth', 'automation', 'image', 'item', 'level', 'notification', 'order', 'price_template', 'product', 'setting', 'supplier', 'user', 'wallet', 'other'],
+    enum: ['system', 'auth', 'automation', 'chat', 'image', 'item', 'level', 'notification', 'order', 'price_template', 'product', 'setting', 'supplier', 'user', 'wallet', 'other'],
     title: 'SettingType',
     description: '设置类型：值对应模块名，便于识别设置归属'
 } as const;
@@ -6709,27 +6884,6 @@ export const UnreadCountSchema = {
     required: ['unread_count'],
     title: 'UnreadCount',
     description: '未读通知数'
-} as const;
-
-export const UnreadSummarySchema = {
-    properties: {
-        notification_unread_count: {
-            type: 'integer',
-            title: 'Notification Unread Count'
-        },
-        conversation_unread_count: {
-            type: 'integer',
-            title: 'Conversation Unread Count'
-        },
-        total_unread: {
-            type: 'integer',
-            title: 'Total Unread'
-        }
-    },
-    type: 'object',
-    required: ['notification_unread_count', 'conversation_unread_count', 'total_unread'],
-    title: 'UnreadSummary',
-    description: '侧边栏总未读：系统通知 + 客服会话未读'
 } as const;
 
 export const UpdatePasswordSchema = {

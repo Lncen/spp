@@ -21,7 +21,6 @@ from app.modules.notification.application.notification_query import (
     delete_my_notification,
     get_my_notifications,
     get_unread_count,
-    get_unread_summary,
     mark_my_all_read,
     mark_my_notification_read,
 )
@@ -32,7 +31,6 @@ from app.modules.notification.schemas.notification import (
     NotificationSendRequest,
     NotificationsPublic,
     UnreadCount,
-    UnreadSummary,
 )
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
@@ -63,15 +61,6 @@ def read_unread_count(
 ) -> UnreadCount:
     """查询当前用户未读通知数"""
     return get_unread_count(session=session, user_id=current_user.id)
-
-
-@router.get("/unread-summary", response_model=UnreadSummary)
-def read_unread_summary(
-    session: SessionDep,
-    current_user: CurrentUser,
-) -> UnreadSummary:
-    """查询侧边栏总未读数：系统通知未读 + 客服会话未读"""
-    return get_unread_summary(session=session, user=current_user)
 
 
 @router.post("/{notification_id}/read", response_model=NotificationPublic)
@@ -152,7 +141,7 @@ def send_admin_notification(
     body: NotificationSendRequest,
 ) -> Message:
     """管理端手动发送通知（站内/邮件），投递异步执行；broadcast=true 时群发给全部启用用户"""
-    created, enqueued = send_manual_notification(
+    created, delivered_in_app, enqueued = send_manual_notification(
         session=session,
         title=body.title,
         content=body.content,
@@ -161,11 +150,15 @@ def send_admin_notification(
         channels=body.channels,
         broadcast=body.broadcast,
     )
-    message = f"已创建 {created} 条投递记录，正在异步发送"
-    failed = created - enqueued
+    message = (
+        f"已创建 {created} 条投递记录：站内 {delivered_in_app} 条已送达，"
+        f"邮件 {enqueued} 条进入异步投递"
+    )
+    failed = (created - delivered_in_app) - enqueued
     if failed:
         message = (
-            f"已创建 {created} 条投递记录，其中 {failed} 条入队失败，"
+            f"已创建 {created} 条投递记录：站内 {delivered_in_app} 条已送达，"
+            f"邮件 {enqueued} 条进入异步投递，其中 {failed} 条入队失败，"
             "将由兜底任务自动补投"
         )
     return Message(message=message)

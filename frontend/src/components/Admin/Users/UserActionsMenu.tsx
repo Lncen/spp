@@ -3,15 +3,15 @@ import { Link as RouterLink } from "@tanstack/react-router"
 import {
   Bell,
   EllipsisVertical,
-  MessagesSquare,
+  MessageSquare,
   Pencil,
   ReceiptText,
   Trash2,
 } from "lucide-react"
 import { useState } from "react"
 
-import { CustomerServiceService, type UserListItemPublic } from "@/client"
-import { useCustomerService } from "@/components/CustomerService/CustomerServiceProvider"
+import { ChatService, type UserListItemPublic } from "@/client"
+import { useChat } from "@/components/Chat/ChatProvider"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -35,8 +35,8 @@ export const UserActionsMenu = ({ user }: UserActionsMenuProps) => {
   const [notifyOpen, setNotifyOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const { openConversation } = useCustomerService()
   const { user: currentUser } = useAuth()
+  const { openChat } = useChat()
   const { showErrorToast } = useCustomToast()
 
   const isCurrentUser = user.id === currentUser?.id
@@ -47,14 +47,14 @@ export const UserActionsMenu = ({ user }: UserActionsMenuProps) => {
     window.setTimeout(() => setOpenDialog(true), 50)
   }
 
-  const startConversationMutation = useMutation({
+  const startChatMutation = useMutation({
     mutationFn: () =>
-      CustomerServiceService.createConversationEndpoint({
+      ChatService.createDirectChat({
         requestBody: { user_id: user.id },
       }),
-    onSuccess: (conversation) => {
+    onSuccess: (chat) => {
       setOpen(false)
-      openConversation(conversation.id)
+      openChat(chat.id)
     },
     onError: handleError.bind(showErrorToast),
   })
@@ -68,19 +68,19 @@ export const UserActionsMenu = ({ user }: UserActionsMenuProps) => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            disabled={isCurrentUser || startChatMutation.isPending}
+            onSelect={(event) => event.preventDefault()}
+            onClick={() => startChatMutation.mutate()}
+          >
+            <MessageSquare />
+            发起私聊
+          </DropdownMenuItem>
           <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
             <RouterLink to="/orders" search={{ user_id: user.id }}>
               <ReceiptText />
               查看订单
             </RouterLink>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            disabled={isCurrentUser || startConversationMutation.isPending}
-            onSelect={(event) => event.preventDefault()}
-            onClick={() => startConversationMutation.mutate()}
-          >
-            <MessagesSquare />
-            发起会话
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={isCurrentUser}

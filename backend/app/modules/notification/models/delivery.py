@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime
+from sqlalchemy import DateTime, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 from app.core.mixin.models import BaseModelMixin
@@ -14,6 +14,13 @@ class NotificationDelivery(BaseModelMixin, SQLModel, table=True):
     """渠道投递记录：追踪每个渠道的发送过程、重试与结果"""
 
     __tablename__ = "notification_deliveries"
+    __table_args__ = (
+        UniqueConstraint(
+            "notification_id",
+            "channel",
+            name="uq_notification_deliveries_notification_channel",
+        ),
+    )
 
     notification_id: uuid.UUID = Field(
         foreign_key="notifications.id",
