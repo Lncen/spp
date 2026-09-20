@@ -15,8 +15,11 @@ export const chatMessagesQueryKey = (chatId: string) =>
 export const chatParticipantsQueryKey = (chatId: string) =>
   ["chat-participants", chatId] as const
 
-/** 消息分页每页条数（与服务端默认值一致） */
-export const CHAT_MESSAGE_PAGE_SIZE = 50
+/** 消息分页每页条数：前端显式按 20 条懒加载（服务端默认值 50，仅作为接口默认） */
+export const CHAT_MESSAGE_PAGE_SIZE = 20
+
+/** 会话列表分页每页条数：滚到底部自动加载下一页 */
+export const CHAT_LIST_PAGE_SIZE = 20
 
 /** typing 状态的本地展示时长（毫秒） */
 export const TYPING_VISIBLE_MS = 5_000

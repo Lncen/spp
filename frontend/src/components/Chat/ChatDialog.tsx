@@ -1,4 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query"
 import { MessageSquarePlus, Trash2, UserRound, Users } from "lucide-react"
 import { useState } from "react"
 
@@ -7,6 +11,7 @@ import { ChatInfoDialog } from "@/components/Chat/ChatInfoDialog"
 import { ChatPanel } from "@/components/Chat/ChatPanel"
 import { useChat } from "@/components/Chat/ChatProvider"
 import {
+  CHAT_LIST_PAGE_SIZE,
   MY_CHATS_QUERY_KEY,
   MY_CHATS_UNREAD_QUERY_KEY,
 } from "@/components/Chat/constants"
@@ -41,6 +46,9 @@ import useCustomToast from "@/hooks/useCustomToast"
 import { cn } from "@/lib/utils"
 import { handleError } from "@/utils"
 
+/** 会话列表滚到底部多少像素内就加载下一页 */
+const LIST_LOAD_MORE_THRESHOLD = 80
+
 /**
  * 聊天弹窗：左侧「我的聊天」列表，右侧消息面板。
  * 私聊由用户列表的「发起私聊」入口创建，列表里同一对象只会出现一条。
@@ -53,12 +61,36 @@ export function ChatDialog() {
   const [deleteTarget, setDeleteTarget] = useState<ChatPublic | null>(null)
   useTimeRefresh()
 
-  const listQuery = useQuery({
+  const listQuery = useInfiniteQuery({
     queryKey: MY_CHATS_QUERY_KEY,
-    queryFn: () => ChatService.readMyChats({ limit: 50 }),
+    queryFn: ({ pageParam }) =>
+      ChatService.readMyChats({
+        skip: pageParam,
+        limit: CHAT_LIST_PAGE_SIZE,
+      }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      const loaded = allPages.reduce((sum, page) => sum + page.data.length, 0)
+      return loaded < lastPage.count ? loaded : undefined
+    },
     enabled: open,
   })
-  const chats: ChatPublic[] = listQuery.data?.data ?? []
+  const chats: ChatPublic[] =
+    listQuery.data?.pages.flatMap((page) => page.data) ?? []
+
+  /** 会话列表懒加载：滚到底部附近时取下一页 */
+  const handleListScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const element = event.currentTarget
+    const remaining =
+      element.scrollHeight - element.scrollTop - element.clientHeight
+    if (
+      remaining < LIST_LOAD_MORE_THRESHOLD &&
+      listQuery.hasNextPage &&
+      !listQuery.isFetchingNextPage
+    ) {
+      listQuery.fetchNextPage()
+    }
+  }
 
   const deleteMutation = useMutation({
     mutationFn: (chatId: string) => ChatService.deleteChat({ chatId }),
@@ -85,7 +117,7 @@ export function ChatDialog() {
             <div className="flex flex-col gap-2 border-b p-3">
               <p className="font-medium">我的聊天</p>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto" onScroll={handleListScroll}>
               {listQuery.isLoading && (
                 <div className="flex flex-col gap-2 p-3">
                   <Skeleton className="h-12 w-full" />
@@ -107,11 +139,17 @@ export function ChatDialog() {
                   onDelete={() => setDeleteTarget(chat)}
                 />
               ))}
+              {listQuery.isFetchingNextPage && (
+                <div className="p-3">
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              )}
             </div>
           </aside>
           <section className="flex min-w-0 flex-1 flex-col">
             {activeChatId ? (
-              <ChatPanel chatId={activeChatId} />
+              // key 让切换会话时重建面板：滚动位置回到最新消息、状态不会串台
+              <ChatPanel key={activeChatId} chatId={activeChatId} />
             ) : (
               <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
                 <MessageSquarePlus className="size-8" />

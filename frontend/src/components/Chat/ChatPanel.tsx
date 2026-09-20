@@ -25,6 +25,7 @@ import {
   MessageScrollerItem,
   MessageScrollerProvider,
   MessageScrollerViewport,
+  useMessageScrollerScrollable,
 } from "@/components/ui/message-scroller"
 import { Textarea } from "@/components/ui/textarea"
 import useAuth from "@/hooks/useAuth"
@@ -48,6 +49,9 @@ type TypingPayload = {
 
 /** 相邻消息超过该间隔就插入一次居中时间分隔 */
 const TIME_DIVIDER_GAP_MS = 5 * 60 * 1000
+
+/** 内容撑不满视口时，最多自动补几页（避免短消息很多时无限加载） */
+const AUTO_FILL_PAGE_LIMIT = 3
 
 /**
  * 聊天面板：订阅聊天房间、加载历史消息、发送与已读。
@@ -232,6 +236,12 @@ export function ChatPanel({ chatId }: { chatId: string }) {
 
       <MessageScrollerProvider autoScroll>
         <MessageScroller>
+          <AutoLoadOlderMessages
+            pageCount={messagesQuery.data?.pages.length ?? 0}
+            hasNextPage={Boolean(messagesQuery.hasNextPage)}
+            isFetchingNextPage={messagesQuery.isFetchingNextPage}
+            fetchNextPage={messagesQuery.fetchNextPage}
+          />
           <MessageScrollerViewport>
             <MessageScrollerContent className="gap-4 p-4">
               {messagesQuery.hasNextPage && (
@@ -356,6 +366,41 @@ export function ChatPanel({ chatId }: { chatId: string }) {
 }
 
 /** 居中时间分隔（与微信类似：首条以及与上一条间隔超过 5 分钟时展示） */
+function AutoLoadOlderMessages({
+  pageCount,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
+}: {
+  pageCount: number
+  hasNextPage: boolean
+  isFetchingNextPage: boolean
+  fetchNextPage: () => void
+}) {
+  const { start, end } = useMessageScrollerScrollable()
+  const hasScrollableContent = start || end
+  // 内容撑不满视口时只自动补有限页数，其余交给「加载更早消息」按钮，避免无限加载
+  const autoFillExhausted =
+    !hasScrollableContent && pageCount >= AUTO_FILL_PAGE_LIMIT
+
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage) return
+    // 内容可滚动：只在用户滚回顶部时加载更早的消息（真正的懒加载）
+    if (hasScrollableContent && start) return
+    if (autoFillExhausted) return
+    fetchNextPage()
+  }, [
+    autoFillExhausted,
+    fetchNextPage,
+    hasNextPage,
+    hasScrollableContent,
+    isFetchingNextPage,
+    start,
+  ])
+
+  return null
+}
+
 function TimeDivider({ value }: { value?: string | null }) {
   return (
     <div className="flex justify-center py-1">
