@@ -1823,6 +1823,8 @@ def test_admin_order_list_filters_by_user_and_includes_username(
     item = content["data"][0]
     assert item["params"] == order["params"]
     assert content["data"][0]["username"] == user_a.username
+    assert item["start_quantity"] == order["start_quantity"]
+    assert item["current_quantity"] == order["current_quantity"]
     assert item.keys() == {
         "id",
         "username",
@@ -1830,6 +1832,8 @@ def test_admin_order_list_filters_by_user_and_includes_username(
         "total_amount",
         "product_name",
         "quantity",
+        "start_quantity",
+        "current_quantity",
         "params",
         "created_at",
     }

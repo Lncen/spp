@@ -1,15 +1,35 @@
 import type { ColumnDef } from "@tanstack/react-table"
 
-import type { OrderListItem } from "@/client"
+import type { OrderListItem, OrderStatus } from "@/client"
 import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 import { ORDER_STATUS_BADGE_VARIANT, orderStatusLabel } from "./constants"
 import OrderActionsMenu from "./OrderActionsMenu"
+
+const COMPLETED_STATUS: OrderStatus = 6
+const CANCELED_STATUS: OrderStatus = 7
+const REFUNDED_STATUS: OrderStatus = 8
 
 function formatDateTime(value?: string | null) {
   if (!value) return "-"
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   return date.toLocaleString("zh-CN", { hour12: false })
+}
+
+/**
+ * 订单完成度（0-100）：已完成数量 = 当前数量 - 开始数量，与后端退款公式一致。
+ * 终态订单直接按状态返回，避免卡密类订单（数量快照不变化）恒为 0%。
+ */
+function orderProgress(order: OrderListItem): number | null {
+  if (order.quantity <= 0) return null
+  if (order.status === COMPLETED_STATUS) return 100
+  if (order.status === CANCELED_STATUS || order.status === REFUNDED_STATUS) {
+    return 0
+  }
+  const fulfilled = order.current_quantity - order.start_quantity
+  const ratio = Math.min(Math.max(fulfilled / order.quantity, 0), 1)
+  return Math.round(ratio * 100)
 }
 
 export const columns: ColumnDef<OrderListItem>[] = [
@@ -63,13 +83,22 @@ export const columns: ColumnDef<OrderListItem>[] = [
     ),
   },
   {
-    accessorKey: "quantity",
-    header: "数量",
-    cell: ({ row }) => (
-      <span className="text-sm text-muted-foreground">
-        {row.original.quantity}
-      </span>
-    ),
+    id: "progress",
+    header: "完成度",
+    cell: ({ row }) => {
+      const progress = orderProgress(row.original)
+      if (progress === null) {
+        return <span className="text-sm text-muted-foreground">-</span>
+      }
+      return (
+        <div className="flex items-center gap-2">
+          <Progress value={progress} className="w-16" />
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {progress}%
+          </span>
+        </div>
+      )
+    },
   },
   {
     accessorKey: "created_at",

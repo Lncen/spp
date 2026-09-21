@@ -16,7 +16,7 @@ const PendingOrders = () => (
         <TableHead>用户</TableHead>
         <TableHead>状态</TableHead>
         <TableHead>金额</TableHead>
-        <TableHead>商品数</TableHead>
+        <TableHead>完成度</TableHead>
         <TableHead>创建时间</TableHead>
         <TableHead className="text-right">操作</TableHead>
       </TableRow>
@@ -37,7 +37,10 @@ const PendingOrders = () => (
             <Skeleton className="h-4 w-24" />
           </TableCell>
           <TableCell>
-            <Skeleton className="h-4 w-10" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-2 w-16 rounded-full" />
+              <Skeleton className="h-3 w-8" />
+            </div>
           </TableCell>
           <TableCell>
             <Skeleton className="h-4 w-36" />

@@ -794,6 +794,8 @@ export type OrderListItem = {
     total_amount: string;
     product_name: string;
     quantity: number;
+    start_quantity: number;
+    current_quantity: number;
     params: {
         [key: string]: unknown;
     };

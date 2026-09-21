@@ -85,6 +85,8 @@ class OrderListItem(SQLModel):
     total_amount: Decimal
     product_name: str
     quantity: int
+    start_quantity: int
+    current_quantity: int
     params: dict[str, Any]
     created_at: datetime | None = None
 

@@ -2645,6 +2645,14 @@ export const OrderListItemSchema = {
             type: 'integer',
             title: 'Quantity'
         },
+        start_quantity: {
+            type: 'integer',
+            title: 'Start Quantity'
+        },
+        current_quantity: {
+            type: 'integer',
+            title: 'Current Quantity'
+        },
         params: {
             additionalProperties: true,
             type: 'object',
@@ -2664,7 +2672,7 @@ export const OrderListItemSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'status', 'total_amount', 'product_name', 'quantity', 'params'],
+    required: ['id', 'status', 'total_amount', 'product_name', 'quantity', 'start_quantity', 'current_quantity', 'params'],
     title: 'OrderListItem',
     description: '订单列表响应，仅返回列表所需字段'
 } as const;
