@@ -18,7 +18,8 @@ from app.modules.level.models import UserLevel
 from app.modules.order.application.sync import sync_orders_status
 from app.modules.order.domain.constants import OrderStatus
 from app.modules.order.models import Order, OrderParam
-from app.modules.product.product.models import ProductSupplier
+from app.modules.product.constants import SyncStatus
+from app.modules.product.product.models import Product, ProductSupplier
 from app.modules.supplier.infrastructure.clients.base import (
     SupplierClientError,
     SupplierClientRejectedError,
@@ -60,6 +61,15 @@ def _fund_wallet(
         json={"amount": amount, "remark": "测试入账"},
     )
     assert response.status_code == 200
+
+
+def _permission_ids_by_code(
+    *, client: TestClient, headers: dict[str, str]
+) -> dict[str, str]:
+    """读取权限目录，返回权限码 → 权限 ID 映射"""
+    response = client.get(f"{settings.API_V1_STR}/permissions", headers=headers)
+    assert response.status_code == 200, response.text
+    return {item["code"]: item["id"] for item in response.json()["data"]}
 
 
 def _create_ready_product(
@@ -302,30 +312,34 @@ def test_create_order_template_price_with_user_level(
     assert Decimal(order["unit_price"]) == Decimal("9.00")
 
 
-def test_create_order_rejects_disabled_can_order(
+def test_create_order_rejects_user_without_order_permission(
     client: TestClient,
     db: Session,
     superuser_token_headers: dict[str, str],
 ) -> None:
+    """直授拒绝 order:create 后，用户无法创建订单"""
     headers, user = _create_wallet_user(client, db)
     _fund_wallet(client, headers, superuser_token_headers)
     product = _create_ready_product(client, superuser_token_headers, price_mode="fixed")
 
-    response = client.patch(
-        f"{settings.API_V1_STR}/users/{user.id}",
-        headers=superuser_token_headers,
-        json={"can_order": False},
+    permission_ids = _permission_ids_by_code(
+        client=client, headers=superuser_token_headers
     )
-    assert response.status_code == 200
-    assert response.json()["can_order"] is False
+    response = client.put(
+        f"{settings.API_V1_STR}/users/{user.id}/permissions/deny",
+        headers=superuser_token_headers,
+        json={"permission_ids": [permission_ids["order:create"]]},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["deny_codes"] == ["order:create"]
 
     response = client.post(
         f"{settings.API_V1_STR}/orders/",
         headers=headers,
         json=_order_payload(product["id"]),
     )
-    assert response.status_code == 200
-    assert _first_order_failure(response)["detail"] == "暂无下单权限"
+    assert response.status_code == 400
+    assert response.json()["detail"] == "暂无下单权限"
 
 
 def test_create_order_requires_wallet(
@@ -432,6 +446,34 @@ def test_create_order_rejects_unsellable_status(
     )
     assert response.status_code == 200
     assert _first_order_failure(response)["detail"] == "商品当前不可购买"
+
+
+def test_create_order_rejects_sync_failed_product(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    """商品上游同步异常时拒绝下单，即使商品仍处于可售状态"""
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product = _create_ready_product(
+        client,
+        superuser_token_headers,
+        price_mode="fixed",
+    )
+    db_product = db.get(Product, uuid.UUID(product["id"]))
+    assert db_product is not None
+    db_product.sync_status = SyncStatus.FAILED
+    db.add(db_product)
+    db.commit()
+
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert response.status_code == 200
+    assert _first_order_failure(response)["detail"] == "商品同步异常，暂不可下单"
 
 
 def test_create_order_rejects_quantity_rule_violations(
@@ -1497,6 +1539,64 @@ def test_fulfill_api_order_unknown_outcome_marks_exception(
     )
     assert detail.json()["status"] == 9  # 结果未知转人工确认
     assert detail.json()["fulfill_failed_count"] == 0
+
+
+def test_fulfill_exception_order_definite_failure_keeps_exception(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """异常订单人工重新履约仍明确失败时保持异常，不回退为已付款"""
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers)
+    product, _ = _create_api_product_with_supplier(client, db, superuser_token_headers)
+
+    def raise_unknown_error(_self: object, **kwargs: object) -> dict:
+        del kwargs
+        raise SupplierClientUnknownError("供应商 API 超时")
+
+    monkeypatch.setattr(YlsupClient, "create_order", raise_unknown_error)
+    order = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert order.status_code == 200
+    order_id = _first_order_result(order)["id"]
+
+    first_try = client.post(
+        f"{settings.API_V1_STR}/orders/{order_id}/fulfill",
+        headers=superuser_token_headers,
+    )
+    assert first_try.status_code == 502
+
+    detail = client.get(
+        f"{settings.API_V1_STR}/orders/{order_id}",
+        headers=superuser_token_headers,
+    )
+    assert detail.json()["status"] == 9
+    assert detail.json()["fulfill_failed_count"] == 0
+
+    def raise_upstream_error(_self: object, **kwargs: object) -> dict:
+        del kwargs
+        raise SupplierClientError("上游下单失败")
+
+    monkeypatch.setattr(YlsupClient, "create_order", raise_upstream_error)
+    second_try = client.post(
+        f"{settings.API_V1_STR}/orders/{order_id}/fulfill",
+        headers=superuser_token_headers,
+    )
+    assert second_try.status_code == 502
+    assert second_try.json()["detail"] == "供应商履约失败: 上游下单失败"
+
+    detail = client.get(
+        f"{settings.API_V1_STR}/orders/{order_id}",
+        headers=superuser_token_headers,
+    )
+    assert detail.json()["status"] == 9  # 人工已介入，失败后不回退为已付款
+    assert detail.json()["fulfill_failed_count"] == 1
+    assert "履约连续失败 1 次" in detail.json()["remark"]
 
 
 def test_record_supplier_order_id_restores_pending(

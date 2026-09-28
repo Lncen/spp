@@ -8,6 +8,7 @@ from typing import Any
 from fastapi import HTTPException
 
 from app.modules.order.domain.constants import SALABLE_PRODUCT_STATUSES
+from app.modules.product.constants import SyncStatus
 from app.modules.product.product.models import (
     Product,
     ProductBuyParam,
@@ -27,6 +28,8 @@ def _validate_product_sellable(
     """校验商品可售状态与配置完整性"""
     if not product.is_active:
         raise HTTPException(status_code=400, detail="商品已停用")
+    if product.sync_status == SyncStatus.FAILED:
+        raise HTTPException(status_code=400, detail="商品同步异常，暂不可下单")
     if product.is_closed:
         raise HTTPException(status_code=400, detail="商品已关闭下单")
     if product.status not in SALABLE_PRODUCT_STATUSES:

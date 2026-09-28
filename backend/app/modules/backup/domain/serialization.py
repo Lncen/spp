@@ -11,7 +11,6 @@ USER_FIELDS = (
     "email",
     "is_superuser",
     "full_name",
-    "can_order",
     "avatar_id",
     "remark",
     "bio",

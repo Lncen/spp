@@ -17,7 +17,6 @@ export const formSchema = z
     confirm_password: z.string().optional(),
     is_superuser: z.boolean().optional(),
     is_active: z.boolean().optional(),
-    can_order: z.boolean().optional(),
     level_id: z.string().optional(),
     avatar_id: z.string().optional(),
     remark: z.string().max(255, "备注不能超过 255 个字符").optional(),

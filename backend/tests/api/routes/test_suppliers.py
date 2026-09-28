@@ -765,11 +765,13 @@ def test_sync_product_saves_upstream_sync_fields(
 
 
 def test_mark_product_sync_failed(db: Session) -> None:
-    """标记本地商品上游同步异常"""
+    """标记本地商品上游同步异常，并将商品退回待审核"""
     supplier = create_random_supplier(db)
     local_product = create_local_product(db, supplier, "58")
+    assert local_product.status == ProductStatus.READY
 
     mark_product_sync_failed(session=db, product_id=local_product.id)
     db.refresh(local_product)
     assert local_product.sync_status == SyncStatus.FAILED
     assert local_product.synced_at is not None
+    assert local_product.status == ProductStatus.PENDING_REVIEW

@@ -204,7 +204,7 @@ PERMISSION_CATEGORIES_DATA: list[PermissionCategoryData] = [
     },
     {
         "name": "订单管理",
-        "description": "订单查询、代下单与售后操作",
+        "description": "订单查询、下单、代客下单与售后操作",
         "sort_order": 6,
         "permissions": [
             {
@@ -216,8 +216,14 @@ PERMISSION_CATEGORIES_DATA: list[PermissionCategoryData] = [
             {
                 "code": "order:create",
                 "action": ActionType.CREATE,
+                "name": "下单",
+                "description": "用户自行创建订单（下单即扣款）",
+            },
+            {
+                "code": "order:admin_create",
+                "action": ActionType.CREATE,
                 "name": "代客下单",
-                "description": "管理员代客下单与下单结算预览",
+                "description": "管理员代客下单与下单结算预览，跳过钱包与余额校验",
             },
             {
                 "code": "order:update",

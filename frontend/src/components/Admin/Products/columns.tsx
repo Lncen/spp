@@ -27,18 +27,9 @@ function formatSyncTime(value?: string | null): string {
 
 function formatPrice(product: ProductPublic) {
   const pricing = product.pricing
-  if (pricing?.fixed_price != null) {
-    const precision = pricing.price_display_precision ?? 2
-    return `${Number(pricing.fixed_price).toFixed(precision)}`
-  }
-  if (pricing?.item_coefficient != null) {
-    return `系数 ${Number(pricing.item_coefficient).toFixed(2)}`
-  }
-  if (pricing?.price_template_id != null) {
-    const precision = pricing.price_display_precision ?? 2
-    return `${Number(pricing.cost_price).toFixed(precision)}`
-  }
-  return "未配置"
+  const precision = pricing?.price_display_precision ?? 2
+  const value = Number(pricing?.cost_price)
+  return Number.isFinite(value) ? value.toFixed(precision) : "未配置"
 }
 
 function formatStock(product: ProductPublic) {
@@ -98,15 +89,6 @@ export const columns: ColumnDef<ProductPublic>[] = [
       </Badge>
     ),
   },
-  // {
-  //   accessorKey: "source_type",
-  //   header: "来源",
-  //   cell: ({ row }) => (
-  //     <span className="text-sm">
-  //       {sourceTypeLabel(row.original.source_type)}
-  //     </span>
-  //   ),
-  // },
   {
     id: "price",
     header: "价格",
@@ -114,13 +96,6 @@ export const columns: ColumnDef<ProductPublic>[] = [
       <span className="font-mono text-sm">{formatPrice(row.original)}</span>
     ),
   },
-  // {
-  //   id: "loss_price",
-  //   header: "损耗",
-  //   cell: ({ row }) => (
-  //     <span className="font-mono text-sm">{formatLossPrice(row.original)}</span>
-  //   ),
-  // },
   {
     id: "stock",
     header: "库存",
@@ -128,15 +103,20 @@ export const columns: ColumnDef<ProductPublic>[] = [
       <span className="text-sm">{formatStock(row.original)}</span>
     ),
   },
-  {
-    accessorKey: "sync_status",
-    header: "同步",
-    cell: ({ row }) => (
-      <span className="text-sm">
-        {syncStatusLabel(row.original.sync_status)}
+{
+  accessorKey: "sync_status",
+  header: "同步",
+  cell: ({ row }) => {
+    const status = row.original.sync_status
+    const isError = status === 2 // 按你实际的异常值改
+
+    return (
+      <span className={`text-sm ${isError ? "text-red-600" : "text-green-600"}`}>
+        {syncStatusLabel(status)}
       </span>
-    ),
+    )
   },
+},
   {
     accessorKey: "synced_at",
     header: "同步时间",

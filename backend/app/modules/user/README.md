@@ -79,6 +79,7 @@ backend/app/modules/user/
 6. **列表搜索**：`GET /users/` 的 `search` 参数对 `username` / `email` / `full_name` 做大小写不敏感的模糊匹配（`ilike`），命中任一字段即返回，搜索词为空时不生效。
 7. **删除账号开关**：`DELETE /users/me` 受系统设置 `allow_delete_account` 控制，默认关闭（返回 403）。
 8. **权限声明**：管理端接口统一使用 `app/api/deps.py` 的 `require_permission` 声明权限码，不再使用 `get_current_active_superuser`；权限码清单见 `app/init_models_data/permissions.py`。
+9. **下单能力不在用户模型**：用户能否下单由权限模块的权限码 `order:create` 决定，`User` 模型与 `UserCreate` / `UserUpdate` 均不再包含 `can_order` 字段；管理员在「权限」分区对该权限码选择「拒绝」即可收回某用户的下单能力，内置 `user` 角色默认持有它。
 
 ## 六、重构记录
 

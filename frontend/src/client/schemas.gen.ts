@@ -7106,11 +7106,6 @@ export const UserCreateSchema = {
             title: 'Is Superuser',
             default: false
         },
-        can_order: {
-            type: 'boolean',
-            title: 'Can Order',
-            default: true
-        },
         full_name: {
             anyOf: [
                 {
@@ -7200,11 +7195,6 @@ export const UserDetailPublicSchema = {
             type: 'boolean',
             title: 'Is Superuser',
             default: false
-        },
-        can_order: {
-            type: 'boolean',
-            title: 'Can Order',
-            default: true
         },
         full_name: {
             anyOf: [
@@ -7420,11 +7410,6 @@ export const UserPublicSchema = {
             type: 'boolean',
             title: 'Is Superuser',
             default: false
-        },
-        can_order: {
-            type: 'boolean',
-            title: 'Can Order',
-            default: true
         },
         full_name: {
             anyOf: [
@@ -7651,17 +7636,6 @@ export const UserUpdateSchema = {
                 }
             ],
             title: 'Is Superuser'
-        },
-        can_order: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Can Order'
         },
         full_name: {
             anyOf: [

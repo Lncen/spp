@@ -15,6 +15,7 @@
 - **上游商品同步**：`POST /suppliers/{id}/upstream-products/sync` 提交 Celery 任务，
   逐个拉取上游商品详情并创建/更新本地商品（未匹配则创建完整商品，匹配则更新成本价与关闭下单状态；
   售价按成本价 1.5 倍维护：固定价格模式写固定售价，商品系数模式写默认折扣率 1.5）；
+  单商品同步异常时，本地已存在商品回写 `sync_status=异常` 并退回待审核，需人工重新审核上架；
 - **实时余额**：查询上游账户余额后写回 `Supplier.balance`（保留 7 位小数，不可手动修改）。
 
 核心链路：
@@ -111,3 +112,5 @@ backend/app/modules/supplier/
    `automation.infrastructure.tasks.supplier_sync`，任务名统一为
    `app.modules.automation.infrastructure.tasks.sync_upstream_products`。
 6. **余额写入约束**：`Supplier.balance` 仅由余额同步接口写回，更新接口显式剔除该字段。
+7. **同步异常即下架待审**：同步失败（异常）时本地商品写回 `sync_status=异常` 并置为
+   `PENDING_REVIEW`；同步成功不回写状态，需人工重新审核后恢复在售。

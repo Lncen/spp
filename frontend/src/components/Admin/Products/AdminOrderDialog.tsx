@@ -289,7 +289,6 @@ export const AdminOrderDialog = ({ product }: AdminOrderDialogProps) => {
         `下单完成：成功 ${data.success_count} 单，失败 ${data.failure_count} 单`,
       )
       queryClient.invalidateQueries({ queryKey: ["orders"] })
-      queryClient.invalidateQueries({ queryKey: ["products"] })
     },
     onError: handleError.bind(showErrorToast),
   })

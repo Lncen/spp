@@ -2032,7 +2032,6 @@ export type UserCreate = {
     email: string;
     is_active?: boolean;
     is_superuser?: boolean;
-    can_order?: boolean;
     full_name?: (string | null);
     /**
      * 管理员对用户的备注，仅管理员可修改
@@ -2060,7 +2059,6 @@ export type UserDetailPublic = {
     email: string;
     is_active?: boolean;
     is_superuser?: boolean;
-    can_order?: boolean;
     full_name?: (string | null);
     /**
      * 管理员对用户的备注，仅管理员可修改
@@ -2120,7 +2118,6 @@ export type UserPublic = {
     email: string;
     is_active?: boolean;
     is_superuser?: boolean;
-    can_order?: boolean;
     full_name?: (string | null);
     /**
      * 管理员对用户的备注，仅管理员可修改
@@ -2173,7 +2170,6 @@ export type UserUpdate = {
     email?: (string | null);
     is_active?: (boolean | null);
     is_superuser?: (boolean | null);
-    can_order?: (boolean | null);
     full_name?: (string | null);
     level_id?: (string | null);
     avatar_id?: (string | null);

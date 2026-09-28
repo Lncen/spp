@@ -134,24 +134,6 @@ export function PermissionsFields({
             </FormItem>
           )}
         />
-
-        <FormField
-          control={control}
-          name="can_order"
-          render={({ field }) => (
-            <FormItem className="flex items-center gap-3">
-              <FormLabel className="w-24 shrink-0 text-right font-normal">
-                允许下单
-              </FormLabel>
-              <FormControl>
-                <Checkbox
-                  checked={field.value ?? false}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
       </div>
 
       <Separator />

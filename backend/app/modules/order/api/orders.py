@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Request
 from app.api.deps import (
     CurrentUser,
     SessionDep,
+    require_any_permission,
     require_permission,
 )
 from app.modules.order.application.after_sale.cancel import cancel_order
@@ -56,7 +57,13 @@ def _request_meta(request: Request) -> tuple[str | None, str | None, str | None]
     return ip, user_agent, request_id
 
 
-@router.post("/", response_model=AdminOrdersPublic)
+@router.post(
+    "/",
+    dependencies=[
+        Depends(require_any_permission("order:create", detail="暂无下单权限"))
+    ],
+    response_model=AdminOrdersPublic,
+)
 def create_user_orders(
     *,
     session: SessionDep,
@@ -90,7 +97,7 @@ def read_user_orders(
 
 @router.post(
     "/admin",
-    dependencies=[Depends(require_permission("order:create"))],
+    dependencies=[Depends(require_permission("order:admin_create"))],
     response_model=AdminOrdersPublic,
 )
 def create_admin_orders_api(
@@ -109,7 +116,7 @@ def create_admin_orders_api(
 
 @router.post(
     "/admin/preview",
-    dependencies=[Depends(require_permission("order:create"))],
+    dependencies=[Depends(require_permission("order:admin_create"))],
     response_model=AdminOrdersPreviewPublic,
 )
 def preview_admin_orders_api(

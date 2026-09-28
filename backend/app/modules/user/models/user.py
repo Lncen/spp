@@ -51,13 +51,6 @@ class User(BaseModelMixin, SQLModel, table=True):
         description="用户的昵称姓名或显示名称，选填，长度不超过255个字符",
     )
 
-    can_order: bool = Field(
-        default=True,
-        index=True,
-        title="是否允许下单",
-        description="独立控制用户是否可创建订单，与账号启用状态互不影响",
-    )
-
     avatar_id: uuid.UUID | None = Field(
         default=None,
         sa_column=Column(

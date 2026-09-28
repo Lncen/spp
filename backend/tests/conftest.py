@@ -47,15 +47,10 @@ from tests.utils.utils import get_superuser_token_headers
 @pytest.fixture(scope="session", autouse=True)
 def db() -> Generator[Session]:
     with Session(engine) as session:
-        # 迁移文件由用户按项目规范自行生成，测试库先幂等补齐新增用户字段
+        # 迁移文件由用户按项目规范自行生成，测试库先幂等对齐用户表结构：
+        # 新增字段补列；已移除字段（can_order 已由权限模块的 order:create 接管）删列
         with engine.begin() as conn:
-            conn.execute(
-                text(
-                    'ALTER TABLE "user" '
-                    "ADD COLUMN IF NOT EXISTS can_order "
-                    "BOOLEAN NOT NULL DEFAULT TRUE"
-                )
-            )
+            conn.execute(text('ALTER TABLE "user" DROP COLUMN IF EXISTS can_order'))
             conn.execute(
                 text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS avatar_id UUID')
             )
@@ -64,11 +59,6 @@ def db() -> Generator[Session]:
             )
             conn.execute(
                 text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS bio VARCHAR(1000)')
-            )
-            conn.execute(
-                text(
-                    'CREATE INDEX IF NOT EXISTS ix_user_can_order ON "user" (can_order)'
-                )
             )
             conn.execute(
                 text(

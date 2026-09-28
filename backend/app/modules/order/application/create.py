@@ -135,13 +135,13 @@ def _create_order_core(
 ) -> Order:
     """公共下单流水线：普通下单与管理员代下共享，避免两套校验逐渐不一致
 
-    两者都执行：can_order、order_enabled、商品/价格、库存、防重复、
-    构造订单落库、order.paid 事件；require_wallet 时校验钱包存在与启用，
+    两者都执行：order_enabled、商品/价格、库存、防重复、构造订单落库、
+    order.paid 事件；require_wallet 时校验钱包存在与启用，
     wallet 非 None 时额外做余额校验与扣款。
+    下单权限（order:create / order:admin_create）由 API 层权限依赖校验，
+    本层不再判断用户字段。
     顺序执行的简单流水线（多步校验与落库），按 AGENTS.md 放宽至 60 行。
     """
-    if not user.can_order:
-        raise HTTPException(status_code=400, detail="暂无下单权限")
     if not get_setting(session=session, key="order_enabled"):
         raise HTTPException(status_code=403, detail="当前暂停下单，请稍后再试")
     if require_wallet:

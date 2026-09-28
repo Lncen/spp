@@ -32,7 +32,8 @@ class SystemRoleData(TypedDict):
 DEFAULT_USER_ROLE_CODE = "user"
 
 # 内置角色清单：admin 取权限清单内全部权限，新增权限自动纳入；
-# user 只持有用户自助能力，权限码取自 ``app/init_models_data/permissions.py``
+# user 持有用户自助能力（聊天与自助下单），权限码取自
+# ``app/init_models_data/permissions.py``
 SYSTEM_ROLES_DATA: list[SystemRoleData] = [
     {
         "code": "admin",
@@ -50,6 +51,7 @@ SYSTEM_ROLES_DATA: list[SystemRoleData] = [
             "chat:self_view",
             "chat:send",
             "chat:create",
+            "order:create",
         ],
     },
 ]

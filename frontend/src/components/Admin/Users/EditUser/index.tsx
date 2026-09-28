@@ -130,7 +130,6 @@ const EditUser = ({ user, open, onOpenChange, onSuccess }: EditUserProps) => {
       full_name: undefined,
       is_superuser: user.is_superuser,
       is_active: user.is_active,
-      can_order: undefined,
       level_id: undefined,
       avatar_id: "none",
       remark: "",
@@ -265,7 +264,6 @@ const EditUser = ({ user, open, onOpenChange, onSuccess }: EditUserProps) => {
       full_name: detail.full_name ?? undefined,
       is_superuser: detail.is_superuser,
       is_active: detail.is_active,
-      can_order: detail.can_order,
       level_id: detail.level_id ?? undefined,
       avatar_id: detail.avatar_id ?? "none",
       remark: detail.remark ?? "",
@@ -332,7 +330,6 @@ const EditUser = ({ user, open, onOpenChange, onSuccess }: EditUserProps) => {
           full_name: data.full_name,
           is_superuser: data.is_superuser,
           is_active: data.is_active,
-          can_order: data.can_order,
           password: data.password || undefined,
           level_id: data.level_id || undefined,
           avatar_id:

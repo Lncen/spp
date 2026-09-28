@@ -238,11 +238,12 @@ def create_synced_product(
 
 
 def mark_product_sync_failed(*, session: Session, product_id: uuid.UUID) -> None:
-    """标记本地商品的上游同步状态为异常"""
+    """标记本地商品的上游同步状态为异常，并退回待审核"""
     db_product = session.get(Product, product_id)
     if db_product is None:
         return
     db_product.sync_status = SyncStatus.FAILED
     db_product.synced_at = get_datetime_cn()
+    db_product.status = ProductStatus.PENDING_REVIEW
     session.add(db_product)
     session.commit()

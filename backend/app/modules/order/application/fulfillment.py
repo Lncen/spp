@@ -14,12 +14,14 @@ from sqlmodel import Session
 from app.core.config import settings
 from app.core.time import get_datetime_cn
 from app.modules.order.application.order_state import (
+    claim_order,
     finalize_fulfillment,
     mark_unknown_outcome,
     record_upstream_order_created,
+    recover_order,
     resolve_fulfill_target,
     rollback_claim_on_failure,
-    to_order_status, recover_order,
+    to_order_status,
 )
 from app.modules.order.application.sync import sync_orders_status
 from app.modules.order.domain.constants import OrderStatus
@@ -48,8 +50,12 @@ def _create_upstream_order(
     is_api: bool,
     now: datetime,
     fail_limit: int,
+    keep_exception: bool = False,
 ) -> None:
-    """调用上游下单，失败按结果是否明确分流（均抛异常终止）"""
+    """调用上游下单，失败按结果是否明确分流（均抛异常终止）
+
+    keep_exception=True 时明确失败保持异常状态（人工重新履约异常订单）。
+    """
     if not is_api:
         return
     try:
@@ -81,6 +87,7 @@ def _create_upstream_order(
             db_order=db_order,
             now=now,
             fail_limit=fail_limit,
+            keep_exception=keep_exception,
         )
         raise HTTPException(
             status_code=502,
@@ -132,12 +139,14 @@ def fulfill_claimed_order(
     db_order: Order,
     fail_limit: int | None = None,
     remark: str | None = None,
+    keep_exception: bool = False,
 ) -> Order:
     """执行已认领订单的履约：调用上游并回写结果，失败按结果是否明确分流
 
     API 订单下单成功即保持 PROCESSING（record_upstream_order_created 已置位），
     不再立即查询上游状态，后续状态由 sync_order_status_periodic 定时同步；
     非 API 订单按原逻辑直接回写终态。
+    keep_exception=True 仅用于异常订单的人工重新履约，失败后不做状态回滚。
     """
     is_api = db_order.fulfillment_type == RedeemType.AUTO_API
     now = get_datetime_cn()
@@ -150,6 +159,7 @@ def fulfill_claimed_order(
         is_api=is_api,
         now=now,
         fail_limit=fail_limit,
+        keep_exception=keep_exception,
     )
     db_order.fulfill_failed_count = 0  # 上游下单成功，清零失败计数
     if not is_api:
@@ -172,16 +182,22 @@ def fulfill_order(
 ) -> Order:
     """履约订单（同步）：先原子认领再执行，防止并发重复履约
 
-    明确失败回滚重试；结果未知（超时/断连）转人工确认。
+    已付款订单走认领（PAID → PROCESSING），异常订单走恢复（EXCEPTION → PROCESSING）。
+    已付款订单明确失败回滚为已付款等待重试；异常订单人工重新履约明确失败后
+    保持异常等待人工处理；结果未知（超时/断连）统一转人工确认。
     """
-    if not recover_order(session=session, db_order=db_order):
-        raise HTTPException(status_code=400, detail="当前状态不可履约")
+    keep_exception = False
+    if not claim_order(session=session, db_order=db_order):
+        if not recover_order(session=session, db_order=db_order):
+            raise HTTPException(status_code=400, detail="当前状态不可履约")
+        keep_exception = True
     try:
         return fulfill_claimed_order(
             session=session,
             db_order=db_order,
             fail_limit=fail_limit,
             remark=remark,
+            keep_exception=keep_exception,
         )
     except FulfillmentUnknownError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc

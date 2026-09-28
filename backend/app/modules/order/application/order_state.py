@@ -67,17 +67,23 @@ def rollback_claim_on_failure(
     db_order: Order,
     now: datetime,
     fail_limit: int,
+    keep_exception: bool = False,
 ) -> None:
-    """明确失败：回滚认领为已付款，累计失败次数，达阈值标记异常"""
-    db_order.status = OrderStatus.PAID
+    """明确失败：累计失败次数，回滚为已付款待重试或保持异常等待人工处理
+
+    keep_exception=True 用于异常订单的人工重新履约：失败后仍是异常，
+    避免人工已介入的订单被降级为已付款后无人跟进。
+    """
     db_order.fulfill_failed_count = (db_order.fulfill_failed_count or 0) + 1
-    if db_order.fulfill_failed_count >= fail_limit:
+    if keep_exception or db_order.fulfill_failed_count >= fail_limit:
         db_order.status = OrderStatus.EXCEPTION
         db_order.failed_at = now
         note = f"履约连续失败 {db_order.fulfill_failed_count} 次，已标记异常"
         db_order.remark = (
             f"{db_order.remark}；{note}"[:255] if db_order.remark else note
         )
+    else:
+        db_order.status = OrderStatus.PAID
     session.add(db_order)
     session.commit()
     session.refresh(db_order)
