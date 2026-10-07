@@ -78,7 +78,16 @@ export const columns: ColumnDef<OrderListItem>[] = [
     header: "金额",
     cell: ({ row }) => (
       <span className="font-mono text-sm">
-        {Number(row.original.total_amount).toFixed(7)}
+        {Number(row.original.total_amount)}
+      </span>
+    ),
+  },
+      {
+    accessorKey: "quantity",
+    header: "数量",
+    cell: ({ row }) => (
+      <span className="font-mono text-sm">
+        {Number(row.original.quantity)}
       </span>
     ),
   },
