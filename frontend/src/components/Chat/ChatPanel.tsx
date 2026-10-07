@@ -168,10 +168,11 @@ export function ChatPanel({ chatId }: { chatId: string }) {
     return () => window.clearInterval(timer)
   }, [])
 
-  // 打开聊天 / 收到新消息后标记已读（游标只前进，重复提交无副作用）
+  // 打开聊天 / 收到新消息后把已读游标推进到最新一条（游标只前进，重复提交无副作用）
   useEffect(() => {
     if (!socket || !newestMessage) return
-    if (newestMessage.sender_id === currentUser?.id) return
+    // 最新一条可能是自己发的，但更早的对方消息仍然算未读：
+    // 不能因为「最新一条是自己发的」就跳过，否则角标会一直清不掉
     // 只在最新消息变化时上报一次，避免缓存刷新触发重复请求
     if (lastReadMessageId.current === newestMessage.id) return
     lastReadMessageId.current = newestMessage.id
@@ -179,7 +180,7 @@ export function ChatPanel({ chatId }: { chatId: string }) {
       chat_id: chatId,
       message_id: newestMessage.id,
     })
-  }, [chatId, currentUser?.id, newestMessage, socket])
+  }, [chatId, newestMessage, socket])
 
   const handleDraftChange = (value: string) => {
     setDraft(value)
