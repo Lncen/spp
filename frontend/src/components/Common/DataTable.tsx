@@ -6,6 +6,7 @@ import {
   getExpandedRowModel,
   getPaginationRowModel,
   type PaginationState,
+  type RowData,
   type Updater,
   useReactTable,
 } from "@tanstack/react-table"
@@ -33,6 +34,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+
+declare module "@tanstack/react-table" {
+  interface ColumnMeta<TData extends RowData, TValue> {
+    /** 列宽（px）；未设置时由表格按内容自适应 */
+    width?: number
+  }
+}
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -92,8 +100,12 @@ export function DataTable<TData, TValue>({
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id} className="hover:bg-transparent">
               {headerGroup.headers.map((header) => {
+                const width = header.column.columnDef.meta?.width
                 return (
-                  <TableHead key={header.id}>
+                  <TableHead
+                    key={header.id}
+                    style={width ? { width } : undefined}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(

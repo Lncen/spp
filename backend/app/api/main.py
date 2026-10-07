@@ -60,6 +60,17 @@ from app.modules.product.category.api import (
     category_router as product_category_router,
 )
 from app.modules.product.category.models import ProductCategory  # noqa: F401
+from app.modules.product.combo.api import (
+    combo_router as product_combo_router,
+)
+from app.modules.product.combo.models import (  # noqa: F401
+    ProductCombo,
+    ProductComboItem,
+)
+from app.modules.product.favorite.api import (
+    favorite_router as product_favorite_router,
+)
+from app.modules.product.favorite.models import ProductFavorite  # noqa: F401
 from app.modules.product.product.api import product_router
 from app.modules.product.product.models import (  # noqa: F401
     Product,
@@ -108,6 +119,8 @@ api_router.include_router(automation_rules_router)
 api_router.include_router(setting_router)
 api_router.include_router(supplier_router)
 api_router.include_router(system_log_router)
+api_router.include_router(product_combo_router)
+api_router.include_router(product_favorite_router)
 api_router.include_router(product_router)
 api_router.include_router(product_category_router)
 api_router.include_router(permission_router)

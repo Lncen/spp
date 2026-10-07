@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { AutomationReadAutomationTasksData, AutomationReadAutomationTasksResponse, AutomationCreateAutomationTaskData, AutomationCreateAutomationTaskResponse, AutomationReadExecutorOptionsResponse, AutomationReadAutomationTaskArchivesData, AutomationReadAutomationTaskArchivesResponse, AutomationReadAutomationTaskData, AutomationReadAutomationTaskResponse, AutomationRetryAutomationTaskData, AutomationRetryAutomationTaskResponse, AutomationCancelAutomationTaskData, AutomationCancelAutomationTaskResponse, AutomationReadAutomationEventsData, AutomationReadAutomationEventsResponse, AutomationPublishAutomationEventRouteData, AutomationPublishAutomationEventRouteResponse, AutomationReadAutomationRulesData, AutomationReadAutomationRulesResponse, AutomationCreateAutomationRuleData, AutomationCreateAutomationRuleResponse, AutomationReadAutomationRuleData, AutomationReadAutomationRuleResponse, AutomationUpdateAutomationRuleData, AutomationUpdateAutomationRuleResponse, AutomationDeleteAutomationRuleData, AutomationDeleteAutomationRuleResponse, AutomationToggleAutomationRuleData, AutomationToggleAutomationRuleResponse, BackupsReadBackupsData, BackupsReadBackupsResponse, BackupsCreateBackupResponse, BackupsDownloadBackupData, BackupsDownloadBackupResponse, BackupsRestoreBackupData, BackupsRestoreBackupResponse, BackupsDeleteBackupData, BackupsDeleteBackupResponse, ChatReadMyChatsData, ChatReadMyChatsResponse, ChatReadMyUnreadCountResponse, ChatCreateDirectChatData, ChatCreateDirectChatResponse, ChatCreateGroupData, ChatCreateGroupResponse, ChatReadChatData, ChatReadChatResponse, ChatDeleteChatData, ChatDeleteChatResponse, ChatReadChatMessagesData, ChatReadChatMessagesResponse, ChatMarkReadData, ChatMarkReadResponse, ChatReadChatParticipantsData, ChatReadChatParticipantsResponse, ChatAddParticipantData, ChatAddParticipantResponse, ChatDeleteParticipantData, ChatDeleteParticipantResponse, ImageCategoriesReadCategoriesResponse, ImageCategoriesCreateNewCategoryData, ImageCategoriesCreateNewCategoryResponse, ImageCategoriesReadCategoryOptionsResponse, ImageCategoriesReadCategoryData, ImageCategoriesReadCategoryResponse, ImageCategoriesUpdateExistingCategoryData, ImageCategoriesUpdateExistingCategoryResponse, ImageCategoriesDeleteExistingCategoryData, ImageCategoriesDeleteExistingCategoryResponse, ImagesReadImagesData, ImagesReadImagesResponse, ImagesReadImageData, ImagesReadImageResponse, ImagesDeleteImageData, ImagesDeleteImageResponse, ImagesUpdateImageData, ImagesUpdateImageResponse, ImagesUploadImageData, ImagesUploadImageResponse, LevelsReadLevelsResponse, LevelsReadLevelData, LevelsReadLevelResponse, LevelsUpdateLevelEndpointData, LevelsUpdateLevelEndpointResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshTokenData, LoginRefreshTokenResponse, LoginLogoutData, LoginLogoutResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, LoginTestTokenResponse, NotificationsReadMyNotificationsData, NotificationsReadMyNotificationsResponse, NotificationsReadUnreadCountResponse, NotificationsMarkReadData, NotificationsMarkReadResponse, NotificationsMarkAllReadResponse, NotificationsDeleteMyNotificationEndpointData, NotificationsDeleteMyNotificationEndpointResponse, NotificationsReadAdminNotificationsData, NotificationsReadAdminNotificationsResponse, NotificationsSendAdminNotificationData, NotificationsSendAdminNotificationResponse, NotificationsRetryAdminDeliveryData, NotificationsRetryAdminDeliveryResponse, NotificationsDeleteAdminNotificationData, NotificationsDeleteAdminNotificationResponse, OrdersCreateUserOrdersData, OrdersCreateUserOrdersResponse, OrdersReadOrdersData, OrdersReadOrdersResponse, OrdersReadUserOrdersData, OrdersReadUserOrdersResponse, OrdersCreateAdminOrdersApiData, OrdersCreateAdminOrdersApiResponse, OrdersPreviewAdminOrdersApiData, OrdersPreviewAdminOrdersApiResponse, OrdersReadUserOrderData, OrdersReadUserOrderResponse, OrdersCancelUserOrderData, OrdersCancelUserOrderResponse, OrdersReadOrderData, OrdersReadOrderResponse, OrdersFulfillOrderApiData, OrdersFulfillOrderApiResponse, OrdersCancelOrderApiData, OrdersCancelOrderApiResponse, OrdersRefundOrderApiData, OrdersRefundOrderApiResponse, OrdersUpdateOrderStatusApiData, OrdersUpdateOrderStatusApiResponse, OrdersSyncOrderStatusApiData, OrdersSyncOrderStatusApiResponse, OrdersRecordSupplierOrderIdApiData, OrdersRecordSupplierOrderIdApiResponse, PermissionsReadPermissionCategoriesResponse, PermissionsReadPermissionTreeResponse, PermissionsReadPermissionsData, PermissionsReadPermissionsResponse, PriceTemplatesReadPriceTemplatesData, PriceTemplatesReadPriceTemplatesResponse, PriceTemplatesCreatePriceTemplateData, PriceTemplatesCreatePriceTemplateResponse, PriceTemplatesReadPriceTemplateData, PriceTemplatesReadPriceTemplateResponse, PriceTemplatesUpdatePriceTemplateData, PriceTemplatesUpdatePriceTemplateResponse, PriceTemplatesDeletePriceTemplateData, PriceTemplatesDeletePriceTemplateResponse, PrivateCreateUserPrivateData, PrivateCreateUserPrivateResponse, ProductCategoriesReadProductCategoriesResponse, ProductCategoriesCreateProductCategoryData, ProductCategoriesCreateProductCategoryResponse, ProductCategoriesReadProductCategoryData, ProductCategoriesReadProductCategoryResponse, ProductCategoriesUpdateProductCategoryData, ProductCategoriesUpdateProductCategoryResponse, ProductCategoriesDeleteProductCategoryData, ProductCategoriesDeleteProductCategoryResponse, ProductsReadProductsData, ProductsReadProductsResponse, ProductsCreateProductData, ProductsCreateProductResponse, ProductsReadProductData, ProductsReadProductResponse, ProductsUpdateProductData, ProductsUpdateProductResponse, ProductsDeleteProductData, ProductsDeleteProductResponse, RolesReadRolesData, RolesReadRolesResponse, RolesCreateRoleEndpointData, RolesCreateRoleEndpointResponse, RolesReadRoleData, RolesReadRoleResponse, RolesUpdateRoleEndpointData, RolesUpdateRoleEndpointResponse, RolesDeleteRoleEndpointData, RolesDeleteRoleEndpointResponse, RolesReadRolePermissionsData, RolesReadRolePermissionsResponse, RolesSetRolePermissionsEndpointData, RolesSetRolePermissionsEndpointResponse, RolesReadMyPermissionsResponse, RolesReadUserRolesData, RolesReadUserRolesResponse, RolesAssignUserRoleData, RolesAssignUserRoleResponse, RolesRemoveUserRoleData, RolesRemoveUserRoleResponse, RolesReadUserPermissionsData, RolesReadUserPermissionsResponse, RolesSetUserPermissionsEndpointData, RolesSetUserPermissionsEndpointResponse, RolesSetUserDeniedPermissionsEndpointData, RolesSetUserDeniedPermissionsEndpointResponse, RolesRemoveUserPermissionEndpointData, RolesRemoveUserPermissionEndpointResponse, SchedulesReadSchedulesData, SchedulesReadSchedulesResponse, SchedulesReadTaskOptionsResponse, SchedulesReadScheduleData, SchedulesReadScheduleResponse, SchedulesUpdateScheduleData, SchedulesUpdateScheduleResponse, SchedulesToggleScheduleData, SchedulesToggleScheduleResponse, SchedulesRunScheduleData, SchedulesRunScheduleResponse, SchedulesReadTaskStatusData, SchedulesReadTaskStatusResponse, SettingsReadSettingsResponse, SettingsUpdateSettingEndpointData, SettingsUpdateSettingEndpointResponse, SuppliersReadSuppliersData, SuppliersReadSuppliersResponse, SuppliersCreateSupplierData, SuppliersCreateSupplierResponse, SuppliersGetPlatformOptionsResponse, SuppliersReadSupplierData, SuppliersReadSupplierResponse, SuppliersUpdateSupplierData, SuppliersUpdateSupplierResponse, SuppliersDeleteSupplierData, SuppliersDeleteSupplierResponse, SuppliersReadSupplierBalanceData, SuppliersReadSupplierBalanceResponse, SuppliersReadUpstreamProductsData, SuppliersReadUpstreamProductsResponse, SuppliersReadUpstreamCategoriesData, SuppliersReadUpstreamCategoriesResponse, SuppliersCreateUpstreamProductsSyncData, SuppliersCreateUpstreamProductsSyncResponse, SuppliersReadUpstreamProductsSyncStatusData, SuppliersReadUpstreamProductsSyncStatusResponse, SystemLogsReadSystemLogsData, SystemLogsReadSystemLogsResponse, SystemLogsReadSystemLogData, SystemLogsReadSystemLogResponse, SystemLogsReadAuditLogsData, SystemLogsReadAuditLogsResponse, SystemLogsReadAuditLogData, SystemLogsReadAuditLogResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, WalletsReadWalletMeResponse, WalletsReadWalletTransactionsMeData, WalletsReadWalletTransactionsMeResponse, WalletsReadWalletByUserIdData, WalletsReadWalletByUserIdResponse, WalletsReadWalletsData, WalletsReadWalletsResponse, WalletsReadWalletByIdData, WalletsReadWalletByIdResponse, WalletsUpdateWalletStatusData, WalletsUpdateWalletStatusResponse, WalletsReadWalletTransactionsData, WalletsReadWalletTransactionsResponse, WalletsAdjustWalletBalanceData, WalletsAdjustWalletBalanceResponse } from './types.gen';
+import type { AutomationReadAutomationTasksData, AutomationReadAutomationTasksResponse, AutomationCreateAutomationTaskData, AutomationCreateAutomationTaskResponse, AutomationReadExecutorOptionsResponse, AutomationReadAutomationTaskArchivesData, AutomationReadAutomationTaskArchivesResponse, AutomationReadAutomationTaskData, AutomationReadAutomationTaskResponse, AutomationRetryAutomationTaskData, AutomationRetryAutomationTaskResponse, AutomationCancelAutomationTaskData, AutomationCancelAutomationTaskResponse, AutomationReadAutomationEventsData, AutomationReadAutomationEventsResponse, AutomationPublishAutomationEventRouteData, AutomationPublishAutomationEventRouteResponse, AutomationReadAutomationRulesData, AutomationReadAutomationRulesResponse, AutomationCreateAutomationRuleData, AutomationCreateAutomationRuleResponse, AutomationReadAutomationRuleData, AutomationReadAutomationRuleResponse, AutomationUpdateAutomationRuleData, AutomationUpdateAutomationRuleResponse, AutomationDeleteAutomationRuleData, AutomationDeleteAutomationRuleResponse, AutomationToggleAutomationRuleData, AutomationToggleAutomationRuleResponse, BackupsReadBackupsData, BackupsReadBackupsResponse, BackupsCreateBackupResponse, BackupsDownloadBackupData, BackupsDownloadBackupResponse, BackupsRestoreBackupData, BackupsRestoreBackupResponse, BackupsDeleteBackupData, BackupsDeleteBackupResponse, ChatReadMyChatsData, ChatReadMyChatsResponse, ChatReadMyUnreadCountResponse, ChatCreateDirectChatData, ChatCreateDirectChatResponse, ChatCreateGroupData, ChatCreateGroupResponse, ChatReadChatData, ChatReadChatResponse, ChatDeleteChatData, ChatDeleteChatResponse, ChatReadChatMessagesData, ChatReadChatMessagesResponse, ChatMarkReadData, ChatMarkReadResponse, ChatReadChatParticipantsData, ChatReadChatParticipantsResponse, ChatAddParticipantData, ChatAddParticipantResponse, ChatDeleteParticipantData, ChatDeleteParticipantResponse, ImageCategoriesReadCategoriesResponse, ImageCategoriesCreateNewCategoryData, ImageCategoriesCreateNewCategoryResponse, ImageCategoriesReadCategoryOptionsResponse, ImageCategoriesReadCategoryData, ImageCategoriesReadCategoryResponse, ImageCategoriesUpdateExistingCategoryData, ImageCategoriesUpdateExistingCategoryResponse, ImageCategoriesDeleteExistingCategoryData, ImageCategoriesDeleteExistingCategoryResponse, ImagesReadImagesData, ImagesReadImagesResponse, ImagesReadImageData, ImagesReadImageResponse, ImagesDeleteImageData, ImagesDeleteImageResponse, ImagesUpdateImageData, ImagesUpdateImageResponse, ImagesUploadImageData, ImagesUploadImageResponse, LevelsReadLevelsResponse, LevelsReadLevelData, LevelsReadLevelResponse, LevelsUpdateLevelEndpointData, LevelsUpdateLevelEndpointResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshTokenData, LoginRefreshTokenResponse, LoginLogoutData, LoginLogoutResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, LoginTestTokenResponse, NotificationsReadMyNotificationsData, NotificationsReadMyNotificationsResponse, NotificationsReadUnreadCountResponse, NotificationsMarkReadData, NotificationsMarkReadResponse, NotificationsMarkAllReadResponse, NotificationsDeleteMyNotificationEndpointData, NotificationsDeleteMyNotificationEndpointResponse, NotificationsReadAdminNotificationsData, NotificationsReadAdminNotificationsResponse, NotificationsSendAdminNotificationData, NotificationsSendAdminNotificationResponse, NotificationsRetryAdminDeliveryData, NotificationsRetryAdminDeliveryResponse, NotificationsDeleteAdminNotificationData, NotificationsDeleteAdminNotificationResponse, OrdersCreateUserOrdersData, OrdersCreateUserOrdersResponse, OrdersReadOrdersData, OrdersReadOrdersResponse, OrdersReadUserOrdersData, OrdersReadUserOrdersResponse, OrdersCreateAdminOrdersApiData, OrdersCreateAdminOrdersApiResponse, OrdersPreviewAdminOrdersApiData, OrdersPreviewAdminOrdersApiResponse, OrdersPreviewUserOrdersApiData, OrdersPreviewUserOrdersApiResponse, OrdersReadUserOrderData, OrdersReadUserOrderResponse, OrdersCancelUserOrderData, OrdersCancelUserOrderResponse, OrdersReadOrderData, OrdersReadOrderResponse, OrdersFulfillOrderApiData, OrdersFulfillOrderApiResponse, OrdersCancelOrderApiData, OrdersCancelOrderApiResponse, OrdersRefundOrderApiData, OrdersRefundOrderApiResponse, OrdersUpdateOrderStatusApiData, OrdersUpdateOrderStatusApiResponse, OrdersSyncOrderStatusApiData, OrdersSyncOrderStatusApiResponse, OrdersRecordSupplierOrderIdApiData, OrdersRecordSupplierOrderIdApiResponse, PermissionsReadPermissionCategoriesResponse, PermissionsReadPermissionTreeResponse, PermissionsReadPermissionsData, PermissionsReadPermissionsResponse, PriceTemplatesReadPriceTemplatesData, PriceTemplatesReadPriceTemplatesResponse, PriceTemplatesCreatePriceTemplateData, PriceTemplatesCreatePriceTemplateResponse, PriceTemplatesReadPriceTemplateData, PriceTemplatesReadPriceTemplateResponse, PriceTemplatesUpdatePriceTemplateData, PriceTemplatesUpdatePriceTemplateResponse, PriceTemplatesDeletePriceTemplateData, PriceTemplatesDeletePriceTemplateResponse, PrivateCreateUserPrivateData, PrivateCreateUserPrivateResponse, ProductCategoriesReadProductCategoriesResponse, ProductCategoriesCreateProductCategoryData, ProductCategoriesCreateProductCategoryResponse, ProductCategoriesReadProductCategoryData, ProductCategoriesReadProductCategoryResponse, ProductCategoriesUpdateProductCategoryData, ProductCategoriesUpdateProductCategoryResponse, ProductCategoriesDeleteProductCategoryData, ProductCategoriesDeleteProductCategoryResponse, ProductCombosReadMyCombosData, ProductCombosReadMyCombosResponse, ProductCombosCreateMyComboData, ProductCombosCreateMyComboResponse, ProductCombosReadMyComboData, ProductCombosReadMyComboResponse, ProductCombosUpdateMyComboData, ProductCombosUpdateMyComboResponse, ProductCombosDeleteMyComboData, ProductCombosDeleteMyComboResponse, ProductFavoritesReadMyFavoritesData, ProductFavoritesReadMyFavoritesResponse, ProductFavoritesCreateMyFavoriteData, ProductFavoritesCreateMyFavoriteResponse, ProductFavoritesReadMyFavoriteStatusData, ProductFavoritesReadMyFavoriteStatusResponse, ProductFavoritesDeleteMyFavoriteData, ProductFavoritesDeleteMyFavoriteResponse, ProductsReadProductsData, ProductsReadProductsResponse, ProductsCreateProductData, ProductsCreateProductResponse, ProductsReadProductData, ProductsReadProductResponse, ProductsUpdateProductData, ProductsUpdateProductResponse, ProductsDeleteProductData, ProductsDeleteProductResponse, RolesReadRolesData, RolesReadRolesResponse, RolesCreateRoleEndpointData, RolesCreateRoleEndpointResponse, RolesReadRoleData, RolesReadRoleResponse, RolesUpdateRoleEndpointData, RolesUpdateRoleEndpointResponse, RolesDeleteRoleEndpointData, RolesDeleteRoleEndpointResponse, RolesReadRolePermissionsData, RolesReadRolePermissionsResponse, RolesSetRolePermissionsEndpointData, RolesSetRolePermissionsEndpointResponse, RolesReadMyPermissionsResponse, RolesReadUserRolesData, RolesReadUserRolesResponse, RolesAssignUserRoleData, RolesAssignUserRoleResponse, RolesRemoveUserRoleData, RolesRemoveUserRoleResponse, RolesReadUserPermissionsData, RolesReadUserPermissionsResponse, RolesSetUserPermissionsEndpointData, RolesSetUserPermissionsEndpointResponse, RolesSetUserDeniedPermissionsEndpointData, RolesSetUserDeniedPermissionsEndpointResponse, RolesRemoveUserPermissionEndpointData, RolesRemoveUserPermissionEndpointResponse, SchedulesReadSchedulesData, SchedulesReadSchedulesResponse, SchedulesReadTaskOptionsResponse, SchedulesReadScheduleData, SchedulesReadScheduleResponse, SchedulesUpdateScheduleData, SchedulesUpdateScheduleResponse, SchedulesToggleScheduleData, SchedulesToggleScheduleResponse, SchedulesRunScheduleData, SchedulesRunScheduleResponse, SchedulesReadTaskStatusData, SchedulesReadTaskStatusResponse, SettingsReadSettingsResponse, SettingsUpdateSettingEndpointData, SettingsUpdateSettingEndpointResponse, SuppliersReadSuppliersData, SuppliersReadSuppliersResponse, SuppliersCreateSupplierData, SuppliersCreateSupplierResponse, SuppliersGetPlatformOptionsResponse, SuppliersReadSupplierData, SuppliersReadSupplierResponse, SuppliersUpdateSupplierData, SuppliersUpdateSupplierResponse, SuppliersDeleteSupplierData, SuppliersDeleteSupplierResponse, SuppliersReadSupplierBalanceData, SuppliersReadSupplierBalanceResponse, SuppliersReadUpstreamProductsData, SuppliersReadUpstreamProductsResponse, SuppliersReadUpstreamCategoriesData, SuppliersReadUpstreamCategoriesResponse, SuppliersCreateUpstreamProductsSyncData, SuppliersCreateUpstreamProductsSyncResponse, SuppliersReadUpstreamProductsSyncStatusData, SuppliersReadUpstreamProductsSyncStatusResponse, SystemLogsReadSystemLogsData, SystemLogsReadSystemLogsResponse, SystemLogsReadSystemLogData, SystemLogsReadSystemLogResponse, SystemLogsReadAuditLogsData, SystemLogsReadAuditLogsResponse, SystemLogsReadAuditLogData, SystemLogsReadAuditLogResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, WalletsReadWalletMeResponse, WalletsReadWalletTransactionsMeData, WalletsReadWalletTransactionsMeResponse, WalletsReadWalletByUserIdData, WalletsReadWalletByUserIdResponse, WalletsReadWalletsData, WalletsReadWalletsResponse, WalletsReadWalletByIdData, WalletsReadWalletByIdResponse, WalletsUpdateWalletStatusData, WalletsUpdateWalletStatusResponse, WalletsReadWalletTransactionsData, WalletsReadWalletTransactionsResponse, WalletsAdjustWalletBalanceData, WalletsAdjustWalletBalanceResponse } from './types.gen';
 
 export class AutomationService {
     /**
@@ -1403,6 +1403,26 @@ export class OrdersService {
     }
     
     /**
+     * Preview User Orders Api
+     * 组合下单结算预览：按当前用户等级计价，不扣库存不落库
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns AdminOrdersPreviewPublic Successful Response
+     * @throws ApiError
+     */
+    public static previewUserOrdersApi(data: OrdersPreviewUserOrdersApiData): CancelablePromise<OrdersPreviewUserOrdersApiResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/orders/preview',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
      * Read User Order
      * 查看当前用户的单个订单
      * @param data The data for the request.
@@ -1882,6 +1902,204 @@ export class ProductCategoriesService {
             url: '/api/v1/product-categories/{category_id}',
             path: {
                 category_id: data.categoryId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class ProductCombosService {
+    /**
+     * Read My Combos
+     * 查看当前用户的组合列表
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @returns ProductCombosPublic Successful Response
+     * @throws ApiError
+     */
+    public static readMyCombos(data: ProductCombosReadMyCombosData = {}): CancelablePromise<ProductCombosReadMyCombosResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/product-combos/me',
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create My Combo
+     * 保存组合（名称 + 商品明细）
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns ProductComboPublic Successful Response
+     * @throws ApiError
+     */
+    public static createMyCombo(data: ProductCombosCreateMyComboData): CancelablePromise<ProductCombosCreateMyComboResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/product-combos/me',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read My Combo
+     * 查看组合详情
+     * @param data The data for the request.
+     * @param data.comboId
+     * @returns ProductComboPublic Successful Response
+     * @throws ApiError
+     */
+    public static readMyCombo(data: ProductCombosReadMyComboData): CancelablePromise<ProductCombosReadMyComboResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/product-combos/me/{combo_id}',
+            path: {
+                combo_id: data.comboId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update My Combo
+     * 更新组合：名称/备注部分更新，明细传入时整体替换
+     * @param data The data for the request.
+     * @param data.comboId
+     * @param data.requestBody
+     * @returns ProductComboPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateMyCombo(data: ProductCombosUpdateMyComboData): CancelablePromise<ProductCombosUpdateMyComboResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/product-combos/me/{combo_id}',
+            path: {
+                combo_id: data.comboId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete My Combo
+     * 删除组合及其明细
+     * @param data The data for the request.
+     * @param data.comboId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteMyCombo(data: ProductCombosDeleteMyComboData): CancelablePromise<ProductCombosDeleteMyComboResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/product-combos/me/{combo_id}',
+            path: {
+                combo_id: data.comboId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class ProductFavoritesService {
+    /**
+     * Read My Favorites
+     * 查看当前用户的商品收藏列表
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @returns ProductFavoritesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readMyFavorites(data: ProductFavoritesReadMyFavoritesData = {}): CancelablePromise<ProductFavoritesReadMyFavoritesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/product-favorites/me',
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create My Favorite
+     * 收藏商品，重复收藏保持幂等
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns ProductFavoritePublic Successful Response
+     * @throws ApiError
+     */
+    public static createMyFavorite(data: ProductFavoritesCreateMyFavoriteData): CancelablePromise<ProductFavoritesCreateMyFavoriteResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/product-favorites/me',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read My Favorite Status
+     * 查看当前用户是否已收藏指定商品
+     * @param data The data for the request.
+     * @param data.productId
+     * @returns ProductFavoriteStatusPublic Successful Response
+     * @throws ApiError
+     */
+    public static readMyFavoriteStatus(data: ProductFavoritesReadMyFavoriteStatusData): CancelablePromise<ProductFavoritesReadMyFavoriteStatusResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/product-favorites/me/{product_id}',
+            path: {
+                product_id: data.productId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete My Favorite
+     * 取消收藏，未收藏时保持幂等
+     * @param data The data for the request.
+     * @param data.productId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteMyFavorite(data: ProductFavoritesDeleteMyFavoriteData): CancelablePromise<ProductFavoritesDeleteMyFavoriteResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/product-favorites/me/{product_id}',
+            path: {
+                product_id: data.productId
             },
             errors: {
                 422: 'Validation Error'

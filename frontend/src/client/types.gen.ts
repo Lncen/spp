@@ -1249,6 +1249,106 @@ export type ProductCategoryUpdate = {
 };
 
 /**
+ * 创建组合请求
+ */
+export type ProductComboCreate = {
+    /**
+     * 同一用户下组合名称唯一
+     */
+    name: string;
+    remark?: (string | null);
+    /**
+     * 组合内商品与数量，下单时按此批量提交
+     */
+    items: Array<ProductComboItemCreate>;
+};
+
+/**
+ * 组合明细请求
+ */
+export type ProductComboItemCreate = {
+    /**
+     * 组合内商品的 UUID
+     */
+    product_id: string;
+    /**
+     * 1=固定数量（用 quantity），2=随机数量（用 min_quantity / max_quantity）
+     */
+    mode?: QuantityMode;
+    /**
+     * 固定数量模式下的购买数量
+     */
+    quantity?: (number | null);
+    /**
+     * 随机数量模式下的最小购买数量
+     */
+    min_quantity?: (number | null);
+    /**
+     * 随机数量模式下的最大购买数量
+     */
+    max_quantity?: (number | null);
+};
+
+/**
+ * 组合明细响应，仅暴露用户可见的商品展示字段
+ */
+export type ProductComboItemPublic = {
+    id: string;
+    product_id: string;
+    product_name: string;
+    image_url?: (string | null);
+    mode: QuantityMode;
+    quantity?: (number | null);
+    min_quantity?: (number | null);
+    max_quantity?: (number | null);
+    sort: number;
+    status: ProductStatus;
+    is_closed: boolean;
+};
+
+/**
+ * 组合列表响应，仅返回列表所需字段
+ */
+export type ProductComboListItem = {
+    id: string;
+    name: string;
+    remark?: (string | null);
+    item_count: number;
+    created_at?: (string | null);
+    updated_at?: (string | null);
+};
+
+/**
+ * 组合详情响应
+ */
+export type ProductComboPublic = {
+    id: string;
+    name: string;
+    remark?: (string | null);
+    item_count: number;
+    created_at?: (string | null);
+    updated_at?: (string | null);
+    items?: Array<ProductComboItemPublic>;
+};
+
+/**
+ * 组合列表响应
+ */
+export type ProductCombosPublic = {
+    data: Array<ProductComboListItem>;
+    count: number;
+};
+
+/**
+ * 更新组合请求（全部可选，items 传入则整体替换）
+ */
+export type ProductComboUpdate = {
+    name?: (string | null);
+    remark?: (string | null);
+    items?: (Array<ProductComboItemCreate> | null);
+};
+
+/**
  * 创建商品请求
  */
 export type ProductCreate = {
@@ -1265,6 +1365,46 @@ export type ProductCreate = {
     inventory?: ProductInventoryCreate;
     fulfillment?: ProductFulfillmentCreate;
     buy_params?: Array<ProductBuyParamCreate>;
+};
+
+/**
+ * 收藏商品请求
+ */
+export type ProductFavoriteCreate = {
+    /**
+     * 要收藏的商品 UUID
+     */
+    product_id: string;
+};
+
+/**
+ * 收藏记录响应，仅暴露用户可见的商品展示字段
+ */
+export type ProductFavoritePublic = {
+    id: string;
+    product_id: string;
+    product_name: string;
+    image_url?: (string | null);
+    category_id?: (string | null);
+    status: ProductStatus;
+    is_closed: boolean;
+    created_at?: (string | null);
+};
+
+/**
+ * 收藏列表响应
+ */
+export type ProductFavoritesPublic = {
+    data: Array<ProductFavoritePublic>;
+    count: number;
+};
+
+/**
+ * 收藏状态响应
+ */
+export type ProductFavoriteStatusPublic = {
+    product_id: string;
+    favorited: boolean;
 };
 
 /**
@@ -1524,6 +1664,11 @@ export type ProductUpdate = {
      */
     buy_params?: (Array<ProductBuyParamUpdate> | null);
 };
+
+/**
+ * 组合明细数量模式
+ */
+export type QuantityMode = 1 | 2;
 
 /**
  * 发货方式
@@ -2671,6 +2816,12 @@ export type OrdersPreviewAdminOrdersApiData = {
 
 export type OrdersPreviewAdminOrdersApiResponse = (AdminOrdersPreviewPublic);
 
+export type OrdersPreviewUserOrdersApiData = {
+    requestBody: AdminOrdersCreate;
+};
+
+export type OrdersPreviewUserOrdersApiResponse = (AdminOrdersPreviewPublic);
+
 export type OrdersReadUserOrderData = {
     orderId: string;
 };
@@ -2804,6 +2955,63 @@ export type ProductCategoriesDeleteProductCategoryData = {
 };
 
 export type ProductCategoriesDeleteProductCategoryResponse = (Message);
+
+export type ProductCombosReadMyCombosData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type ProductCombosReadMyCombosResponse = (ProductCombosPublic);
+
+export type ProductCombosCreateMyComboData = {
+    requestBody: ProductComboCreate;
+};
+
+export type ProductCombosCreateMyComboResponse = (ProductComboPublic);
+
+export type ProductCombosReadMyComboData = {
+    comboId: string;
+};
+
+export type ProductCombosReadMyComboResponse = (ProductComboPublic);
+
+export type ProductCombosUpdateMyComboData = {
+    comboId: string;
+    requestBody: ProductComboUpdate;
+};
+
+export type ProductCombosUpdateMyComboResponse = (ProductComboPublic);
+
+export type ProductCombosDeleteMyComboData = {
+    comboId: string;
+};
+
+export type ProductCombosDeleteMyComboResponse = (Message);
+
+export type ProductFavoritesReadMyFavoritesData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type ProductFavoritesReadMyFavoritesResponse = (ProductFavoritesPublic);
+
+export type ProductFavoritesCreateMyFavoriteData = {
+    requestBody: ProductFavoriteCreate;
+};
+
+export type ProductFavoritesCreateMyFavoriteResponse = (ProductFavoritePublic);
+
+export type ProductFavoritesReadMyFavoriteStatusData = {
+    productId: string;
+};
+
+export type ProductFavoritesReadMyFavoriteStatusResponse = (ProductFavoriteStatusPublic);
+
+export type ProductFavoritesDeleteMyFavoriteData = {
+    productId: string;
+};
+
+export type ProductFavoritesDeleteMyFavoriteResponse = (Message);
 
 export type ProductsReadProductsData = {
     categoryId?: (string | null);

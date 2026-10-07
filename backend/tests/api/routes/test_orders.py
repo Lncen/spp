@@ -2163,3 +2163,161 @@ def test_cleanup_completed_orders_purges_terminal_orders(
         assert remaining == []
     # 钱包流水保留（4 张订单对应 4 笔消费）
     assert len(_order_transactions(client, headers)) == 4
+
+
+def _combined_order_payload(
+    products: list[dict], quantities: list[int]
+) -> dict:
+    """组合下单请求：一次提交多个商品，每个商品各自带下单参数"""
+    return {
+        "orders": [
+            {
+                "product_id": product["id"],
+                "quantity": quantity,
+                "params": {"account": f"combo-account-{index}"},
+            }
+            for index, (product, quantity) in enumerate(
+                zip(products, quantities, strict=False), start=1
+            )
+        ]
+    }
+
+
+def test_user_combined_order_creates_multiple_orders(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    """组合下单：一次请求提交多个商品，逐单独立创建并分别扣库存、扣款"""
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers, "100.00")
+    product_a = _create_ready_product(
+        client, superuser_token_headers, price_mode="fixed"
+    )
+    product_b = _create_ready_product(
+        client, superuser_token_headers, price_mode="fixed"
+    )
+
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/",
+        headers=headers,
+        json=_combined_order_payload([product_a, product_b], [2, 1]),
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["total"] == 2
+    assert content["success_count"] == 2
+    assert content["failure_count"] == 0
+
+    first, second = content["results"]
+    assert first["index"] == 1
+    assert second["index"] == 2
+    assert first["order"]["product_id"] == product_a["id"]
+    assert Decimal(first["order"]["total_amount"]) == Decimal("40.00")
+    assert second["order"]["product_id"] == product_b["id"]
+    assert Decimal(second["order"]["total_amount"]) == Decimal("20.00")
+
+    assert _wallet_balance(client, headers) == Decimal("40.00")
+    assert _product_stock(client, product_a["id"], superuser_token_headers) == 98
+    assert _product_stock(client, product_b["id"], superuser_token_headers) == 99
+    assert len(_order_transactions(client, headers)) == 2
+
+
+def test_user_preview_orders_totals_without_side_effects(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    """组合下单结算预览返回逐项金额与合计，且不扣库存、不扣款、不落库"""
+    headers, _ = _create_wallet_user(client, db)
+    _fund_wallet(client, headers, superuser_token_headers, "100.00")
+    product_a = _create_ready_product(
+        client, superuser_token_headers, price_mode="fixed"
+    )
+    product_b = _create_ready_product(
+        client, superuser_token_headers, price_mode="fixed"
+    )
+
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/preview",
+        headers=headers,
+        json=_combined_order_payload([product_a, product_b], [2, 1]),
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["total"] == 2
+    assert Decimal(content["total_amount"]) == Decimal("60.00")
+
+    items = content["items"]
+    assert [item["index"] for item in items] == [1, 2]
+    assert items[0]["product_id"] == product_a["id"]
+    assert items[0]["product_name"] == product_a["name"]
+    assert items[0]["quantity"] == 2
+    assert Decimal(items[0]["unit_price"]) == Decimal("20.00")
+    assert Decimal(items[0]["subtotal"]) == Decimal("40.00")
+    assert Decimal(items[1]["subtotal"]) == Decimal("20.00")
+
+    assert _wallet_balance(client, headers) == Decimal("100.00")
+    assert _product_stock(client, product_a["id"], superuser_token_headers) == 100
+    assert _product_stock(client, product_b["id"], superuser_token_headers) == 100
+    assert _order_transactions(client, headers) == []
+
+
+def test_user_preview_orders_uses_caller_level_pricing(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    """预览金额按调用人自身等级计价，与用户实际支付一致"""
+    headers, user = _create_wallet_user(client, db)
+    level = db.exec(select(UserLevel).where(UserLevel.level == 1)).one()
+    user.level_id = level.id
+    db.add(user)
+    db.commit()
+
+    template = create_price_template(client, superuser_token_headers)
+    product = _create_ready_product(
+        client,
+        superuser_token_headers,
+        price_template_id=template["id"],
+    )
+
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/preview",
+        headers=headers,
+        json=_combined_order_payload([product], [1]),
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert Decimal(content["total_amount"]) == Decimal("9.00")
+    assert Decimal(content["items"][0]["unit_price"]) == Decimal("9.00")
+
+
+def test_user_preview_orders_requires_order_permission(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    """被拒绝 order:create 的用户无法调用组合下单预览"""
+    headers, user = _create_wallet_user(client, db)
+    product = _create_ready_product(
+        client, superuser_token_headers, price_mode="fixed"
+    )
+
+    permission_ids = _permission_ids_by_code(
+        client=client, headers=superuser_token_headers
+    )
+    response = client.put(
+        f"{settings.API_V1_STR}/users/{user.id}/permissions/deny",
+        headers=superuser_token_headers,
+        json={"permission_ids": [permission_ids["order:create"]]},
+    )
+    assert response.status_code == 200, response.text
+
+    response = client.post(
+        f"{settings.API_V1_STR}/orders/preview",
+        headers=headers,
+        json=_order_payload(product["id"]),
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "暂无下单权限"

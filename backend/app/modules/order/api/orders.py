@@ -16,7 +16,7 @@ from app.modules.order.application.after_sale.refund import refund_order
 from app.modules.order.application.create import (
     create_admin_orders,
     create_orders,
-    preview_admin_orders,
+    preview_orders,
 )
 from app.modules.order.application.fulfillment import (
     fulfill_order,
@@ -126,7 +126,28 @@ def preview_admin_orders_api(
     body: AdminOrdersCreate,
 ) -> Any:
     """管理员批量下单结算预览，不扣库存不落库"""
-    return preview_admin_orders(
+    return preview_orders(
+        session=session,
+        operator=current_user,
+        body=body,
+    )
+
+
+@router.post(
+    "/preview",
+    dependencies=[
+        Depends(require_any_permission("order:create", detail="暂无下单权限"))
+    ],
+    response_model=AdminOrdersPreviewPublic,
+)
+def preview_user_orders_api(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    body: AdminOrdersCreate,
+) -> Any:
+    """组合下单结算预览：按当前用户等级计价，不扣库存不落库"""
+    return preview_orders(
         session=session,
         operator=current_user,
         body=body,

@@ -86,3 +86,10 @@ class RuleType(IntEnum):
     FIXED_PRICE = 1
     PERCENTAGE_PRICE = 2
     CATEGORY_PRICE = 3
+
+
+class QuantityMode(IntEnum):
+    """组合明细数量模式"""
+
+    FIXED = 1  # 固定数量
+    RANDOM = 2  # 随机数量（下单时在最小/最大数量之间随机）

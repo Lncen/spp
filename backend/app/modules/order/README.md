@@ -9,6 +9,9 @@
 
 - **创建订单**：条件验证（下单权限、下单开关、商品可售、商品上游同步状态、数量、参数、防重复、余额）、
   计价、扣库存、扣款、落库，并发布 `order.paid` 事件；
+- **组合下单**：`POST /orders/` 一次提交多个商品（勾选收藏后一起结算），逐单独立创建，
+  单张失败不影响其他订单；`POST /orders/preview` 提供下单前结算预览，按调用人等级计价，
+  不扣库存、不落库；
 - **订单领域规则**：状态枚举与上游状态映射、退款公式与入账、本地取消、状态手动维护；
 - **履约/查单编排**：认领 → 上游下单 → 失败分流、批量查单 → 快照更新 → 自动退款，
   `/orders/{id}/fulfill`、`/orders/{id}/sync-status` 与自动化执行器 / 定时任务共用同一套编排。
@@ -33,7 +36,7 @@ backend/app/modules/order/
 │   └── orders.py                   # /orders 全部路由（响应模型与同步语义不变）
 ├── application/                    # 应用服务：按业务动作拆分
 │   ├── __init__.py
-│   ├── create.py                   # 创建订单：条件验证、计价、扣库存、扣款、落库、发事件
+│   ├── create.py                   # 创建订单：条件验证、计价、扣库存、扣款、落库、发事件；组合下单与结算预览
 │   ├── fulfillment.py              # 履约编排（认领 → 上游下单 → 分流）+ 手动状态维护
 │   ├── sync.py                     # 上游状态同步 / 退单申请服务
 │   ├── order_state.py              # 履约状态转换规则（认领/回滚/转异常/终态/上游状态映射）
@@ -106,3 +109,7 @@ backend/app/modules/order/
    `/orders/admin`、`/orders/admin/preview` 要求权限码 `order:admin_create`；
    权限码与默认授予见 `app/init_models_data/permissions.py` 与 `roles.py`（内置
    `user` 角色默认持有 `order:create`）。订单模块不再读取用户字段判断下单权限。
+8. **组合下单复用单商品链路**：一张订单仍只对应一个商品，组合下单只是「一次请求多张订单」，
+   因此履约、查单、退款、状态同步无需改动。`POST /orders/preview`（要求 `order:create`）
+   与 `POST /orders/admin/preview` 共用 `order.application.create.preview_orders`，
+   区别只在调用人（决定等级定价）与权限码。

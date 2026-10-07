@@ -8,6 +8,7 @@ import {
   syncStatusLabel,
 } from "./constants"
 import { ProductActionsMenu } from "./ProductActionsMenu"
+import { ProductFavoriteButton } from "./ProductFavoriteButton"
 
 function formatSyncTime(value?: string | null): string {
   if (!value) return "—"
@@ -42,8 +43,20 @@ function formatStock(product: ProductPublic) {
 
 export const columns: ColumnDef<ProductPublic>[] = [
   {
+    id: "favorite",
+    header: "收藏",
+    // 列宽固定为图标按钮 + 单元格左右内边距，避免被表格自适应撑宽
+    meta: { width: 64 },
+    cell: ({ row }) => (
+      <div className="flex justify-center">
+        <ProductFavoriteButton productId={row.original.id} />
+      </div>
+    ),
+  },
+  {
     accessorKey: "name",
     header: "商品名称",
+    meta: { width: 164 },
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
         <span className="font-medium">{row.original.name}</span>
@@ -54,6 +67,7 @@ export const columns: ColumnDef<ProductPublic>[] = [
   {
     accessorKey: "category_name",
     header: "分类",
+    meta: { width: 64 },
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground">
         {row.original.category_name || "未分类"}
@@ -63,6 +77,7 @@ export const columns: ColumnDef<ProductPublic>[] = [
   {
     accessorKey: "supplier_name",
     header: "供应商",
+     meta: { width: 32 },
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground">
         {row.original.supplier?.supplier_name || "—"}
@@ -79,6 +94,7 @@ export const columns: ColumnDef<ProductPublic>[] = [
   {
     accessorKey: "status",
     header: "状态",
+     meta: { width: 32 },
     cell: ({ row }) => (
       <Badge
         variant={
@@ -103,20 +119,22 @@ export const columns: ColumnDef<ProductPublic>[] = [
       <span className="text-sm">{formatStock(row.original)}</span>
     ),
   },
-{
-  accessorKey: "sync_status",
-  header: "同步",
-  cell: ({ row }) => {
-    const status = row.original.sync_status
-    const isError = status === 2 // 按你实际的异常值改
+  {
+    accessorKey: "sync_status",
+    header: "同步",
+    cell: ({ row }) => {
+      const status = row.original.sync_status
+      const isError = status === 2 // 按你实际的异常值改
 
-    return (
-      <span className={`text-sm ${isError ? "text-red-600" : "text-green-600"}`}>
-        {syncStatusLabel(status)}
-      </span>
-    )
+      return (
+        <span
+          className={`text-sm ${isError ? "text-red-600" : "text-green-600"}`}
+        >
+          {syncStatusLabel(status)}
+        </span>
+      )
+    },
   },
-},
   {
     accessorKey: "synced_at",
     header: "同步时间",
@@ -126,6 +144,7 @@ export const columns: ColumnDef<ProductPublic>[] = [
       </span>
     ),
   },
+
   {
     id: "actions",
     header: () => <span className="sr-only">Actions</span>,

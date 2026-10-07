@@ -6,8 +6,10 @@ import {
   Cpu,
   Database,
   FolderTree,
+  Heart,
   Home,
   Image,
+  Layers,
   ListTodo,
   Medal,
   MessageSquare,
@@ -84,11 +86,14 @@ const navGroups: ItemGroup[] = [
   },
   {
     label: "商品",
+    icon: Package,
     collapsible: true,
     items: [
+      { icon: Heart, title: "我的收藏", path: "/favorites" },
+      { icon: Layers, title: "我的组合", path: "/combos" },
       {
         icon: Package,
-        title: "商品",
+        title: "商品管理",
         path: "/products",
         permission: "product:view",
       },

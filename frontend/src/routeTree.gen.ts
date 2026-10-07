@@ -28,6 +28,8 @@ import { Route as LayoutNotificationsRouteImport } from './routes/_layout/notifi
 import { Route as LayoutLevelsRouteImport } from './routes/_layout/levels'
 import { Route as LayoutImagesRouteImport } from './routes/_layout/images'
 import { Route as LayoutGlobalSettingsRouteImport } from './routes/_layout/global-settings'
+import { Route as LayoutFavoritesRouteImport } from './routes/_layout/favorites'
+import { Route as LayoutCombosRouteImport } from './routes/_layout/combos'
 import { Route as LayoutCategoriesRouteImport } from './routes/_layout/categories'
 import { Route as LayoutBackupsRouteImport } from './routes/_layout/backups'
 import { Route as LayoutAutomationRouteImport } from './routes/_layout/automation'
@@ -133,6 +135,16 @@ const LayoutGlobalSettingsRoute = LayoutGlobalSettingsRouteImport.update({
   path: '/global-settings',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutFavoritesRoute = LayoutFavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutCombosRoute = LayoutCombosRouteImport.update({
+  id: '/combos',
+  path: '/combos',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutCategoriesRoute = LayoutCategoriesRouteImport.update({
   id: '/categories',
   path: '/categories',
@@ -196,6 +208,8 @@ export interface FileRoutesByFullPath {
   '/automation': typeof LayoutAutomationRouteWithChildren
   '/backups': typeof LayoutBackupsRoute
   '/categories': typeof LayoutCategoriesRoute
+  '/combos': typeof LayoutCombosRoute
+  '/favorites': typeof LayoutFavoritesRoute
   '/global-settings': typeof LayoutGlobalSettingsRoute
   '/images': typeof LayoutImagesRoute
   '/levels': typeof LayoutLevelsRoute
@@ -224,6 +238,8 @@ export interface FileRoutesByTo {
   '/audit-logs': typeof LayoutAuditLogsRoute
   '/backups': typeof LayoutBackupsRoute
   '/categories': typeof LayoutCategoriesRoute
+  '/combos': typeof LayoutCombosRoute
+  '/favorites': typeof LayoutFavoritesRoute
   '/global-settings': typeof LayoutGlobalSettingsRoute
   '/images': typeof LayoutImagesRoute
   '/levels': typeof LayoutLevelsRoute
@@ -256,6 +272,8 @@ export interface FileRoutesById {
   '/_layout/automation': typeof LayoutAutomationRouteWithChildren
   '/_layout/backups': typeof LayoutBackupsRoute
   '/_layout/categories': typeof LayoutCategoriesRoute
+  '/_layout/combos': typeof LayoutCombosRoute
+  '/_layout/favorites': typeof LayoutFavoritesRoute
   '/_layout/global-settings': typeof LayoutGlobalSettingsRoute
   '/_layout/images': typeof LayoutImagesRoute
   '/_layout/levels': typeof LayoutLevelsRoute
@@ -289,6 +307,8 @@ export interface FileRouteTypes {
     | '/automation'
     | '/backups'
     | '/categories'
+    | '/combos'
+    | '/favorites'
     | '/global-settings'
     | '/images'
     | '/levels'
@@ -317,6 +337,8 @@ export interface FileRouteTypes {
     | '/audit-logs'
     | '/backups'
     | '/categories'
+    | '/combos'
+    | '/favorites'
     | '/global-settings'
     | '/images'
     | '/levels'
@@ -348,6 +370,8 @@ export interface FileRouteTypes {
     | '/_layout/automation'
     | '/_layout/backups'
     | '/_layout/categories'
+    | '/_layout/combos'
+    | '/_layout/favorites'
     | '/_layout/global-settings'
     | '/_layout/images'
     | '/_layout/levels'
@@ -512,6 +536,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutGlobalSettingsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/favorites': {
+      id: '/_layout/favorites'
+      path: '/favorites'
+      fullPath: '/favorites'
+      preLoaderRoute: typeof LayoutFavoritesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/combos': {
+      id: '/_layout/combos'
+      path: '/combos'
+      fullPath: '/combos'
+      preLoaderRoute: typeof LayoutCombosRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/categories': {
       id: '/_layout/categories'
       path: '/categories'
@@ -610,6 +648,8 @@ interface LayoutRouteChildren {
   LayoutAutomationRoute: typeof LayoutAutomationRouteWithChildren
   LayoutBackupsRoute: typeof LayoutBackupsRoute
   LayoutCategoriesRoute: typeof LayoutCategoriesRoute
+  LayoutCombosRoute: typeof LayoutCombosRoute
+  LayoutFavoritesRoute: typeof LayoutFavoritesRoute
   LayoutGlobalSettingsRoute: typeof LayoutGlobalSettingsRoute
   LayoutImagesRoute: typeof LayoutImagesRoute
   LayoutLevelsRoute: typeof LayoutLevelsRoute
@@ -632,6 +672,8 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAutomationRoute: LayoutAutomationRouteWithChildren,
   LayoutBackupsRoute: LayoutBackupsRoute,
   LayoutCategoriesRoute: LayoutCategoriesRoute,
+  LayoutCombosRoute: LayoutCombosRoute,
+  LayoutFavoritesRoute: LayoutFavoritesRoute,
   LayoutGlobalSettingsRoute: LayoutGlobalSettingsRoute,
   LayoutImagesRoute: LayoutImagesRoute,
   LayoutLevelsRoute: LayoutLevelsRoute,

@@ -27,6 +27,8 @@ from app.modules.order.models import Order, OrderParam
 from app.modules.permission.models import Permission, PermissionCategory
 from app.modules.price_template.models import PriceTemplate, PriceTemplateRule
 from app.modules.product.category.models import ProductCategory
+from app.modules.product.combo.models import ProductCombo, ProductComboItem
+from app.modules.product.favorite.models import ProductFavorite
 from app.modules.product.product.models import (
     Product,
     ProductBuyParam,
@@ -201,6 +203,9 @@ def db() -> Generator[Session]:
                 ProductInventory.__table__,
                 ProductFulfillment.__table__,
                 ProductBuyParam.__table__,
+                ProductCombo.__table__,
+                ProductComboItem.__table__,
+                ProductFavorite.__table__,
                 Order.__table__,
                 OrderParam.__table__,
                 Wallet.__table__,
@@ -215,6 +220,25 @@ def db() -> Generator[Session]:
                 UserPermission.__table__,
             ],
         )
+        # 既有测试库里已存在的表不会被 create_all 改结构：
+        # 组合明细新增的数量模式列由项目迁移流程生成，测试库在 create_all 之后幂等补列
+        with engine.begin() as conn:
+            for column_sql in (
+                (
+                    "ALTER TABLE product_combo_item ADD COLUMN IF NOT EXISTS "
+                    "mode INTEGER NOT NULL DEFAULT 1"
+                ),
+                (
+                    "ALTER TABLE product_combo_item ADD COLUMN IF NOT EXISTS "
+                    "min_quantity INTEGER"
+                ),
+                (
+                    "ALTER TABLE product_combo_item ADD COLUMN IF NOT EXISTS "
+                    "max_quantity INTEGER"
+                ),
+                "ALTER TABLE product_combo_item ALTER COLUMN quantity DROP NOT NULL",
+            ):
+                conn.execute(text(column_sql))
         # 建表完成后执行幂等播种；新增模块的种子数据依赖表结构已存在
         init_db(session)
         yield session
@@ -224,11 +248,17 @@ def db() -> Generator[Session]:
         session.execute(statement)
         statement = delete(Message)
         session.execute(statement)
+        statement = delete(ProductComboItem)
+        session.execute(statement)
+        statement = delete(ProductCombo)
+        session.execute(statement)
         statement = delete(ChatParticipant)
         session.execute(statement)
         statement = delete(Chat)
         session.execute(statement)
         statement = delete(ProductBuyParam)
+        session.execute(statement)
+        statement = delete(ProductFavorite)
         session.execute(statement)
         statement = delete(ProductInventory)
         session.execute(statement)

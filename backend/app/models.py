@@ -31,6 +31,8 @@ from app.modules.order.models import Order, OrderParam
 from app.modules.permission.models import Permission, PermissionCategory
 from app.modules.price_template.models import PriceTemplate, PriceTemplateRule
 from app.modules.product.category.models import ProductCategory
+from app.modules.product.combo.models import ProductCombo, ProductComboItem
+from app.modules.product.favorite.models import ProductFavorite
 from app.modules.product.product.models import (
     Product,
     ProductBuyParam,
@@ -80,6 +82,9 @@ __all__ = [
     "ProductInventory",
     "ProductFulfillment",
     "ProductBuyParam",
+    "ProductCombo",
+    "ProductComboItem",
+    "ProductFavorite",
     "Role",
     "RolePermission",
     "UserPermission",

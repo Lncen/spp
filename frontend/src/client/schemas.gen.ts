@@ -4324,6 +4324,375 @@ export const ProductCategoryUpdateSchema = {
     description: '更新商品分类请求（全部可选）'
 } as const;
 
+export const ProductComboCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 50,
+            minLength: 1,
+            title: '组合名称',
+            description: '同一用户下组合名称唯一'
+        },
+        remark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '备注'
+        },
+        items: {
+            items: {
+                '$ref': '#/components/schemas/ProductComboItemCreate'
+            },
+            type: 'array',
+            maxItems: 100,
+            minItems: 1,
+            title: '组合明细',
+            description: '组合内商品与数量，下单时按此批量提交'
+        }
+    },
+    type: 'object',
+    required: ['name', 'items'],
+    title: 'ProductComboCreate',
+    description: '创建组合请求'
+} as const;
+
+export const ProductComboItemCreateSchema = {
+    properties: {
+        product_id: {
+            type: 'string',
+            format: 'uuid',
+            title: '商品 ID',
+            description: '组合内商品的 UUID'
+        },
+        mode: {
+            '$ref': '#/components/schemas/QuantityMode',
+            title: '数量模式',
+            description: '1=固定数量（用 quantity），2=随机数量（用 min_quantity / max_quantity）',
+            default: 1
+        },
+        quantity: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '固定数量',
+            description: '固定数量模式下的购买数量'
+        },
+        min_quantity: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '最小数量',
+            description: '随机数量模式下的最小购买数量'
+        },
+        max_quantity: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '最大数量',
+            description: '随机数量模式下的最大购买数量'
+        }
+    },
+    type: 'object',
+    required: ['product_id'],
+    title: 'ProductComboItemCreate',
+    description: '组合明细请求'
+} as const;
+
+export const ProductComboItemPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        product_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Product Id'
+        },
+        product_name: {
+            type: 'string',
+            title: 'Product Name'
+        },
+        image_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Url'
+        },
+        mode: {
+            '$ref': '#/components/schemas/QuantityMode'
+        },
+        quantity: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Quantity'
+        },
+        min_quantity: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Min Quantity'
+        },
+        max_quantity: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max Quantity'
+        },
+        sort: {
+            type: 'integer',
+            title: 'Sort'
+        },
+        status: {
+            '$ref': '#/components/schemas/ProductStatus'
+        },
+        is_closed: {
+            type: 'boolean',
+            title: 'Is Closed'
+        }
+    },
+    type: 'object',
+    required: ['id', 'product_id', 'product_name', 'mode', 'sort', 'status', 'is_closed'],
+    title: 'ProductComboItemPublic',
+    description: '组合明细响应，仅暴露用户可见的商品展示字段'
+} as const;
+
+export const ProductComboListItemSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        remark: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Remark'
+        },
+        item_count: {
+            type: 'integer',
+            title: 'Item Count'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'item_count'],
+    title: 'ProductComboListItem',
+    description: '组合列表响应，仅返回列表所需字段'
+} as const;
+
+export const ProductComboPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        remark: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Remark'
+        },
+        item_count: {
+            type: 'integer',
+            title: 'Item Count'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At'
+        },
+        items: {
+            items: {
+                '$ref': '#/components/schemas/ProductComboItemPublic'
+            },
+            type: 'array',
+            title: 'Items'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'item_count'],
+    title: 'ProductComboPublic',
+    description: '组合详情响应'
+} as const;
+
+export const ProductComboUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 50,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '组合名称'
+        },
+        remark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '备注'
+        },
+        items: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/ProductComboItemCreate'
+                    },
+                    type: 'array',
+                    maxItems: 100,
+                    minItems: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: '组合明细'
+        }
+    },
+    type: 'object',
+    title: 'ProductComboUpdate',
+    description: '更新组合请求（全部可选，items 传入则整体替换）'
+} as const;
+
+export const ProductCombosPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ProductComboListItem'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ProductCombosPublic',
+    description: '组合列表响应'
+} as const;
+
 export const ProductCreateSchema = {
     properties: {
         name: {
@@ -4409,6 +4778,124 @@ export const ProductCreateSchema = {
     required: ['name', 'category_id', 'pricing'],
     title: 'ProductCreate',
     description: '创建商品请求'
+} as const;
+
+export const ProductFavoriteCreateSchema = {
+    properties: {
+        product_id: {
+            type: 'string',
+            format: 'uuid',
+            title: '商品 ID',
+            description: '要收藏的商品 UUID'
+        }
+    },
+    type: 'object',
+    required: ['product_id'],
+    title: 'ProductFavoriteCreate',
+    description: '收藏商品请求'
+} as const;
+
+export const ProductFavoritePublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        product_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Product Id'
+        },
+        product_name: {
+            type: 'string',
+            title: 'Product Name'
+        },
+        image_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Url'
+        },
+        category_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Category Id'
+        },
+        status: {
+            '$ref': '#/components/schemas/ProductStatus'
+        },
+        is_closed: {
+            type: 'boolean',
+            title: 'Is Closed'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'product_id', 'product_name', 'status', 'is_closed'],
+    title: 'ProductFavoritePublic',
+    description: '收藏记录响应，仅暴露用户可见的商品展示字段'
+} as const;
+
+export const ProductFavoriteStatusPublicSchema = {
+    properties: {
+        product_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Product Id'
+        },
+        favorited: {
+            type: 'boolean',
+            title: 'Favorited'
+        }
+    },
+    type: 'object',
+    required: ['product_id', 'favorited'],
+    title: 'ProductFavoriteStatusPublic',
+    description: '收藏状态响应'
+} as const;
+
+export const ProductFavoritesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ProductFavoritePublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ProductFavoritesPublic',
+    description: '收藏列表响应'
 } as const;
 
 export const ProductFulfillmentCreateSchema = {
@@ -5520,6 +6007,13 @@ export const ProductsPublicSchema = {
     required: ['data', 'count'],
     title: 'ProductsPublic',
     description: '商品列表响应'
+} as const;
+
+export const QuantityModeSchema = {
+    type: 'integer',
+    enum: [1, 2],
+    title: 'QuantityMode',
+    description: '组合明细数量模式'
 } as const;
 
 export const RedeemTypeSchema = {

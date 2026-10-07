@@ -301,13 +301,17 @@ def create_admin_orders(
     )
 
 
-def preview_admin_orders(
+def preview_orders(
     *,
     session: Session,
     operator: User,
     body: AdminOrdersCreate,
 ) -> AdminOrdersPreviewPublic:
-    """批量结算预览：复用下单校验与计价，不扣库存不落库"""
+    """组合下单结算预览：复用下单校验与计价，按操作人等级定价，不扣库存不落库
+
+    用户自助下单与管理员代客下单共用：定价取 ``operator.level_id``，
+    因此用户预览得到的就是自己实际要支付的金额。
+    """
     preview_items: list[AdminOrderPreviewItem] = []
     total_amount = Decimal("0.00")
     for index, order_in in enumerate(body.orders, start=1):
